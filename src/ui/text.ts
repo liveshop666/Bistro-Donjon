@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { audio } from '../audio/AudioManager';
 import { FONT } from '../core/constants';
 
 /** Texte pixel (Press Start 2P) avec ombre portée d'un pixel. Tailles conseillées : 8 ou 16. */
@@ -24,6 +25,7 @@ export function button(scene: Phaser.Scene, x: number, y: number, w: number, h: 
   c.on('pointerout', () => draw(false));
   c.on('pointerup', () => {
     draw(false);
+    audio.sfx('clic');
     onClick();
   });
   return c;

@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { audio } from '../audio/AudioManager';
 import { CHEF_ORDER, CHEFS, ChefId, H, W, WORLD_ORDER, WorldId, WORLDS } from '../core/constants';
 import { button, txt } from '../ui/text';
 
@@ -63,6 +64,7 @@ export class MenuScene extends Phaser.Scene {
         .setInteractive({ useHandCursor: true })
         .on('pointerdown', () => {
           this.chef = id;
+          audio.sfx('clic');
           this.refresh();
         });
     });
@@ -80,6 +82,7 @@ export class MenuScene extends Phaser.Scene {
         .setInteractive({ useHandCursor: true })
         .on('pointerdown', () => {
           this.world = id;
+          audio.sfx('clic');
           this.refresh();
         });
       txt(this, x, 460, String(i + 1)).setOrigin(0.5);
@@ -94,6 +97,14 @@ export class MenuScene extends Phaser.Scene {
     button(this, 96, 592, 150, 28, 'DUO  BIENTOT', 0x4a4f66, () => {}).setAlpha(0.6);
     button(this, 264, 592, 150, 28, 'DUEL BIENTOT', 0x4a4f66, () => {}).setAlpha(0.6);
     txt(this, W / 2, 624, 'PROTOTYPE SOLO v0.1', 8, '#6b7391').setOrigin(0.5);
+    const son = () => (audio.muted ? 'SON : NON' : 'SON : OUI');
+    const mute = txt(this, W - 6, 6, son(), 8, '#bfc8e0').setOrigin(1, 0).setInteractive({ useHandCursor: true });
+    mute.on('pointerdown', () => {
+      audio.toggleMute();
+      mute.setText(son());
+      audio.sfx('clic');
+    });
+    audio.music('menu');
     this.refresh();
   }
 

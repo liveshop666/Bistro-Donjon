@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { audio } from '../audio/AudioManager';
 import {
   BOSS_REWARD, ChefId, CHEFS, CONVEYORS, EnemyId, H, IngredientId, POWER_LABEL, POWER_TIME, UpgradeDef, W, WAVES, WorldDef, WorldId, WORLDS,
 } from '../core/constants';
@@ -106,6 +107,9 @@ export class GameScene extends Phaser.Scene {
     this.waves = new WaveManager(this.gm, this.world, (t, x, y) => this.spawnEnemy(t, x, y));
     this.gm.on('phase', (p: Phase) => this.onPhase(p));
     this.hud.banner('VAGUE 1\nA LA CHASSE !');
+    audio.music('chasse');
+    audio.sfx('vague');
+    this.input.keyboard?.on('keydown-M', () => audio.toggleMute());
   }
 
   // ------------------------------------------------------------------ boucle
@@ -136,6 +140,7 @@ export class GameScene extends Phaser.Scene {
     if (wasCooking && this.pot.state === 'ready') {
       this.recipes.onChange();
       this.hud.float(this.pot.x, this.pot.y - 60, 'PRET !', '#7dff7d');
+      audio.sfx('pret');
     }
     this.drawAuras(time);
     this.hud.refresh(time);
@@ -157,6 +162,7 @@ export class GameScene extends Phaser.Scene {
         this.tick.regen = 0;
         chef.heal(1);
         this.hud.float(chef.x, chef.y - 50, '+1', '#7dff7d');
+        audio.sfx('soin');
       }
     }
     if (chef.powers.bouclier > 0) {
@@ -185,6 +191,7 @@ export class GameScene extends Phaser.Scene {
     if (!target) return;
     c.cooldown = c.def.cooldown;
     c.strike(target.x, target.y);
+    audio.sfx(c.def.id === 'moustachu' ? 'coup_poele' : c.def.id === 'shiba' ? 'coup_rouleau' : 'coup_hachoir');
     const dmg = this.attackDamage();
     const ang = Math.atan2(target.y - c.y, target.x - c.x);
     const tx = target.x;
@@ -221,12 +228,14 @@ export class GameScene extends Phaser.Scene {
     chef.ult = 0;
     this.hud.banner(chef.def.ultimateName, '#ff8a1e', 420);
     this.cameras.main.flash(150, 255, 200, 120);
+    audio.sfx('ultime');
 
     if (chef.def.ultimate === 'tornade') {
       chef.ultActive = 3;
       this.tick.tornado = 0;
     } else if (chef.def.ultimate === 'onde') {
       this.cameras.main.shake(350, 0.012);
+      audio.sfx('choc');
       this.ringFx(chef.x, chef.y, 300, 0xe8c48a, 500);
       for (const e of [...this.enemies]) {
         if (e.dead) continue;
@@ -279,8 +288,12 @@ export class GameScene extends Phaser.Scene {
       summon: (x, y) => {
         for (let i = 0; i < 3; i++) this.spawnEnemy('tomate', x - 50 + i * 50, y + 20);
         this.hud.float(x, y - 90, 'A MOI, MES SBIRES !', '#ff6a5a');
+        audio.sfx('rugissement');
       },
-      shake: () => this.cameras.main.shake(300, 0.012),
+      shake: () => {
+        this.cameras.main.shake(300, 0.012);
+        audio.sfx('choc');
+      },
     };
     for (const e of this.enemies) if (!e.dead) e.update(dt, api);
     for (let i = 0; i < this.enemies.length; i++) {
@@ -297,6 +310,7 @@ export class GameScene extends Phaser.Scene {
           gm.damageStand(e.def.damage);
           this.hud.float(e.x, this.world.standLine - 10, 'STAND -' + e.def.damage, '#ff6a5a');
           this.cameras.main.shake(80, 0.004);
+          audio.sfx('stand');
         }
       }
     }
@@ -306,6 +320,7 @@ export class GameScene extends Phaser.Scene {
     if (this.chef.powers.bouclier > 0 || this.chef.ultActive > 0 || this.dashing) return;
     if (this.chef.hurt(n)) {
       this.cameras.main.shake(120, 0.008);
+      audio.sfx('aie');
       this.cameras.main.flash(100, 255, 60, 60);
     }
   }
@@ -313,12 +328,14 @@ export class GameScene extends Phaser.Scene {
   private damage(e: Enemy, dmg: number): void {
     if (e.dead) return;
     e.hit(dmg);
+    audio.sfx('touche');
     if (e.hp <= 0) this.kill(e);
   }
 
   private kill(e: Enemy): void {
     e.dead = true;
     this.gm.kills++;
+    audio.sfx(e.def.ai === 'boss' ? 'explosion' : 'pop');
     this.chef.addUlt(5);
     this.puff(e.x, e.y - e.radius, e.def.id === 'gelee' ? 0x6fe04a : e.def.id === 'champi' ? 0xc9a070 : 0xe8483a, e.def.ai === 'boss' ? 30 : 7);
     if (e.def.ai === 'boss') {
@@ -346,6 +363,7 @@ export class GameScene extends Phaser.Scene {
 
   private shoot(x: number, y: number, tx: number, ty: number): void {
     const d = Math.hypot(tx - x, ty - y) || 1;
+    audio.sfx('feu');
     this.shots.push({ img: this.add.image(x, y, 'boule_feu').setDepth(1600), vx: ((tx - x) / d) * 95, vy: ((ty - y) / d) * 95, life: 5 });
   }
 
@@ -367,7 +385,10 @@ export class GameScene extends Phaser.Scene {
   private slice(x1: number, y1: number, x2: number, y2: number): void {
     if (this.gm.phase === 'cards' || this.gm.phase === 'over') return;
     for (const i of this.ingredients) {
-      if (i.trySlice(x1, y1, x2, y2)) this.hud.float(i.x, i.y - 16, 'TRANCHE ! x2', '#8fe0ff');
+      if (i.trySlice(x1, y1, x2, y2)) {
+        this.hud.float(i.x, i.y - 16, 'TRANCHE ! x2', '#8fe0ff');
+        audio.sfx('tranche');
+      }
     }
   }
 
@@ -376,6 +397,7 @@ export class GameScene extends Phaser.Scene {
     for (const i of this.ingredients) {
       i.update(dt, this.chef.x, this.chef.y, radius, time);
       if (i.collected) {
+        audio.sfx('ramasse');
         this.chef.inv[i.type].n++;
         if (i.sliced) this.chef.inv[i.type].sliced++;
       }
@@ -393,9 +415,11 @@ export class GameScene extends Phaser.Scene {
         const sliced = recipes.consume(order, chef.inv);
         pot.start(order, sliced, Math.pow(0.75, gm.level('fourneaux')));
         this.hud.float(pot.x, pot.y - 60, sliced > 0 ? 'CUISSON EXPRESS !' : 'A LA MARMITE !', '#ffe27a');
+        audio.sfx('marmite');
       }
     } else if (nearPot && pot.state === 'ready' && !chef.dish) {
       chef.dish = pot.take();
+      audio.sfx('plat');
     }
 
     const c = this.world.counter;
@@ -411,6 +435,8 @@ export class GameScene extends Phaser.Scene {
       chef.addUlt(20);
       recipes.serve(order, gm.wave);
       this.hud.float(c.x, c.y - 44, `+${gold} OR`);
+      audio.sfx('piece');
+      this.time.delayedCall(260, () => audio.sfx('pouvoir'));
       this.hud.float(c.x, c.y - 58, `POUVOIR : ${POWER_LABEL[order.recipe.power]}`, '#8fe0ff');
       this.puff(c.x, c.y - 20, 0xffd23e, 8);
     }
@@ -455,6 +481,7 @@ export class GameScene extends Phaser.Scene {
           beam.lineStyle(2, 0xff5a3c).lineBetween(W / 2, ty - 16, target.x, target.y - target.radius);
           this.tweens.add({ targets: beam, alpha: 0, duration: 140, onComplete: () => beam.destroy() });
           this.damage(target, 10);
+          audio.sfx('laser');
         }
       }
     }
@@ -474,6 +501,7 @@ export class GameScene extends Phaser.Scene {
         b.x = -999;
         this.ringFx(b.img.x, b.img.y - 10, 66, 0xff8a1e, 300);
         this.cameras.main.shake(150, 0.008);
+        audio.sfx('explosion');
         for (const e of [...this.enemies]) {
           if (!e.dead && Math.hypot(e.x - b.img.x, e.y - b.img.y) < 66 + e.radius) this.damage(e, 45);
         }
@@ -484,6 +512,16 @@ export class GameScene extends Phaser.Scene {
 
   // ------------------------------------------------------------------ phases
   private onPhase(p: Phase): void {
+    if (p === 'kitchen') {
+      audio.music('cuisine');
+      audio.sfx('cloche');
+    } else if (p === 'harvest') {
+      audio.music('chasse');
+      audio.sfx('vague');
+    } else if (p === 'boss') {
+      audio.music('boss');
+      audio.sfx('rugissement');
+    }
     if (p === 'kitchen') this.hud.banner('COUP DE FEU !\nEN CUISINE !', '#ffe27a');
     else if (p === 'harvest') this.hud.banner(`VAGUE ${this.gm.wave + 1}\nA LA CHASSE !`);
     else if (p === 'boss') {
@@ -508,6 +546,8 @@ export class GameScene extends Phaser.Scene {
   private showEnd(): void {
     const { gm } = this;
     this.touch.setEnabled(false);
+    audio.music(null);
+    audio.sfx(gm.victory ? 'victoire' : 'defaite');
     const save = loadSave();
     const record = gm.gold > save.best;
     if (record) writeSave({ best: gm.gold });

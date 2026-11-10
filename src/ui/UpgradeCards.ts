@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { audio } from '../audio/AudioManager';
 import { CARDS_TIME, H, UpgradeDef, W } from '../core/constants';
 import { txt } from './text';
 
@@ -22,7 +23,9 @@ export class UpgradeCards {
     const shownAt = this.scene.time.now;
     const clock = add(txt(this.scene, W / 2, 216, `${left}s`, 8, '#bfc8e0').setOrigin(0.5).setDepth(D + 1));
 
+    audio.sfx('cartes');
     const pick = (u: UpgradeDef) => {
+      audio.sfx('carte');
       this.countdown?.remove();
       this.objects.forEach((o) => o.destroy());
       this.objects = [];

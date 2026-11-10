@@ -43,6 +43,7 @@ Toutes les valeurs (durées, stats, vagues, recettes, cartes) sont dans `src/cor
 - Bestiaire : Champi-Bouclier (vise le stand), Tomate Grognon (meute), Gelée Sucrée (bondit, se divise), Piment Diablotin (tir à distance), Roi Tomate (charge, invoque, fait trembler l'écran).
 - 4 mondes avec leur mécanique : Clairière (standard), Marché de Nuit (monstres en file), Taverne (tonneaux explosifs), Cantine Cyber (tapis roulants).
 - 6 recettes, 8 cartes d'amélioration (couteaux volants, bottes, tourelle, aimant, fourneaux…), meilleur score sauvegardé localement.
+- Son entièrement synthétisé (aucun fichier audio) : une trentaine de bruitages et 4 musiques chiptune (menu, chasse, cuisine, boss). Coupure du son depuis le menu ou avec la touche M.
 - Affichage Pixel Perfect : le canvas est agrandi d'un facteur entier en pixels physiques.
 
 ## Pas encore fait
@@ -51,7 +52,7 @@ Toutes les valeurs (durées, stats, vagues, recettes, cartes) sont dans `src/cor
 - **Monétisation** (AdMob récompensé, boutique de skins) et déblocage progressif des mondes.
 - **Sprites animés** : chaque personnage est une image fixe animée par code (rebond, dandinement, élan). Les planches d'animation image par image restent à produire en 32 × 32.
 - **Masques de collision des décors** : seule la ligne cuisine/arène est gérée ; les personnages passent sur les arbres et les murs dessinés.
-- **Son et musique**, ingrédient Viande, louche laser.
+- Ingrédient Viande, louche laser.
 - **Projet Android** : la configuration Capacitor est prête mais le dossier `android/` n'est pas généré (voir ci-dessous).
 
 ## Générer l'application Android
@@ -85,6 +86,7 @@ public/assets/maps/             décors des 4 mondes (360 × 640)
 public/assets/ui/               ingrédients, marmite, icônes, bouton d'ultime
 reference/                      planches visuelles d'origine
 tools/                          découpe des planches en sprites
+src/audio/                      AudioManager (bruitages et musiques synthétisés)
 src/core/                       constants, GameManager, WaveManager, RecipeManager
 src/entities/                   Chef, Enemy, Ingredient, CookingPot
 src/input/                      TouchController (joystick flottant + tranchage)

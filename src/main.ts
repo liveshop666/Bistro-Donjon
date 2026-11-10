@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import '@fontsource/press-start-2p';
+import { audio } from './audio/AudioManager';
 import { H, W } from './core/constants';
 import { BootScene } from './scenes/BootScene';
 import { GameScene } from './scenes/GameScene';
@@ -31,11 +32,12 @@ document.fonts.load('8px "Press Start 2P"').finally(() => {
     roundPixels: true,
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.NO_CENTER },
     input: { activePointers: 3 },
+    audio: { noAudio: true }, // tout le son passe par src/audio/AudioManager (synthèse Web Audio)
     scene: [BootScene, MenuScene, GameScene],
   });
   window.addEventListener('resize', () => {
     fitParent();
     game.scale.refresh();
   });
-  (window as unknown as { game: Phaser.Game }).game = game;
+  Object.assign(window, { game, audio }); // accès console pour le débogage
 });
