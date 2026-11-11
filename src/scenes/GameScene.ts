@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { audio, Tune } from '../audio/AudioManager';
 import {
-  BOSS_REWARD, ChefId, CHEFS, CHOP_TIME, COMBO_GOLD, COMBO_SIZE, CONVEYORS, EnemyId, GameMode, H, IngredientId, INGREDIENTS, itemLabel, ORDER_PATIENCE,
+  BOSS_REWARD, ChefId, CHEFS, CHOP_TIME, COMBO_GOLD, COMBO_SIZE, CONVEYORS, EnemyId, GameMode, H, IngredientId, INGREDIENTS, itemLabel, playerLevel, ORDER_PATIENCE,
   POWER_LABEL, POWER_TIME, SHOP, Sabotage, SABOTAGE_LABEL, SABOTAGES, TIP_BONUS, UpgradeDef, W, WAVES, WORLD_ORDER, WorldDef, WorldId, WORLDS,
 } from '../core/constants';
 import { GameManager, Phase } from '../core/GameManager';
@@ -701,6 +701,7 @@ export class GameScene extends Phaser.Scene {
     const draw = duel && !this.rivalOut && gm.victory === false && gm.gold === this.rivalGold && this.chef.hp > 0 && gm.standHp > 0;
     audio.sfx(gm.victory ? 'victoire' : 'defaite');
     const profile = loadProfile();
+    const levelBefore = playerLevel(profile.earned).level;
     const gifts = addCoins(gm.gold); // l'or de la partie devient des pièces (et compte pour les cadeaux de palier)
     const lines: string[] = [];
     let title: string;
@@ -724,6 +725,9 @@ export class GameScene extends Phaser.Scene {
       if (this.unlockedWorld) lines.push('NOUVEAU MONDE DEBLOQUE !');
     }
     lines.push(`+${gm.gold} PIECES POUR LA BOUTIQUE`);
+    const levelNow = playerLevel(loadProfile().earned);
+    if (levelNow.level > levelBefore) lines.push(`NIVEAU ${levelNow.level} ATTEINT !`);
+    else lines.push(`NIVEAU ${levelNow.level} : ${levelNow.into}/${levelNow.span}`);
     for (const g of gifts) lines.push(`CADEAU DEBLOQUE : ${itemLabel(g)} !`);
     const milestone = nextMilestone();
     if (milestone) lines.push(`PROCHAIN CADEAU DANS ${milestone.left} PIECES`);

@@ -272,5 +272,16 @@ export const SHOP: ShopItem[] = [
 /** Nom d'un article sur une seule ligne. */
 export const itemLabel = (it: ShopItem): string => it.name.replace('-\n', '-').replace('\n', ' ');
 
+/**
+ * Niveau du joueur : il monte avec le total de pièces gagnées depuis le début (jamais avec les pièces dépensées).
+ * Niveau 2 à 500 pièces, 3 à 1 500, 5 à 5 000, 10 à 22 500, 20 à 95 000 : chaque niveau est plus long que le précédent.
+ */
+const levelStart = (level: number): number => 250 * level * (level - 1);
+export function playerLevel(earned: number): { level: number; into: number; span: number } {
+  let level = 1;
+  while (earned >= levelStart(level + 1)) level++;
+  return { level, into: earned - levelStart(level), span: levelStart(level + 1) - levelStart(level) };
+}
+
 /** Cadeau du jour : pièces offertes selon le nombre de jours joués d'affilée (plafonné au 7e jour). */
 export const DAILY_GIFT = [100, 150, 200, 250, 300, 400, 500];

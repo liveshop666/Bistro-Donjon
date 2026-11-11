@@ -114,7 +114,7 @@ class AudioManager {
     this.master.gain.value = this.muted ? 0 : 1;
     this.master.connect(ctx.destination);
     this.musicBus = ctx.createGain();
-    this.musicBus.gain.value = 0.36;
+    this.musicBus.gain.value = 0.2; // musique en retrait : les bruitages (coups, monstres) restent au premier plan
     this.musicBus.connect(this.master);
     this.sfxBus = ctx.createGain();
     this.sfxBus.gain.value = 0.9;

@@ -40,10 +40,23 @@ document.fonts.load('8px "Press Start 2P"').finally(() => {
     audio: { noAudio: true }, // tout le son passe par src/audio/AudioManager (synthèse Web Audio)
     scene: [BootScene, MenuScene, GameScene, RulesScene, DuelScene, ShopScene, AccountScene],
   });
-  window.addEventListener('resize', () => {
+  // Recalage de l'écran : refait tout de suite puis encore deux fois, car sur Android la taille de la fenêtre
+  // n'est pas toujours à jour au moment de l'événement (clavier qui se ferme, rotation, retour dans l'appli).
+  const refit = () => {
     fitParent();
+    game.scale.getParentBounds();
     game.scale.refresh();
-  });
+  };
+  const refitSoon = () => {
+    refit();
+    window.setTimeout(refit, 250);
+    window.setTimeout(refit, 1000);
+  };
+  window.addEventListener('resize', refitSoon);
+  window.addEventListener('orientationchange', refitSoon);
+  window.addEventListener('focus', refitSoon);
+  window.visualViewport?.addEventListener('resize', refitSoon);
+  document.addEventListener('visibilitychange', () => !document.hidden && refitSoon());
   // Appli en arrière-plan (appel, autre appli, écran éteint) : la partie se met en pause.
   document.addEventListener('visibilitychange', () => document.hidden && game.events.emit('app-pause'));
   // Bouton Retour d'Android : pause en partie, retour au menu ailleurs, sortie depuis le menu.

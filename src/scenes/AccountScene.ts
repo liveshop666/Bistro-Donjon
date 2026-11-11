@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
-import { H, W } from '../core/constants';
+import { H, W, playerLevel } from '../core/constants';
 import { deleteAllData, loadProfile, saveProfile } from '../core/Storage';
+import { openKeyboard } from '../ui/Keyboard';
 import { openModal } from '../ui/Modal';
 import { button, txt } from '../ui/text';
 
@@ -24,12 +25,12 @@ export class AccountScene extends Phaser.Scene {
     txt(this, 96, 76, 'PSEUDO', 8, '#8fe0ff');
     txt(this, 96, 92, p.pseudo || 'CHEF SANS NOM', 8);
     txt(this, 96, 108, 'Affiché en duel en ligne', 8, '#6b7391');
-    txt(this, W / 2, 142, `RECORD : ${p.best} OR\n\nDUELS GAGNES : ${p.duelWins}\n\nPIECES : ${p.coins}\n\nMONDES DEBLOQUES : ${p.unlocked}/4`, 8, '#bfc8e0').setOrigin(0.5, 0);
+    txt(this, W / 2, 134, `NIVEAU ${playerLevel(p.earned).level}\n\nRECORD : ${p.best} OR\n\nDUELS GAGNES : ${p.duelWins}\n\nPIECES : ${p.coins}\n\nMONDES DEBLOQUES : ${p.unlocked}/4`, 8, '#bfc8e0').setOrigin(0.5, 0);
 
     const items: [string, number, () => void][] = [
       ['CHANGER DE PSEUDO', 0x3d5c8f, () => this.rename()],
       ['ASSISTANCE', 0x3d7a4a, () => this.support()],
-      ['CONFIDENTIALITE', 0x4a4f66, () => void window.open('privacy.html', '_blank')],
+      ['CONFIDENTIALITE', 0x4a4f66, () => this.privacy()],
       ['SUPPRIMER MES DONNEES', 0x9a3a2e, () => this.confirmDelete()],
     ];
     items.forEach(([label, color, cb], i) => button(this, W / 2, 262 + i * 44, 260, 36, label, color, cb));
@@ -40,11 +41,10 @@ export class AccountScene extends Phaser.Scene {
   }
 
   private rename(): void {
-    const raw = window.prompt('Ton pseudo (12 caractères max) :', loadProfile().pseudo);
-    if (raw === null) return;
-    const pseudo = raw.replace(/[^\p{L}\p{N} _-]/gu, '').trim().slice(0, 12).toUpperCase();
-    saveProfile({ pseudo });
-    this.scene.restart();
+    openKeyboard(this, 'TON PSEUDO', loadProfile().pseudo, 12, (pseudo) => {
+      saveProfile({ pseudo });
+      this.scene.restart();
+    });
   }
 
   private support(): void {
@@ -53,15 +53,44 @@ export class AccountScene extends Phaser.Scene {
       const body = encodeURIComponent(`\n\n---\nBistro Donjon v${APP_VERSION}`);
       window.location.href = `mailto:${SUPPORT_CONTACT}?subject=${subject}&body=${body}`;
     };
+    // L'assistance sert à NOUS CONTACTER en cas de problème avec le jeu (les règles ont leur propre bouton au menu).
+    const copy = { label: () => (this.copied ? 'ADRESSE COPIEE !' : "COPIER L'ADRESSE"), action: () => (this.copyContact(), false) };
     const items = [
-      ...(SUPPORT_CONTACT ? [{ label: 'ECRIRE UN E-MAIL', color: 0x3d7a4a, action: mail }] : []),
-      { label: 'REVOIR LES REGLES', action: () => void this.scene.start('Rules') },
+      ...(SUPPORT_CONTACT ? [{ label: 'ECRIRE UN E-MAIL', color: 0x3d7a4a, action: mail }, copy] : []),
       { label: 'FERMER', action: () => {} },
     ];
     const note = SUPPORT_CONTACT
-      ? `Un souci, une idée ? Ecris-nous :\n${SUPPORT_CONTACT}`
-      : "Un souci, une idée ? Contacte-nous\nvia la fiche du jeu sur le\nGoogle Play Store.";
-    openModal(this, 'ASSISTANCE', items, note);
+      ? `Un bug, un achat, une idée ?\nEcris-nous, on te répond vite :\n\n${SUPPORT_CONTACT}\n\nDis-nous ton téléphone et ce\nqui s'est passé.`
+      : "Un bug, un achat, une idée ?\n\nNotre adresse de contact arrive\ntrès bientôt ici même.";
+    this.copied = false;
+    openModal(this, 'NOUS CONTACTER', items, note);
+  }
+
+  private copied = false;
+
+  private copyContact(): void {
+    void navigator.clipboard?.writeText(SUPPORT_CONTACT).catch(() => {});
+    this.copied = true;
+  }
+
+  /** Confidentialité : résumé affiché dans le jeu, au style du jeu (la version complète est sur la fiche du magasin). */
+  private privacy(): void {
+    openModal(this, 'CONFIDENTIALITE', [{ label: 'FERMER', action: () => {} }], [
+      'Tes données restent sur cet',
+      'appareil : record, pièces,',
+      'costumes, partie en cours.',
+      '',
+      'Pas de compte, pas de publicité,',
+      'aucun outil de suivi.',
+      '',
+      'En duel en ligne, ton pseudo et',
+      'ton score sont envoyés à ton',
+      'adversaire le temps du duel,',
+      'puis oubliés.',
+      '',
+      '« Supprimer mes données » efface',
+      'tout, tout de suite.',
+    ].join('\n'));
   }
 
   private confirmDelete(): void {

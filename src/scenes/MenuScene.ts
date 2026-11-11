@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { audio } from '../audio/AudioManager';
-import { CHEF_ORDER, CHEFS, ChefId, DAILY_GIFT, H, itemLabel, W, WORLD_ORDER, WorldId, WORLDS } from '../core/constants';
+import { CHEF_ORDER, CHEFS, ChefId, DAILY_GIFT, H, itemLabel, playerLevel, W, WORLD_ORDER, WorldId, WORLDS } from '../core/constants';
 import { claimDailyGift, loadProfile, loadRun, saveProfile } from '../core/Storage';
 import { openModal } from '../ui/Modal';
 import { button, txt } from '../ui/text';
@@ -39,7 +39,12 @@ export class MenuScene extends Phaser.Scene {
     const title = txt(this, W / 2, 50, 'BISTRO\nDONJON', 32, '#ffc533').setOrigin(0.5);
     title.setStroke('#7a2a12', 6);
     this.tweens.add({ targets: title, y: 53, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
-    txt(this, W / 2, 104, `PIECES : ${profile.coins}   RECORD : ${profile.best}`, 8, '#bfc8e0').setOrigin(0.5);
+    const lvl = playerLevel(profile.earned);
+    txt(this, W / 2, 100, `NIVEAU ${lvl.level}   PIECES : ${profile.coins}   RECORD : ${profile.best}`, 8, '#bfc8e0').setOrigin(0.5);
+    // barre de progression vers le niveau suivant
+    const xp = this.add.graphics();
+    xp.fillStyle(0x1b1b2b).fillRect(80, 108, 200, 6);
+    xp.fillStyle(0x4fb8ff).fillRect(81, 109, Math.round((198 * lvl.into) / lvl.span), 4);
 
     // --- Chefs
     txt(this, W / 2, 124, 'CHOISIS TON CHEF', 8, '#8fe0ff').setOrigin(0.5);
