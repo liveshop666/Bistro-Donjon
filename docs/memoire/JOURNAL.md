@@ -18,11 +18,12 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
 - Son 100 % synthétisé, règles en jeu (5 pages), projet Android, visuels et textes de la fiche Play Store.
 - Collisions avec les décors (11/11, sur le PC de Rudy) : le chef ne traverse plus les arbres, troncs et rocher de la Clairière, les étals du Marché ni les tonneaux et caisses de la Taverne. Il glisse le long, le dash s'arrête devant, et un ingrédient tombé dans un décor est reposé juste à côté.
 
-**En cours : mise à jour automatique sur le téléphone (11/11)**
+**Mise à jour automatique sur le téléphone (11/11) : en service, vérifié depuis le PC**
 - Le jeu est déployé sur Vercel (projet `bistro-donjon`, équipe stockly, relié à GitHub : chaque envoi sur `main` redéploie). Adresse : `bistro-donjon-stockly6.vercel.app`.
 - Porte d'entrée (`middleware.ts`) : sans autorisation, rien du jeu n'est servi. L'APK de test entre tout seul grâce à une clé secrète (la clé est dans les secrets GitHub, `BD_APP_KEY` ; Vercel n'a que son empreinte, `APP_KEY_HASH`) : rien à taper sur le téléphone. Un code à taper depuis un navigateur est possible en plus (`ACCESS_CODE` dans Vercel, facultatif). Aucune de ces valeurs n'est dans le dépôt. Variables vides = site fermé à tous.
 - L'APK de test charge le jeu depuis cette adresse (`BD_LIVE_URL` dans le workflow Android) : installé une fois, il se met à jour tout seul. L'AAB du Play Store garde le jeu embarqué.
-- Reste à faire, en attente du oui de Rudy : créer la clé secrète (GitHub + Vercel), retirer la protection « Vercel Authentication » sur l'adresse de production (sinon l'appli tombe sur la page de connexion Vercel), envoyer, vérifier, puis installer le nouvel APK une dernière fois.
+- Mis en service avec l'accord de Rudy : la protection « Vercel Authentication » ne couvre plus que les adresses de brouillon (preview) ; l'adresse de production est gardée par la porte du jeu. Vérifié : un navigateur reçoit « 403 version de test privée » (page et images), l'APK reçoit le jeu.
+- Pas encore essayé sur un vrai téléphone. Cette version de test demande du réseau. Pour changer la clé : nouveau secret `BD_APP_KEY` dans GitHub + nouvelle empreinte `APP_KEY_HASH` dans Vercel, puis renvoyer du code et réinstaller l'APK.
 
 **Pas fait**
 - Jamais testé sur un vrai téléphone. APK non construit ici (le SDK Android n'est pas téléchargeable depuis cet environnement) : il sort de GitHub Actions.
