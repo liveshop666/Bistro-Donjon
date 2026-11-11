@@ -1,9 +1,10 @@
 /**
  * Porte d'entrée de la version en ligne (Vercel) : sans le code d'accès, rien du jeu n'est servi.
  *
- * Le code n'est PAS dans le dépôt : il se règle dans Vercel (variable d'environnement ACCESS_CODE).
- * Tant que cette variable est vide, le site reste fermé à tout le monde.
- * Une fois le bon code entré, un cookie d'un an évite de le redemander sur cet appareil.
+ * Deux façons d'entrer, toutes deux réglées dans Vercel (variables d'environnement), jamais dans le dépôt :
+ *  - APP_KEY : clé secrète que l'APK de test envoie tout seul (rien à taper sur le téléphone) ;
+ *  - ACCESS_CODE (facultatif) : code à taper pour entrer depuis un navigateur, mémorisé un an par un cookie.
+ * Tant que les deux variables sont vides, le site reste fermé à tout le monde.
  * Ce fichier n'est utilisé que par Vercel : il ne fait pas partie du jeu ni de l'APK du Play Store.
  */
 declare const process: { env: Record<string, string | undefined> };
@@ -43,7 +44,13 @@ function page(message: string, withForm: boolean): string {
 export default async function middleware(request: Request): Promise<Response> {
   const headers = { 'content-type': 'text/html; charset=utf-8', 'x-robots-tag': 'noindex, nofollow', 'cache-control': 'no-store' };
   const code = (process.env.ACCESS_CODE ?? '').trim();
-  if (!code) return new Response(page('Le jeu est fermé pour le moment.', false), { status: 503, headers });
+  const appKey = (process.env.APP_KEY ?? '').trim();
+  if (!code && !appKey) return new Response(page('Le jeu est fermé pour le moment.', false), { status: 503, headers });
+
+  // L'appli de test se présente toute seule avec sa clé secrète (ajoutée à son « user-agent ») : rien à taper.
+  const agent = request.headers.get('user-agent') ?? '';
+  if (appKey.length >= 16 && agent.includes(`BistroDonjonApp/${appKey}`)) return new Response(null, { headers: { 'x-middleware-next': '1' } });
+  if (!code) return new Response(page('Version de test privée.', false), { status: 403, headers });
 
   const token = await sha256('bistro-donjon:' + code);
   const cookies = (request.headers.get('cookie') ?? '').split(/;\s*/);

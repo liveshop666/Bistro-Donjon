@@ -20,9 +20,9 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
 
 **En cours : mise à jour automatique sur le téléphone (11/11)**
 - Le jeu est déployé sur Vercel (projet `bistro-donjon`, équipe stockly, relié à GitHub : chaque envoi sur `main` redéploie). Adresse : `bistro-donjon-stockly6.vercel.app`.
-- Porte à code d'accès (`middleware.ts`) : sans le code, rien du jeu n'est servi. Le code se règle dans Vercel (variable `ACCESS_CODE`), jamais dans le dépôt. Variable vide = site fermé à tous.
+- Porte d'entrée (`middleware.ts`) : sans autorisation, rien du jeu n'est servi. L'APK de test entre tout seul grâce à une clé secrète (`APP_KEY` dans Vercel, `BD_APP_KEY` dans les secrets GitHub) : rien à taper sur le téléphone. Un code à taper depuis un navigateur est possible en plus (`ACCESS_CODE` dans Vercel, facultatif). Aucune de ces valeurs n'est dans le dépôt. Variables vides = site fermé à tous.
 - L'APK de test charge le jeu depuis cette adresse (`BD_LIVE_URL` dans le workflow Android) : installé une fois, il se met à jour tout seul. L'AAB du Play Store garde le jeu embarqué.
-- Reste à faire, en attente de Rudy : choisir le code d'accès ; autoriser à retirer la protection « Vercel Authentication » sur l'adresse de production (sinon l'appli tombe sur la page de connexion Vercel) ; puis envoyer, vérifier et installer le nouvel APK.
+- Reste à faire, en attente du oui de Rudy : créer la clé secrète (GitHub + Vercel), retirer la protection « Vercel Authentication » sur l'adresse de production (sinon l'appli tombe sur la page de connexion Vercel), envoyer, vérifier, puis installer le nouvel APK une dernière fois.
 
 **Pas fait**
 - Jamais testé sur un vrai téléphone. APK non construit ici (le SDK Android n'est pas téléchargeable depuis cet environnement) : il sort de GitHub Actions.

@@ -32,6 +32,7 @@ jobs:
       - run: npx cap sync android
         env:
           BD_LIVE_URL: https://bistro-donjon-stockly6.vercel.app
+          BD_APP_KEY: ${{ secrets.BD_APP_KEY }}
       - name: APK de test
         working-directory: android
         run: chmod +x gradlew && ./gradlew assembleDebug --no-daemon
