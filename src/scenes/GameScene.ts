@@ -236,7 +236,7 @@ export class GameScene extends Phaser.Scene {
     const onBelt = this.world.mechanic === 'tapis' && CONVEYORS.some((c) => chef.y >= c.y && chef.y <= c.y + c.h);
     const speed = chef.def.speed * (1 + 0.15 * gm.level('bottes')) * (chef.powers.vitesse > 0 ? 1.35 : 1) * (onBelt ? 1.6 : 1);
     const dir = this.inverseT > 0 ? this.touch.dir.clone().negate() : this.touch.dir;
-    if (!this.dashing) chef.move(dir, speed, dt, this.bounds);
+    if (!this.dashing) chef.move(dir, speed, dt, this.bounds, this.blocked);
 
     for (const p of Object.keys(chef.powers) as (keyof typeof chef.powers)[]) chef.powers[p] = Math.max(0, chef.powers[p] - dt);
     if (chef.powers.regen > 0) {
@@ -328,8 +328,15 @@ export class GameScene extends Phaser.Scene {
     } else {
       // Danse des Lames : dash qui traverse et découpe ennemis et ingrédients
       const dir = this.touch.dir.lengthSq() > 0.01 ? this.touch.dir.clone().normalize() : new Phaser.Math.Vector2(chef.facing, 0);
-      const x2 = Phaser.Math.Clamp(chef.x + dir.x * 220, this.bounds.left, this.bounds.right);
-      const y2 = Phaser.Math.Clamp(chef.y + dir.y * 220, this.bounds.top, this.bounds.bottom);
+      let x2 = chef.x;
+      let y2 = chef.y;
+      for (let d = 4; d <= 220; d += 4) { // le dash s'arrête devant un décor
+        const tx = Phaser.Math.Clamp(chef.x + dir.x * d, this.bounds.left, this.bounds.right);
+        const ty = Phaser.Math.Clamp(chef.y + dir.y * d, this.bounds.top, this.bounds.bottom);
+        if (this.blocked(tx, ty)) break;
+        x2 = tx;
+        y2 = ty;
+      }
       const line = new Phaser.Geom.Line(chef.x, chef.y, x2, y2);
       for (const e of [...this.enemies]) {
         if (!e.dead && this.distToLine(line, e.x, e.y) < 30 + e.radius) this.damage(e, 50);
@@ -446,10 +453,22 @@ export class GameScene extends Phaser.Scene {
 
   private drop(type: IngredientId, x: number, y: number): void {
     const b = this.bounds;
-    this.ingredients.push(
-      new Ingredient(this, type, Phaser.Math.Clamp(x, b.left, b.right), Phaser.Math.Clamp(y, this.world.standLine + 6, b.bottom)),
-    );
+    let px = Phaser.Math.Clamp(x, b.left, b.right);
+    let py = Phaser.Math.Clamp(y, this.world.standLine + 6, b.bottom);
+    // tombé dans un décor : on le pose juste à côté, là où le chef peut le ramasser
+    for (let r = 8; this.blocked(px, py) && r <= 200; r += 8) {
+      for (let a = 0; a < 8; a++) {
+        const tx = Phaser.Math.Clamp(px + Math.cos((a * Math.PI) / 4) * r, b.left, b.right);
+        const ty = Phaser.Math.Clamp(py + Math.sin((a * Math.PI) / 4) * r, this.world.standLine + 6, b.bottom);
+        if (!this.blocked(tx, ty)) { px = tx; py = ty; break; }
+      }
+    }
+    this.ingredients.push(new Ingredient(this, type, px, py));
   }
+
+  /** Vrai si le point (les pieds du chef) est dans un décor de la carte, avec une petite marge. */
+  private blocked = (x: number, y: number): boolean =>
+    (this.world.obstacles ?? []).some((o) => x > o.x - 6 && x < o.x + o.w + 6 && y > o.y - 3 && y < o.y + o.h + 3);
 
   private shoot(x: number, y: number, tx: number, ty: number): void {
     const d = Math.hypot(tx - x, ty - y) || 1;

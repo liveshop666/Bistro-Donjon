@@ -151,20 +151,34 @@ export interface WorldDef {
   board: { x: number; y: number };
   /** Ligne de séparation cuisine / arène : les monstres s'y arrêtent et attaquent le stand. */
   standLine: number;
+  /** Décors peints sur la carte que le chef ne traverse pas (arbres, troncs, étals, tonneaux). Rectangles en pixels. */
+  obstacles?: Obstacle[];
 }
+
+export interface Obstacle { x: number; y: number; w: number; h: number }
 
 export const WORLDS: Record<WorldId, WorldDef> = {
   clairiere: {
     id: 'clairiere', name: 'LA CLAIRIERE', hint: 'Idéal pour apprendre', mechanic: 'none',
     pot: { x: 140, y: 214 }, counter: { x: 264, y: 200 }, board: { x: 204, y: 232 }, standLine: 252,
+    obstacles: [
+      { x: 0, y: 250, w: 145, h: 150 }, { x: 235, y: 250, w: 120, h: 95 }, { x: 268, y: 340, w: 50, h: 55 }, // sapins, chêne
+      { x: 30, y: 405, w: 90, h: 35 }, { x: 262, y: 408, w: 82, h: 50 }, // troncs couchés
+      { x: 15, y: 548, w: 32, h: 30 }, { x: 0, y: 575, w: 55, h: 65 }, { x: 250, y: 600, w: 95, h: 40 }, // rocher, arbres du bas
+    ],
   },
   marche: {
     id: 'marche', name: 'MARCHE DE NUIT', hint: 'Monstres en file serrée', mechanic: 'file',
     pot: { x: 92, y: 276 }, counter: { x: 268, y: 276 }, board: { x: 180, y: 284 }, standLine: 312,
+    obstacles: [{ x: 0, y: 295, w: 62, h: 345 }, { x: 296, y: 300, w: 64, h: 340 }], // étals des deux côtés de la rue
   },
   taverne: {
     id: 'taverne', name: 'LA TAVERNE', hint: 'Tonneaux explosifs', mechanic: 'tonneaux',
     pot: { x: 84, y: 296 }, counter: { x: 262, y: 296 }, board: { x: 173, y: 304 }, standLine: 330,
+    obstacles: [ // tonneaux et caisses du décor (le mur du fond reste libre : la cuisine est devant)
+      { x: 36, y: 405, w: 40, h: 42 }, { x: 284, y: 402, w: 30, h: 50 }, { x: 296, y: 440, w: 42, h: 50 },
+      { x: 20, y: 608, w: 92, h: 32 }, { x: 288, y: 595, w: 48, h: 45 },
+    ],
   },
   cantine: {
     id: 'cantine', name: 'CANTINE CYBER', hint: 'Tapis roulants rapides', mechanic: 'tapis',

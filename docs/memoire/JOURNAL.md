@@ -11,12 +11,15 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
 - Duel 2 minutes avec sabotages : contre l'ordinateur, ou en ligne (partie rapide, salon à code) via `server/`.
 - Boutique : 6 costumes + 3 effets, achetables en pièces gagnées en jeu. Écran Mon compte : pseudo, assistance, suppression des données.
 - Son 100 % synthétisé, règles en jeu (5 pages), projet Android, visuels et textes de la fiche Play Store.
+- Collisions avec les décors (11/11, sur le PC de Rudy) : le chef ne traverse plus les arbres, troncs et rocher de la Clairière, les étals du Marché ni les tonneaux et caisses de la Taverne. Il glisse le long, le dash s'arrête devant, et un ingrédient tombé dans un décor est reposé juste à côté.
 
 **Pas fait**
 - Jamais testé sur un vrai téléphone. APK non construit ici (le SDK Android n'est pas téléchargeable depuis cet environnement) : il sort de GitHub Actions.
 - Serveur de duel non hébergé : le jeu en ligne ne marche qu'avec le serveur lancé localement.
 - Paiements en euros non branchés (`src/core/Billing.ts`), pas de connexion à un compte ni de sauvegarde en ligne.
-- Mode Duo coopératif, publicités récompensées, iOS, collisions avec les décors (on marche sur les arbres et les murs).
+- Mode Duo coopératif, publicités récompensées, iOS.
+- Les monstres traversent encore les décors (laissé exprès pour ne pas changer leur comportement ni l'équilibrage).
+- Murs du fond de la Taverne et de la Cantine : laissés libres, car la marmite et le comptoir sont posés devant.
 
 **Décisions à obtenir du propriétaire**
 - Adresse e-mail d'assistance à publier.
@@ -32,8 +35,12 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
 - **K.O. en duel = défaite immédiate** : trop punitif, le duel s'arrêtait en 30 s. Leçon : en duel, un K.O. coûte de l'or et la partie continue.
 - **Morceau d'image parasite sur le Roi Tomate** : la découpe automatique englobait un portrait voisin. Leçon : vérifier chaque sprite à l'œil après `npm run assets`.
 - **Dossier trop haut chez le propriétaire** : le ZIP GitHub se décompresse dans un sous-dossier du même nom. Leçon : dire d'entrer dans le dossier qui contient `package.json`.
+- **Navigateur de test absent sur le PC** : Playwright est installé mais pas son Chromium. Leçon : lancer avec `channel="msedge"` (Edge est déjà là) plutôt que de télécharger un navigateur.
+- **Scène relancée à moitié pendant le test** : arrêter toutes les scènes et démarrer « Game » dans la même image laisse une scène sans caméra. Leçon : arrêter, attendre un instant, puis démarrer.
 
 ## Notes techniques
 - Les costumes de boutique sont une seule image animée par code ; les chefs de base ont de vraies images de marche et d'attaque.
 - Le duel ne synchronise pas les arènes : chaque joueur joue la sienne, le serveur relaie scores et sabotages. Les scores sont déclarés par le client (trichable).
 - La reprise d'une sauvegarde repart du début de la vague, avec l'or et l'inventaire du moment de la sauvegarde.
+- Collisions : les décors sont peints dans l'image de fond, donc chaque monde déclare ses zones bloquantes (`obstacles`, rectangles en pixels) dans `constants.ts`. `GameScene.blocked(x, y)` teste les pieds du chef. Pour ajuster une zone, modifier le rectangle puis vérifier à l'œil sur la carte.
+- Test dans le navigateur : la scène Phaser est récupérée en remplaçant `SceneManager.prototype.update` (importé depuis `/.vite/deps/phaser`), puis le chef est piloté au clavier.

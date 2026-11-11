@@ -48,11 +48,16 @@ export class Chef {
     this.knife = scene.add.image(x, y, 'couteau').setVisible(false);
   }
 
-  move(dir: Phaser.Math.Vector2, speed: number, dt: number, bounds: Phaser.Geom.Rectangle): void {
+  /** @param blocked vrai si un point est dans un décor : le chef glisse le long au lieu de le traverser */
+  move(dir: Phaser.Math.Vector2, speed: number, dt: number, bounds: Phaser.Geom.Rectangle,
+    blocked: (x: number, y: number) => boolean = () => false): void {
     this.moving = dir.lengthSq() > 0.01;
     if (this.moving) {
-      this.x = Phaser.Math.Clamp(this.x + dir.x * speed * dt, bounds.left, bounds.right);
-      this.y = Phaser.Math.Clamp(this.y + dir.y * speed * dt, bounds.top, bounds.bottom);
+      const nx = Phaser.Math.Clamp(this.x + dir.x * speed * dt, bounds.left, bounds.right);
+      const ny = Phaser.Math.Clamp(this.y + dir.y * speed * dt, bounds.top, bounds.bottom);
+      const stuck = blocked(this.x, this.y); // déjà dans un décor (ne devrait pas arriver) : on le laisse sortir
+      if (stuck || !blocked(nx, this.y)) this.x = nx;
+      if (stuck || !blocked(this.x, ny)) this.y = ny;
       if (Math.abs(dir.x) > 0.15) this.facing = dir.x > 0 ? 1 : -1;
       this.walkT += dt * (speed / 12);
     }
