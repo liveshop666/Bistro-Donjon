@@ -7,12 +7,14 @@ Tu es un chef cuisinier ambulant dans un monde peuplé de monstres-aliments. Cha
 | Action | Téléphone | Ordinateur |
 | --- | --- | --- |
 | Se déplacer | poser le pouce n'importe où et glisser (joystick flottant) | cliquer-glisser, ou flèches / ZQSD |
-| Attaquer | automatique dès qu'un monstre est à portée | automatique |
+| Attaquer | garder appuyé le bouton rouge en bas à droite : le chef frappe le monstre le plus proche, ou devant lui | touche K ou E |
 | Trancher | glisser vite le doigt sur un ingrédient au sol | cliquer-glisser vite dessus |
-| Attaque ultime | bouton de feu en bas à droite, quand la jauge est pleine | Espace |
-| Pause | bouton en haut à droite | Échap ou P |
+| Attaque ultime | bouton de feu au-dessus du bouton d'attaque, quand la jauge est pleine | Espace |
+| Pause | bouton PAUSE en bas de l'écran (ou l'icône en haut à droite) | Échap ou P |
 
-À l'arrêt, le chef frappe à pleine cadence. En mouvement, il esquive mais frappe deux fois moins vite.
+C'est le joueur qui frappe : tant que le bouton d'attaque est appuyé, le chef tape. À l'arrêt, il frappe à pleine cadence. En mouvement, il esquive mais frappe deux fois moins vite.
+
+Chaque monde a sa propre musique de chasse.
 
 ## Déroulement d'une partie solo (environ 4 minutes)
 Trois vagues, chacune en 3 temps, puis le boss.
@@ -64,4 +66,10 @@ La partie solo est enregistrée automatiquement au début de chaque vague. « Sa
 - Se joue contre l'ordinateur, ou en ligne : partie rapide (adversaire au hasard) ou salon privé avec un code à 4 chiffres.
 
 ## La boutique
-L'or gagné en partie devient des pièces. Elles servent à acheter des costumes de chefs et des effets d'arme, purement décoratifs : aucun article ne rend plus fort.
+L'or gagné en partie devient des pièces. La boutique vend des costumes de chefs et des effets d'arme, purement décoratifs : aucun article ne rend plus fort. Chaque article a une rareté (commun, rare, épique, légendaire) et s'obtient d'une seule façon :
+
+- **Pièces** : acheté avec les pièces gagnées en jouant (800 à 6 000).
+- **Cadeau de palier** : gratuit, débloqué tout seul quand le total de pièces gagnées depuis le début atteint 2 500, 5 000, 10 000, 50 000 ou 100 000. Dépenser ses pièces ne fait pas baisser ce total.
+- **Premium** : les articles les plus rares, en argent réel uniquement (paiement pas encore branché).
+
+**Cadeau du jour** : à la première ouverture du jeu chaque jour, des pièces sont offertes (100 le premier jour, jusqu'à 500 le 7e jour d'affilée). Sauter un jour remet la série à 1.

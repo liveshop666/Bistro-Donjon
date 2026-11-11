@@ -221,29 +221,56 @@ export const SPRITE_FILES = {
 };
 
 // ---------------------------------------------------------------- Boutique (cosmétiques uniquement)
+export type Rarity = 'commun' | 'rare' | 'epique' | 'legendaire';
+export const RARITY: Record<Rarity, { label: string; color: number; text: string }> = {
+  commun: { label: 'COMMUN', color: 0x8a90a8, text: '#bfc8e0' },
+  rare: { label: 'RARE', color: 0x3f8fff, text: '#7fb8ff' },
+  epique: { label: 'EPIQUE', color: 0xb46bff, text: '#d0a0ff' },
+  legendaire: { label: 'LEGENDAIRE', color: 0xffc533, text: '#ffd23e' },
+};
+
+/**
+ * Un article s'obtient d'UNE seule façon :
+ *  - `coins`  : acheté avec les pièces gagnées en jouant ;
+ *  - `palier` : cadeau gratuit, débloqué quand le total de pièces gagnées depuis le début atteint ce nombre ;
+ *  - `euro`   : premium, en argent réel uniquement (les plus rares).
+ */
 export interface ShopItem {
   id: string;
   kind: 'skin' | 'effet';
+  rarity: Rarity;
   /** Chef concerné par le costume. */
   chef?: ChefId;
   name: string;
   desc: string;
-  /** Prix en pièces gagnées en jouant. */
-  coins: number;
-  /** Prix en argent réel (achat intégré). */
-  euro: string;
+  coins?: number;
+  palier?: number;
+  euro?: string;
   sprite?: string;
   color?: number;
+  /** Effet qui change de couleur en continu. */
+  rainbow?: boolean;
 }
 
 export const SHOP: ShopItem[] = [
-  { id: 'skin_samourai', kind: 'skin', chef: 'moustachu', name: 'CHAT\nSAMOURAI', desc: 'Armure rouge et casque\ndoré pour Chef Moustachu.', coins: 3000, euro: '0,99 EUR', sprite: 'skin_samourai' },
-  { id: 'skin_chevalier', kind: 'skin', chef: 'moustachu', name: 'CHAT\nCHEVALIER', desc: 'Heaume, bouclier et\nfourchette géante.', coins: 3000, euro: '0,99 EUR', sprite: 'skin_chevalier' },
-  { id: 'skin_cyber', kind: 'skin', chef: 'moustachu', name: 'CHAT\nCYBER', desc: 'Visière néon et poêle\nélectrique.', coins: 3000, euro: '0,99 EUR', sprite: 'skin_cyber' },
-  { id: 'skin_astronaute', kind: 'skin', chef: 'moustachu', name: 'CHAT\nASTRONAUTE', desc: 'Scaphandre et fouet\nlaser.', coins: 3000, euro: '0,99 EUR', sprite: 'skin_astronaute' },
-  { id: 'skin_patissier', kind: 'skin', chef: 'moustachu', name: 'CHAT\nPATISSIER', desc: 'Veste de chef et grand\nfouet de pâtissier.', coins: 1500, euro: '0,49 EUR', sprite: 'skin_patissier' },
-  { id: 'skin_shiba_samourai', kind: 'skin', chef: 'shiba', name: 'SHIBA\nSAMOURAI', desc: 'Armure et sabre de feu\npour Maître Shiba.', coins: 3000, euro: '0,99 EUR', sprite: 'skin_shiba_samourai' },
-  { id: 'fx_bleu', kind: 'effet', name: 'FLAMMES\nBLEUES', desc: 'Tes coups laissent une\ntraînée bleue.', coins: 800, euro: '0,49 EUR', color: 0x4fb8ff },
-  { id: 'fx_or', kind: 'effet', name: 'ETOILES\nDOREES', desc: 'Tes coups laissent une\ntraînée dorée.', coins: 800, euro: '0,49 EUR', color: 0xffe27a },
-  { id: 'fx_rose', kind: 'effet', name: 'LAMES\nROSES', desc: 'Tes coups laissent une\ntraînée rose.', coins: 800, euro: '0,49 EUR', color: 0xff7ad0 },
+  // --- costumes
+  { id: 'skin_patissier', kind: 'skin', rarity: 'rare', chef: 'moustachu', name: 'CHAT\nPATISSIER', desc: 'Veste de chef et grand\nfouet de pâtissier.', palier: 10000, sprite: 'skin_patissier' },
+  { id: 'skin_chevalier', kind: 'skin', rarity: 'rare', chef: 'moustachu', name: 'CHAT\nCHEVALIER', desc: 'Heaume, bouclier et\nfourchette géante.', coins: 3000, sprite: 'skin_chevalier' },
+  { id: 'skin_samourai', kind: 'skin', rarity: 'epique', chef: 'moustachu', name: 'CHAT\nSAMOURAI', desc: 'Armure rouge et casque\ndoré pour Chef Moustachu.', coins: 6000, sprite: 'skin_samourai' },
+  { id: 'skin_shiba_samourai', kind: 'skin', rarity: 'epique', chef: 'shiba', name: 'SHIBA\nSAMOURAI', desc: 'Armure et sabre de feu\npour Maître Shiba.', palier: 50000, sprite: 'skin_shiba_samourai' },
+  { id: 'skin_cyber', kind: 'skin', rarity: 'legendaire', chef: 'moustachu', name: 'CHAT\nCYBER', desc: 'Visière néon et poêle\nélectrique.', euro: '1,99 EUR', sprite: 'skin_cyber' },
+  { id: 'skin_astronaute', kind: 'skin', rarity: 'legendaire', chef: 'moustachu', name: 'CHAT\nASTRONAUTE', desc: 'Scaphandre et fouet\nlaser.', euro: '1,99 EUR', sprite: 'skin_astronaute' },
+  // --- effets d'arme
+  { id: 'fx_vert', kind: 'effet', rarity: 'commun', name: 'FLAMMES\nVERTES', desc: 'Tes coups laissent une\ntraînée verte.', palier: 2500, color: 0x6dff6d },
+  { id: 'fx_bleu', kind: 'effet', rarity: 'commun', name: 'FLAMMES\nBLEUES', desc: 'Tes coups laissent une\ntraînée bleue.', coins: 800, color: 0x4fb8ff },
+  { id: 'fx_rose', kind: 'effet', rarity: 'commun', name: 'LAMES\nROSES', desc: 'Tes coups laissent une\ntraînée rose.', coins: 800, color: 0xff7ad0 },
+  { id: 'fx_or', kind: 'effet', rarity: 'rare', name: 'ETOILES\nDOREES', desc: 'Tes coups laissent une\ntraînée dorée.', palier: 5000, color: 0xffe27a },
+  { id: 'fx_violet', kind: 'effet', rarity: 'epique', name: 'ECLAIRS\nVIOLETS', desc: 'Tes coups laissent une\ntraînée violette.', euro: '0,99 EUR', color: 0xb46bff },
+  { id: 'fx_arcenciel', kind: 'effet', rarity: 'legendaire', name: 'ARC-EN-\nCIEL', desc: 'Tes coups changent de\ncouleur en continu.', palier: 100000, color: 0xff7ad0, rainbow: true },
 ];
+
+/** Nom d'un article sur une seule ligne. */
+export const itemLabel = (it: ShopItem): string => it.name.replace('-\n', '-').replace('\n', ' ');
+
+/** Cadeau du jour : pièces offertes selon le nombre de jours joués d'affilée (plafonné au 7e jour). */
+export const DAILY_GIFT = [100, 150, 200, 250, 300, 400, 500];

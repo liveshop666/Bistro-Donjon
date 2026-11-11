@@ -6,7 +6,11 @@ import { Chef } from '../entities/Chef';
 import { txt } from './text';
 
 const D = 2000;
-const ULT = { x: 322, y: 600, r: 32 };
+const ULT = { x: 322, y: 514, r: 32 };
+/** Bouton d'attaque : sous le pouce droit, on le garde appuyé pour frapper en continu. */
+const ATK = { x: 316, y: 592, r: 34 };
+/** Bouton PAUSE en bas de l'écran, facile à atteindre. */
+const PAUSE = { x: 233, y: 622, w: 70, h: 26 };
 
 /** Interface en jeu : vie, stand, chrono, or, commandes, inventaire, bouton d'ultime. */
 export class Hud {
@@ -20,6 +24,10 @@ export class Hud {
   private orderCounts: { text: Phaser.GameObjects.Text; ing: IngredientId; need: number }[] = [];
   private ultBtn: Phaser.GameObjects.Image;
   private ultRing: Phaser.GameObjects.Graphics;
+  private atkBtn: Phaser.GameObjects.Graphics;
+  private atkIcon: Phaser.GameObjects.Image;
+  /** Identifiant du doigt posé sur le bouton d'attaque (-1 : relâché). */
+  private atkPointer = -1;
   private patience: Phaser.GameObjects.Graphics;
   private combo: Phaser.GameObjects.Text;
   private rival: Phaser.GameObjects.Text;
@@ -54,13 +62,48 @@ export class Hud {
     this.ultBtn = scene.add.image(ULT.x, ULT.y, 'bouton_ultime').setDepth(D + 2).setInteractive({ useHandCursor: true });
     this.ultBtn.on('pointerdown', onUlt);
 
+    // bouton d'attaque (maintenir pour frapper)
+    this.atkBtn = scene.add.graphics().setDepth(D + 1);
+    this.atkIcon = scene.add.image(ATK.x, ATK.y, 'couteau').setDepth(D + 2).setScale(2.4).setAngle(45);
+    scene.add
+      .zone(ATK.x, ATK.y, ATK.r * 2 + 8, ATK.r * 2 + 8)
+      .setDepth(D + 3)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerdown', (p: Phaser.Input.Pointer) => (this.atkPointer = p.id));
+    const release = (p: Phaser.Input.Pointer) => {
+      if (p.id === this.atkPointer) this.atkPointer = -1;
+    };
+    scene.input.on('pointerup', release);
+    scene.input.on('pointerupoutside', release);
+
+    // bouton PAUSE en bas (celui du haut reste aussi)
+    const pg = scene.add.graphics().setDepth(D);
+    pg.fillStyle(0x1b1b2b, 0.9).fillRect(PAUSE.x - PAUSE.w / 2, PAUSE.y - PAUSE.h / 2, PAUSE.w, PAUSE.h);
+    pg.fillStyle(0x3a3f55, 0.9).fillRect(PAUSE.x - PAUSE.w / 2 + 2, PAUSE.y - PAUSE.h / 2 + 2, PAUSE.w - 4, PAUSE.h - 4);
+    txt(scene, PAUSE.x, PAUSE.y, 'PAUSE').setOrigin(0.5).setDepth(D + 1);
+    scene.add.zone(PAUSE.x, PAUSE.y, PAUSE.w, PAUSE.h).setDepth(D + 3).setInteractive({ useHandCursor: true }).on('pointerdown', onPause);
+
     recipes.onChange = () => this.buildOrders();
     this.buildOrders();
   }
 
+  /** Vrai tant que le joueur garde le doigt sur le bouton d'attaque. */
+  get attackHeld(): boolean {
+    return this.atkPointer !== -1;
+  }
+
+  releaseAttack(): void {
+    this.atkPointer = -1;
+  }
+
   /** Vrai si le point touche un élément d'interface (ne doit pas déclencher le joystick). */
   isUi(x: number, y: number): boolean {
-    return Math.hypot(x - ULT.x, y - ULT.y) < ULT.r + 4 || (x > W - 26 && y < 26);
+    return (
+      Math.hypot(x - ULT.x, y - ULT.y) < ULT.r + 4 ||
+      Math.hypot(x - ATK.x, y - ATK.y) < ATK.r + 6 ||
+      (Math.abs(x - PAUSE.x) < PAUSE.w / 2 + 2 && Math.abs(y - PAUSE.y) < PAUSE.h / 2 + 2) ||
+      (x > W - 26 && y < 26)
+    );
   }
 
   private buildOrders(): void {
@@ -141,6 +184,14 @@ export class Hud {
     this.ultRing.lineStyle(4, ready ? 0xffe27a : 0xff8a1e, 1).beginPath();
     this.ultRing.arc(ULT.x, ULT.y, ULT.r, -Math.PI / 2, -Math.PI / 2 + (Math.PI * 2 * chef.ult) / 100).strokePath();
     this.ultBtn.setAlpha(ready ? 1 : 0.45).setScale(ready ? 1 + Math.sin(time / 120) * 0.05 : 0.9);
+
+    // bouton d'attaque : s'enfonce quand on appuie
+    const held = this.attackHeld;
+    this.atkBtn.clear();
+    this.atkBtn.fillStyle(0x14141f, 0.6).fillCircle(ATK.x, ATK.y, ATK.r);
+    this.atkBtn.fillStyle(held ? 0xff6a3a : 0xc8402e, held ? 0.95 : 0.75).fillCircle(ATK.x, ATK.y, ATK.r - (held ? 6 : 4));
+    this.atkBtn.lineStyle(3, 0xffe9b0, 0.9).strokeCircle(ATK.x, ATK.y, ATK.r);
+    this.atkIcon.setScale(held ? 2.1 : 2.4);
   }
 
   banner(text: string, color = '#ffc533', y = 330): void {

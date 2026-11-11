@@ -2,7 +2,7 @@
  * Son de Bistro Donjon, 100 % synthétisé (Web Audio) : aucun fichier audio à charger.
  * Style « puce 16-bits » : ondes carrées/triangle + bruit, pour coller au pixel art.
  *  - sfx(nom)   : bruitages courts
- *  - music(nom) : boucles chiptune (menu, chasse, cuisine, boss)
+ *  - music(nom) : boucles chiptune (menu, une musique de chasse par monde, cuisine, boss)
  */
 
 export type Sfx =
@@ -10,7 +10,7 @@ export type Sfx =
   | 'marmite' | 'pret' | 'plat' | 'piece' | 'pouvoir' | 'aie' | 'stand' | 'ultime' | 'feu' | 'explosion'
   | 'hache' | 'parti' | 'laser' | 'rugissement' | 'choc' | 'vague' | 'cloche' | 'cartes' | 'carte' | 'soin' | 'victoire' | 'defaite';
 
-export type Tune = 'menu' | 'chasse' | 'cuisine' | 'boss';
+export type Tune = 'menu' | 'chasse' | 'chasse_marche' | 'chasse_taverne' | 'chasse_cantine' | 'cuisine' | 'boss';
 
 interface TuneDef {
   bpm: number;
@@ -33,11 +33,29 @@ const TUNES: Record<Tune, TuneDef> = {
     lead: [69, 72, 77, 0, 72, 69, 72, 0, 69, 74, 77, 0, 74, 69, 74, 0, 70, 74, 77, 0, 74, 70, 74, 77, 79, 76, 72, 0, 76, 79, 76, 0],
     bass: [41, 0, 48, 0, 41, 0, 48, 0, 38, 0, 45, 0, 38, 0, 45, 0, 46, 0, 53, 0, 46, 0, 53, 0, 48, 0, 55, 0, 48, 0, 55, 0],
   },
-  // Do majeur, sautillant : la chasse aux ingrédients
+  // Clairière : do majeur, sautillant : la chasse aux ingrédients
   chasse: {
     bpm: 138, leadWave: 'square', drums: true,
     lead: [76, 79, 84, 79, 76, 79, 84, 0, 76, 81, 84, 81, 76, 81, 83, 0, 77, 81, 84, 81, 77, 81, 86, 84, 83, 86, 79, 83, 86, 0, 83, 79],
     bass: bounce([48, 45, 41, 43]),
+  },
+  // Marché de nuit : gamme japonaise (mi fa la si do), posé et mystérieux
+  chasse_marche: {
+    bpm: 124, leadWave: 'triangle', drums: true,
+    lead: [76, 77, 81, 0, 83, 81, 77, 76, 81, 83, 84, 0, 83, 81, 77, 0, 76, 77, 81, 83, 84, 83, 81, 77, 76, 0, 77, 76, 72, 0, 71, 0],
+    bass: pedal([45, 45, 41, 40]),
+  },
+  // Taverne : gigue médiévale en ré dorien, qui tape du pied
+  chasse_taverne: {
+    bpm: 150, leadWave: 'square', drums: true,
+    lead: [74, 77, 81, 77, 74, 77, 81, 0, 72, 76, 79, 76, 72, 76, 79, 0, 74, 77, 81, 84, 83, 81, 79, 77, 76, 74, 72, 76, 74, 0, 74, 0],
+    bass: bounce([38, 36, 38, 33]),
+  },
+  // Cantine cyber : arpèges de synthé rapides en mi mineur
+  chasse_cantine: {
+    bpm: 162, leadWave: 'sawtooth', drums: true,
+    lead: [76, 83, 88, 83, 76, 83, 88, 91, 74, 81, 86, 81, 74, 81, 86, 90, 72, 79, 84, 79, 72, 79, 84, 88, 71, 78, 83, 78, 87, 83, 78, 75],
+    bass: pedal([40, 38, 36, 35]),
   },
   // Sol majeur, pressé : le coup de feu en cuisine
   cuisine: {

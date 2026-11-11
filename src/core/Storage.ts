@@ -1,4 +1,4 @@
-import { ChefId, IngredientId, UpgradeId, WorldId } from './constants';
+import { ChefId, DAILY_GIFT, IngredientId, SHOP, ShopItem, UpgradeId, WorldId } from './constants';
 
 /** Sauvegardes locales : profil du joueur et partie en cours. */
 
@@ -15,6 +15,11 @@ export interface Profile {
   duelWins: number;
   /** Pièces gagnées en jouant, à dépenser dans la boutique. */
   coins: number;
+  /** Total des pièces gagnées depuis le début (ne baisse jamais) : débloque les cadeaux de palier. */
+  earned: number;
+  /** Dernier jour où le cadeau du jour a été pris (AAAA-MM-JJ) et nombre de jours d'affilée. */
+  lastGift: string;
+  streak: number;
   /** Identifiants des articles de boutique possédés. */
   owned: string[];
   /** Costume équipé par chef. */
@@ -42,7 +47,7 @@ export interface RunSave {
   inv: Record<IngredientId, { n: number; sliced: number }>;
 }
 
-const DEFAULT: Profile = { best: 0, chef: 'moustachu', world: 'clairiere', unlocked: 1, rulesSeen: false, duelWins: 0, coins: 0, owned: [], skins: {}, effect: null, pseudo: '' };
+const DEFAULT: Profile = { best: 0, chef: 'moustachu', world: 'clairiere', unlocked: 1, rulesSeen: false, duelWins: 0, coins: 0, earned: 0, lastGift: '', streak: 0, owned: [], skins: {}, effect: null, pseudo: '' };
 
 function read<T>(key: string): T | null {
   try {
@@ -62,7 +67,13 @@ function write(key: string, value: unknown): void {
   }
 }
 
-export const loadProfile = (): Profile => ({ ...DEFAULT, ...(read<Partial<Profile>>(PROFILE_KEY) ?? {}) });
+export function loadProfile(): Profile {
+  const raw = read<Partial<Profile>>(PROFILE_KEY) ?? {};
+  const p = { ...DEFAULT, ...raw };
+  // anciens profils : le total gagné démarre à ce que le joueur possède déjà
+  if (raw.earned === undefined) p.earned = p.coins;
+  return p;
+}
 export const saveProfile = (p: Partial<Profile>): void => write(PROFILE_KEY, { ...loadProfile(), ...p });
 
 export function loadRun(): RunSave | null {
@@ -79,4 +90,37 @@ export function deleteAllData(): void {
   } catch {
     /* ignoré */
   }
+}
+
+/**
+ * Ajoute des pièces (à dépenser + total gagné à vie) et débloque les cadeaux de palier atteints.
+ * Renvoie les cadeaux nouvellement débloqués.
+ */
+export function addCoins(n: number): ShopItem[] {
+  const p = loadProfile();
+  const earned = p.earned + Math.max(0, n);
+  const gifts = SHOP.filter((it) => it.palier !== undefined && earned >= it.palier && !p.owned.includes(it.id));
+  saveProfile({ coins: p.coins + Math.max(0, n), earned, owned: [...p.owned, ...gifts.map((g) => g.id)] });
+  return gifts;
+}
+
+/** Prochain cadeau de palier pas encore atteint, et pièces restant à gagner. */
+export function nextMilestone(): { item: ShopItem; left: number } | null {
+  const p = loadProfile();
+  const next = SHOP.filter((it) => it.palier !== undefined && p.earned < it.palier).sort((a, b) => a.palier! - b.palier!)[0];
+  return next ? { item: next, left: next.palier! - p.earned } : null;
+}
+
+const day = (d: Date): string => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+/** Cadeau du jour : une fois par jour ; jouer plusieurs jours d'affilée rapporte plus. Renvoie null si déjà pris. */
+export function claimDailyGift(now = new Date()): { streak: number; coins: number; gifts: ShopItem[] } | null {
+  const p = loadProfile();
+  const today = day(now);
+  if (p.lastGift === today) return null;
+  const yesterday = day(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1));
+  const streak = p.lastGift === yesterday ? p.streak + 1 : 1;
+  const coins = DAILY_GIFT[Math.min(streak, DAILY_GIFT.length) - 1];
+  saveProfile({ lastGift: today, streak });
+  return { streak, coins, gifts: addCoins(coins) };
 }

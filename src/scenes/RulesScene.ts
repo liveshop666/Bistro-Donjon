@@ -21,9 +21,9 @@ monde suivant.`,
     text: `Pose ton pouce n'importe où et
 glisse pour déplacer ton chef.
 
-A l'arrêt, il frappe tout seul à
-pleine cadence. En mouvement, il
-esquive mais frappe 2 fois moins.
+Garde le bouton rouge appuyé pour
+FRAPPER. A l'arrêt tu tapes vite,
+en mouvement 2 fois moins.
 
 Les monstres vaincus lâchent des
 ingrédients. Glisse VITE le doigt
@@ -66,7 +66,7 @@ n'atteignent la cuisine !
 
 VICTOIRE : bats le Roi Tomate.
 
-Le bouton PAUSE (en haut à droite)
+Le bouton PAUSE (en bas de l'écran)
 permet de sauvegarder et quitter :
 tu reprendras au début de la vague.`,
   },

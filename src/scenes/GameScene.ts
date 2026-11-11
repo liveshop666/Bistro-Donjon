@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
-import { audio } from '../audio/AudioManager';
+import { audio, Tune } from '../audio/AudioManager';
 import {
-  BOSS_REWARD, ChefId, CHEFS, CHOP_TIME, COMBO_GOLD, COMBO_SIZE, CONVEYORS, EnemyId, GameMode, H, IngredientId, INGREDIENTS, ORDER_PATIENCE,
+  BOSS_REWARD, ChefId, CHEFS, CHOP_TIME, COMBO_GOLD, COMBO_SIZE, CONVEYORS, EnemyId, GameMode, H, IngredientId, INGREDIENTS, itemLabel, ORDER_PATIENCE,
   POWER_LABEL, POWER_TIME, SHOP, Sabotage, SABOTAGE_LABEL, SABOTAGES, TIP_BONUS, UpgradeDef, W, WAVES, WORLD_ORDER, WorldDef, WorldId, WORLDS,
 } from '../core/constants';
 import { GameManager, Phase } from '../core/GameManager';
@@ -15,7 +15,7 @@ import { TouchController } from '../input/TouchController';
 import { Hud } from '../ui/Hud';
 import { button, txt } from '../ui/text';
 import { UpgradeCards } from '../ui/UpgradeCards';
-import { clearRun, loadProfile, RunSave, saveProfile, saveRun } from '../core/Storage';
+import { addCoins, clearRun, loadProfile, nextMilestone, RunSave, saveProfile, saveRun } from '../core/Storage';
 import { BotLink, DuelLink } from '../network/DuelLink';
 import { openModal } from '../ui/Modal';
 
@@ -42,6 +42,9 @@ export interface GameData {
 }
 
 /** Boucle solo : récolte -> cuisine -> cartes, puis boss. */
+/** Une musique de chasse par monde. */
+const HUNT_TUNE: Record<WorldId, Tune> = { clairiere: 'chasse', marche: 'chasse_marche', taverne: 'chasse_taverne', cantine: 'chasse_cantine' };
+
 export class GameScene extends Phaser.Scene {
   private gm!: GameManager;
   private waves!: WaveManager;
@@ -81,6 +84,8 @@ export class GameScene extends Phaser.Scene {
   private rivalOut: 'ko' | 'left' | null = null;
   private unlockedWorld = false;
   private effectColor: number | null = null;
+  private effectRainbow = false;
+  private atkKeys: Phaser.Input.Keyboard.Key[] = [];
 
   constructor() {
     super('Game');
@@ -138,7 +143,9 @@ export class GameScene extends Phaser.Scene {
 
     const profile = loadProfile();
     const skin = profile.skins[this.chefId] ?? null;
-    this.effectColor = SHOP.find((i) => i.id === profile.effect)?.color ?? null;
+    const effect = SHOP.find((i) => i.id === profile.effect && profile.owned.includes(i.id));
+    this.effectColor = effect?.color ?? null;
+    this.effectRainbow = !!effect?.rainbow;
     this.chef = new Chef(this, CHEFS[this.chefId], W / 2, standLine + 100, skin && profile.owned.includes(skin) ? skin : null);
     if (this.resume) {
       const r = this.resume;
@@ -155,6 +162,7 @@ export class GameScene extends Phaser.Scene {
     this.touch = new TouchController(this, (x, y) => this.hud.isUi(x, y));
     this.touch.onSlice = (x1, y1, x2, y2) => this.slice(x1, y1, x2, y2);
     this.input.keyboard?.on('keydown-SPACE', () => this.ultimate());
+    this.atkKeys = this.input.keyboard ? Object.values(this.input.keyboard.addKeys('K,E') as Record<string, Phaser.Input.Keyboard.Key>) : [];
 
     this.waves = new WaveManager(this.gm, this.world, (t, x, y) => this.spawnEnemy(t, x, y));
     this.gm.on('phase', (p: Phase) => this.onPhase(p));
@@ -179,7 +187,7 @@ export class GameScene extends Phaser.Scene {
       audio.music('boss');
     } else {
       this.hud.banner(`VAGUE ${this.gm.wave + 1}\nA LA CHASSE !`);
-      audio.music('chasse');
+      audio.music(HUNT_TUNE[this.worldId]);
     }
     this.autosave();
   }
@@ -204,7 +212,7 @@ export class GameScene extends Phaser.Scene {
     this.waves.update(dt);
 
     this.updateChef(dt);
-    this.autoAttack(dt);
+    this.attack(dt);
     this.updateUltimate(dt);
     this.updateEnemies(dt);
     this.updateShots(dt);
@@ -257,11 +265,13 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  private autoAttack(dt: number): void {
+  /** Attaque manuelle : le joueur garde le bouton d'attaque appuyé (ou la touche K / E au clavier). */
+  private attack(dt: number): void {
     const c = this.chef;
     // A l'arrêt le chef frappe à pleine cadence ; en mouvement il esquive et frappe deux fois moins vite.
     c.cooldown -= dt * (c.moving ? 0.5 : 1);
     if (c.cooldown > 0 || this.dashing) return;
+    if (!this.hud.attackHeld && !this.atkKeys.some((k) => k.isDown)) return;
     let target: Enemy | null = null;
     let best = c.def.range;
     for (const e of this.enemies) {
@@ -271,15 +281,16 @@ export class GameScene extends Phaser.Scene {
         target = e;
       }
     }
-    if (!target) return;
+    // sans monstre à portée, le coup part devant le chef (dans le sens du joystick)
+    const aim = this.touch.dir.lengthSq() > 0.01 ? this.touch.dir.clone().normalize() : new Phaser.Math.Vector2(c.facing, 0);
+    const tx = target ? target.x : c.x + aim.x * c.def.range * 0.8;
+    const ty = target ? target.y : c.y + aim.y * c.def.range * 0.8;
     c.cooldown = c.def.cooldown;
-    c.strike(target.x, target.y);
+    c.strike(tx, ty);
     audio.sfx(c.def.id === 'moustachu' ? 'coup_poele' : c.def.id === 'shiba' ? 'coup_rouleau' : 'coup_hachoir');
     const dmg = this.attackDamage();
-    const ang = Math.atan2(target.y - c.y, target.x - c.x);
-    const tx = target.x;
-    const ty = target.y;
-    const color = c.powers.feu > 0 ? 0xff3b1e : (this.effectColor ?? c.def.slashColor);
+    const ang = Math.atan2(ty - c.y, tx - c.x);
+    const color = c.powers.feu > 0 ? 0xff3b1e : (this.fxColor() ?? c.def.slashColor);
 
     if (c.def.id === 'moustachu') {
       // arc de feu devant le chef
@@ -298,6 +309,11 @@ export class GameScene extends Phaser.Scene {
       if (c.def.id === 'shiba') this.ringFx(tx, ty - 6, zone, color);
       else this.arcFx(c.x, c.y - 16, ang + (Math.random() - 0.5), c.def.range, color, 0.7);
     }
+  }
+
+  /** Couleur de l'effet d'arme équipé (l'arc-en-ciel change de couleur en continu). */
+  private fxColor(): number | null {
+    return this.effectRainbow ? (Phaser.Display.Color.HSVToRGB((this.time.now / 700) % 1, 0.85, 1) as Phaser.Display.Color).color : this.effectColor;
   }
 
   private attackDamage(): number {
@@ -649,7 +665,7 @@ export class GameScene extends Phaser.Scene {
       audio.music('cuisine');
       audio.sfx('cloche');
     } else if (p === 'harvest') {
-      audio.music('chasse');
+      audio.music(HUNT_TUNE[this.worldId]);
       audio.sfx('vague');
     } else if (p === 'boss') {
       audio.music('boss');
@@ -685,7 +701,7 @@ export class GameScene extends Phaser.Scene {
     const draw = duel && !this.rivalOut && gm.victory === false && gm.gold === this.rivalGold && this.chef.hp > 0 && gm.standHp > 0;
     audio.sfx(gm.victory ? 'victoire' : 'defaite');
     const profile = loadProfile();
-    saveProfile({ coins: profile.coins + gm.gold }); // l'or de la partie devient des pièces de boutique
+    const gifts = addCoins(gm.gold); // l'or de la partie devient des pièces (et compte pour les cadeaux de palier)
     const lines: string[] = [];
     let title: string;
     if (duel) {
@@ -708,6 +724,9 @@ export class GameScene extends Phaser.Scene {
       if (this.unlockedWorld) lines.push('NOUVEAU MONDE DEBLOQUE !');
     }
     lines.push(`+${gm.gold} PIECES POUR LA BOUTIQUE`);
+    for (const g of gifts) lines.push(`CADEAU DEBLOQUE : ${itemLabel(g)} !`);
+    const milestone = nextMilestone();
+    if (milestone) lines.push(`PROCHAIN CADEAU DANS ${milestone.left} PIECES`);
     const D = 3000;
     this.add.rectangle(0, 0, W, H, 0x0c0c18, 0.8).setOrigin(0).setDepth(D).setInteractive();
     txt(this, W / 2, 150, title, 16, gm.victory ? '#ffc533' : '#ff6a5a').setOrigin(0.5).setDepth(D + 1);
@@ -741,6 +760,7 @@ export class GameScene extends Phaser.Scene {
     if (this.paused || gm.phase === 'over' || gm.phase === 'cards') return;
     this.paused = true;
     this.touch.setEnabled(false);
+    this.hud.releaseAttack();
     const resume = () => {
       this.paused = false;
       this.touch.setEnabled(true);

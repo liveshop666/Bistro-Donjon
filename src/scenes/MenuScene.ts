@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
 import { audio } from '../audio/AudioManager';
-import { CHEF_ORDER, CHEFS, ChefId, H, W, WORLD_ORDER, WorldId, WORLDS } from '../core/constants';
-import { loadProfile, loadRun, saveProfile } from '../core/Storage';
+import { CHEF_ORDER, CHEFS, ChefId, DAILY_GIFT, H, itemLabel, W, WORLD_ORDER, WorldId, WORLDS } from '../core/constants';
+import { claimDailyGift, loadProfile, loadRun, saveProfile } from '../core/Storage';
+import { openModal } from '../ui/Modal';
 import { button, txt } from '../ui/text';
 
 /** Ecran titre : choix du chef et du monde, accès au solo, au duel, à la reprise et aux règles. */
@@ -20,13 +21,14 @@ export class MenuScene extends Phaser.Scene {
   }
 
   create(): void {
-    const profile = loadProfile();
-    if (!profile.rulesSeen) {
+    if (!loadProfile().rulesSeen) {
       // premier lancement : on montre les règles
       saveProfile({ rulesSeen: true });
       this.scene.start('Rules');
       return;
     }
+    const gift = claimDailyGift(); // cadeau du jour, une fois par jour
+    const profile = loadProfile();
     this.chef = profile.chef;
     this.unlocked = profile.unlocked;
     this.world = WORLD_ORDER.indexOf(profile.world) < this.unlocked ? profile.world : 'clairiere';
@@ -108,6 +110,13 @@ export class MenuScene extends Phaser.Scene {
     });
     audio.music('menu');
     this.refresh();
+    if (gift) {
+      const tomorrow = DAILY_GIFT[Math.min(gift.streak + 1, DAILY_GIFT.length) - 1];
+      const lines = [`Jour ${gift.streak} d'affilée : +${gift.coins} pièces !`, `Reviens demain : +${tomorrow} pièces.`];
+      for (const g of gift.gifts) lines.push(`Cadeau débloqué : ${itemLabel(g)} !`);
+      audio.sfx('piece');
+      openModal(this, 'CADEAU DU JOUR', [{ label: 'MERCI !', color: 0xe8642a, action: () => {} }], lines.join('\n'));
+    }
   }
 
   private refresh(): void {
