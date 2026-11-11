@@ -15,6 +15,10 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
 - Une musique de chasse par monde : Clairière (l'ancienne), Marché de nuit (gamme japonaise), Taverne (gigue médiévale), Cantine (arpèges de synthé). Cuisine et boss gardent la même musique partout.
 - Cadeau du jour : pièces offertes à la première ouverture du jeu chaque jour, de 100 à 500 selon le nombre de jours d'affilée.
 - Fin de partie : affiche les cadeaux débloqués et les pièces qui manquent pour le prochain.
+- Pseudo (11/11, bug vu sur le téléphone de Rudy) : « Changer de pseudo » ouvrait une fenêtre du téléphone ; à la fermeture du clavier, le jeu restait rétréci dans un coin et il fallait quitter l'appli. Remplacé par un clavier dessiné dans le jeu (`src/ui/Keyboard.ts`). L'écran se recale aussi tout seul après tout changement de taille.
+- Niveau du joueur : il monte avec le total de pièces gagnées (niveau 2 à 500, 5 à 5 000, 10 à 22 500, 20 à 95 000). Affiché au menu avec une barre, dans Mon compte et en fin de partie. Les mondes 2, 3 et 4 se débloquent toujours en battant le Roi Tomate du monde précédent.
+- Assistance : sert à contacter l'équipe (plus de lien vers les règles). Confidentialité : résumé affiché dans le jeu. Plus aucune page ne sort du jeu.
+- Musique baissée (volume 0,36 -> 0,2), bruitages inchangés.
 - Son 100 % synthétisé, règles en jeu (5 pages), projet Android, visuels et textes de la fiche Play Store.
 - Collisions avec les décors (11/11, sur le PC de Rudy) : le chef ne traverse plus les arbres, troncs et rocher de la Clairière, les étals du Marché ni les tonneaux et caisses de la Taverne. Il glisse le long, le dash s'arrête devant, et un ingrédient tombé dans un décor est reposé juste à côté.
 
@@ -32,12 +36,15 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
 - Mode Duo coopératif, publicités récompensées, iOS.
 - Classement mondial : pas fait, il faut un serveur en ligne (voir décisions). Idées proposées à Rudy pour faire revenir les joueurs, pas encore faites : missions du jour, classement mondial hebdomadaire, saisons avec récompenses.
 - Articles premium : les 3 articles premium (Chat Cyber, Chat Astronaute, Eclairs Violets) ne peuvent pas encore être obtenus, le paiement n'étant pas branché. De nouveaux costumes « les plus beaux » demandent de nouveaux dessins dans `reference/`.
-- Attaque manuelle jamais essayée sur un vrai téléphone (deux pouces : joystick + bouton).
+- Jeu en ligne contre de vrais joueurs (partie rapide, créer un salon, rejoindre) et classement mondial : les boutons existent, mais il n'y a pas de serveur en ligne. Plan retenu : un projet Supabase gratuit (mise en relation + relais des scores + table du classement). La création du projet a été refusée par la sécurité de l'application : il faut l'accord direct de Rudy.
+- Rotation en paysage : pas faite. Le jeu et ses 4 cartes sont dessinés en hauteur (360 x 640) ; débloquer la rotation afficherait juste le jeu en tout petit. Un vrai mode paysage demande de redessiner les cartes et de refaire chaque écran.
+- Effets d'ultime dans la boutique et page d'accueil séparée : demandés par Rudy, pas encore faits (à préciser : effets seulement visuels, ou nouveaux pouvoirs).
 - Les monstres traversent encore les décors (laissé exprès pour ne pas changer leur comportement ni l'équilibrage).
 - Murs du fond de la Taverne et de la Cantine : laissés libres, car la marmite et le comptoir sont posés devant.
 
 **Décisions à obtenir du propriétaire**
-- Adresse e-mail d'assistance à publier.
+- Adresse e-mail d'assistance à publier (sans elle, « Nous contacter » affiche « adresse bientôt disponible »). À régler dans Vercel : `VITE_SUPPORT_EMAIL`.
+- Accord pour créer le projet Supabase « bistro-donjon » (gratuit) pour le jeu en ligne et le classement mondial.
 - Hébergeur du serveur de duel (servirait aussi au classement mondial).
 - Prix des articles premium (1,99 € les costumes légendaires, 0,99 € l'effet épique : proposés par Claude, à valider).
 - Connexion par compte : avec quel service (Google Play Jeux, e-mail via Supabase…).
@@ -53,6 +60,8 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
 - **Dossier trop haut chez le propriétaire** : le ZIP GitHub se décompresse dans un sous-dossier du même nom. Leçon : dire d'entrer dans le dossier qui contient `package.json`.
 - **Navigateur de test absent sur le PC** : Playwright est installé mais pas son Chromium. Leçon : lancer avec `channel="msedge"` (Edge est déjà là) plutôt que de télécharger un navigateur.
 - **Script de modification qui casse les retours à la ligne** : un script Python passé dans le terminal a transformé des `\n` en vrais retours à la ligne dans le code. Leçon : pour modifier du code qui contient `\n`, utiliser l'outil d'édition ou un fichier de script, pas un texte collé dans le terminal ; puis lancer `npx tsc --noEmit`.
+- **Fenêtre du téléphone dans le jeu** : `window.prompt` ouvre le clavier d'Android, qui change la taille de l'écran et laisse le jeu rétréci. Leçon : jamais de `prompt`, `alert`, `confirm` ni de page externe ; tout se fait avec les fenêtres du jeu (`Modal`, `Keyboard`).
+- **`npx tsc` lancé hors du dossier du projet** : npx a téléchargé un paquet sans rapport nommé « tsc ». Leçon : utiliser `npm run typecheck` depuis le dossier du jeu.
 - **Scène relancée à moitié pendant le test** : arrêter toutes les scènes et démarrer « Game » dans la même image laisse une scène sans caméra. Leçon : arrêter, attendre un instant, puis démarrer.
 
 ## Notes techniques
@@ -64,4 +73,5 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
 - Attaque : `GameScene.attack()` ne frappe que si `hud.attackHeld` (doigt sur le bouton) ou touche K/E. Cadence et dégâts inchangés par rapport à l'ancienne attaque automatique.
 - Musiques : `HUNT_TUNE` (GameScene) associe chaque monde à sa boucle dans `AudioManager.TUNES`.
 - Version en ligne : `middleware.ts` (à la racine) n'est utilisé que par Vercel. Il se teste en local en le compilant avec esbuild puis en l'appelant avec des `Request`. Un changement de `ACCESS_CODE` ne prend effet qu'au déploiement suivant et annule les accès déjà donnés.
+- Mise à jour sur le téléphone : tout changement dans `src/`, `public/` ou `index.html` arrive tout seul (Vercel). Tout changement dans `android/` ou `capacitor.config.ts` demande de réinstaller l'APK.
 - Test dans le navigateur : la scène Phaser est récupérée en remplaçant `SceneManager.prototype.update` (importé depuis `/.vite/deps/phaser`), puis le chef est piloté au clavier.
