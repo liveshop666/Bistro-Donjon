@@ -17,8 +17,16 @@ Ces fichiers sont du Markdown simple : le dossier `docs/` s'ouvre tel quel comme
 - Scène de jeu : `src/scenes/GameScene.ts`. Sauvegardes : `src/core/Storage.ts`. Son synthétisé : `src/audio/AudioManager.ts`.
 - Règles du jeu : `docs/REGLES.md` (à garder identiques à `src/scenes/RulesScene.ts`). Publication : `docs/PUBLICATION.md`.
 
+## Où vit ce projet
+- **GitHub** `liveshop666/Bistro-Donjon` est la référence commune.
+- **Sur le PC de Rudy**, le dépôt est rangé DANS son cerveau Obsidian : `C:\Users\nolla\jarvis-workspace\cerveau\projets\bistro-donjon\`.
+  Là, `docs/memoire/JOURNAL.md` est directement une note d'Obsidian, lue aussi par son assistante vocale Alma.
+  Le reste du cerveau (`../../moi.md`, `../../regles.md`, `../../memoire/`) peut être lu pour le contexte, sans le modifier.
+- **Dans le navigateur (cloud)**, même dépôt, même journal : tout se retrouve sur le PC au prochain `git pull`.
+
 ## Méthode à chaque session (demandée par le propriétaire)
 **Avant de toucher au code**
+0. `git pull` pour récupérer le travail fait ailleurs (l'autre Claude Code, le navigateur). S'il y a un conflit, s'arrêter et l'expliquer simplement à Rudy.
 1. Lire `docs/memoire/JOURNAL.md` en entier : « Où on en est », « Erreurs commises et leçons », « Notes techniques ».
 2. Regarder les derniers commits (`git log --oneline -15`) pour voir ce qui a changé depuis la dernière session.
 3. Redire au propriétaire en 3 lignes : où on en est, ce qu'on va faire, ce qu'on ne touchera pas.
@@ -30,7 +38,7 @@ Ces fichiers sont du Markdown simple : le dossier `docs/` s'ouvre tel quel comme
 - Après chaque changement de gameplay : `npm run build`, puis une partie test dans le navigateur.
 
 **À la fin (ou quand le propriétaire dit « mets à jour », « note ça », « on s'arrête »)**
-Mettre à jour `docs/memoire/JOURNAL.md` : « Où on en est » (fait / pas fait / décisions à obtenir), une ligne par nouvelle erreur dans « Erreurs commises et leçons » (erreur → leçon), et les notes techniques utiles. Le pousser avec le code.
+Mettre à jour `docs/memoire/JOURNAL.md` : « Où on en est » (fait / pas fait / décisions à obtenir), une ligne par nouvelle erreur dans « Erreurs commises et leçons » (erreur → leçon), et les notes techniques utiles. Puis commit et `git push` du code et du journal, pour que l'autre Claude Code et GitHub soient à jour.
 Ce journal est recopié automatiquement dans le cerveau Obsidian du propriétaire et lu par son assistante vocale Alma : il doit rester clair pour un non-développeur.
 
 ## Règles de travail
