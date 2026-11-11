@@ -1,7 +1,8 @@
 name: Android
 
 # Construit l'application Android à chaque envoi de code, ou à la demande (onglet Actions > Android > Run workflow).
-# - APK de test (debug) : toujours produit, à installer directement sur un téléphone.
+# - APK de test (debug) : toujours produit, à installer une fois sur un téléphone. Il charge le jeu depuis la
+#   version en ligne protégée par un code, donc il se met à jour tout seul à chaque envoi de code.
 # - AAB signé pour le Play Store : produit seulement si les secrets de signature sont renseignés
 #   (ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD).
 on:
@@ -27,7 +28,10 @@ jobs:
           java-version: 21
       - run: npm ci
       - run: npm run build
+      # L'APK de test charge le jeu depuis la version en ligne (Vercel) : il se met à jour tout seul.
       - run: npx cap sync android
+        env:
+          BD_LIVE_URL: https://bistro-donjon-stockly6.vercel.app
       - name: APK de test
         working-directory: android
         run: chmod +x gradlew && ./gradlew assembleDebug --no-daemon
@@ -35,6 +39,10 @@ jobs:
         with:
           name: bistro-donjon-apk-test
           path: android/app/build/outputs/apk/debug/app-debug.apk
+      # Pour le Play Store, on remet le jeu embarqué dans l'appli (pas d'adresse en ligne).
+      - name: Jeu embarqué pour le Play Store
+        if: env.KEYSTORE_B64 != ''
+        run: npx cap sync android
       - name: AAB signé (Play Store)
         if: env.KEYSTORE_B64 != ''
         working-directory: android

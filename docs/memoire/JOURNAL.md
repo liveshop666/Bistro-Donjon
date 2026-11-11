@@ -18,6 +18,12 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
 - Son 100 % synthétisé, règles en jeu (5 pages), projet Android, visuels et textes de la fiche Play Store.
 - Collisions avec les décors (11/11, sur le PC de Rudy) : le chef ne traverse plus les arbres, troncs et rocher de la Clairière, les étals du Marché ni les tonneaux et caisses de la Taverne. Il glisse le long, le dash s'arrête devant, et un ingrédient tombé dans un décor est reposé juste à côté.
 
+**En cours : mise à jour automatique sur le téléphone (11/11)**
+- Le jeu est déployé sur Vercel (projet `bistro-donjon`, équipe stockly, relié à GitHub : chaque envoi sur `main` redéploie). Adresse : `bistro-donjon-stockly6.vercel.app`.
+- Porte à code d'accès (`middleware.ts`) : sans le code, rien du jeu n'est servi. Le code se règle dans Vercel (variable `ACCESS_CODE`), jamais dans le dépôt. Variable vide = site fermé à tous.
+- L'APK de test charge le jeu depuis cette adresse (`BD_LIVE_URL` dans le workflow Android) : installé une fois, il se met à jour tout seul. L'AAB du Play Store garde le jeu embarqué.
+- Reste à faire, en attente de Rudy : choisir le code d'accès ; autoriser à retirer la protection « Vercel Authentication » sur l'adresse de production (sinon l'appli tombe sur la page de connexion Vercel) ; puis envoyer, vérifier et installer le nouvel APK.
+
 **Pas fait**
 - Jamais testé sur un vrai téléphone. APK non construit ici (le SDK Android n'est pas téléchargeable depuis cet environnement) : il sort de GitHub Actions.
 - Serveur de duel non hébergé : le jeu en ligne ne marche qu'avec le serveur lancé localement.
@@ -56,4 +62,5 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
 - Boutique : un article a UN seul mode d'obtention dans `SHOP` (`coins`, `palier` ou `euro`) et une `rarity`. `Storage.addCoins()` est le seul endroit qui ajoute des pièces : il augmente aussi le total à vie (`earned`) et offre les cadeaux de palier. Ne jamais faire `coins + x` à la main.
 - Attaque : `GameScene.attack()` ne frappe que si `hud.attackHeld` (doigt sur le bouton) ou touche K/E. Cadence et dégâts inchangés par rapport à l'ancienne attaque automatique.
 - Musiques : `HUNT_TUNE` (GameScene) associe chaque monde à sa boucle dans `AudioManager.TUNES`.
+- Version en ligne : `middleware.ts` (à la racine) n'est utilisé que par Vercel. Il se teste en local en le compilant avec esbuild puis en l'appelant avec des `Request`. Un changement de `ACCESS_CODE` ne prend effet qu'au déploiement suivant et annule les accès déjà donnés.
 - Test dans le navigateur : la scène Phaser est récupérée en remplaçant `SceneManager.prototype.update` (importé depuis `/.vite/deps/phaser`), puis le chef est piloté au clavier.
