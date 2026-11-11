@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { H, IngredientId, INGREDIENTS, POWER_LABEL, PowerId, W, WAVES } from '../core/constants';
+import { COMBO_SIZE, H, IngredientId, INGREDIENTS, ORDER_PATIENCE, POWER_LABEL, PowerId, W, WAVES } from '../core/constants';
 import { GameManager } from '../core/GameManager';
 import { RecipeManager } from '../core/RecipeManager';
 import { Chef } from '../entities/Chef';
@@ -20,16 +20,25 @@ export class Hud {
   private orderCounts: { text: Phaser.GameObjects.Text; ing: IngredientId; need: number }[] = [];
   private ultBtn: Phaser.GameObjects.Image;
   private ultRing: Phaser.GameObjects.Graphics;
+  private patience: Phaser.GameObjects.Graphics;
+  private combo: Phaser.GameObjects.Text;
+  private rival: Phaser.GameObjects.Text;
+  /** Score du rival en duel (null en solo). */
+  rivalInfo: { name: string; gold: number } | null = null;
 
-  constructor(private scene: Phaser.Scene, private gm: GameManager, private chef: Chef, private recipes: RecipeManager, onUlt: () => void) {
+  constructor(private scene: Phaser.Scene, private gm: GameManager, private chef: Chef, private recipes: RecipeManager, onUlt: () => void, onPause: () => void) {
     scene.add.rectangle(0, 0, W, 26, 0x14141f, 0.88).setOrigin(0).setDepth(D);
     scene.add.image(9, 8, 'coeur').setDepth(D + 1);
     scene.add.image(9, 19, 'ico_stand').setDepth(D + 1);
     this.bars = scene.add.graphics().setDepth(D + 1);
     this.timer = txt(scene, W / 2, 13, '').setOrigin(0.5).setDepth(D + 1);
-    scene.add.image(W - 10, 13, 'piece').setDepth(D + 1);
-    this.gold = txt(scene, W - 20, 13, '0', 8, '#ffd23e').setOrigin(1, 0.5).setDepth(D + 1);
-    this.powers = txt(scene, W / 2, 70, '', 8, '#8fe0ff').setOrigin(0.5, 0).setDepth(D + 1);
+    scene.add.image(W - 12, 13, 'ico_pause').setDepth(D + 1).setInteractive({ useHandCursor: true }).on('pointerdown', onPause);
+    scene.add.image(W - 32, 13, 'piece').setDepth(D + 1);
+    this.patience = scene.add.graphics().setDepth(D + 2);
+    this.combo = txt(scene, 6, 70, '', 8, '#ffc533').setDepth(D + 1);
+    this.rival = txt(scene, W - 6, 70, '', 8, '#ff9d8a').setOrigin(1, 0).setDepth(D + 1);
+    this.gold = txt(scene, W - 42, 13, '0', 8, '#ffd23e').setOrigin(1, 0.5).setDepth(D + 1);
+    this.powers = txt(scene, W / 2, 84, '', 8, '#8fe0ff').setOrigin(0.5, 0).setDepth(D + 1);
 
     // inventaire
     scene.add.rectangle(2, H - 34, 186, 32, 0x14141f, 0.8).setOrigin(0).setDepth(D);
@@ -51,7 +60,7 @@ export class Hud {
 
   /** Vrai si le point touche un élément d'interface (ne doit pas déclencher le joystick). */
   isUi(x: number, y: number): boolean {
-    return Math.hypot(x - ULT.x, y - ULT.y) < ULT.r + 4;
+    return Math.hypot(x - ULT.x, y - ULT.y) < ULT.r + 4 || (x > W - 26 && y < 26);
   }
 
   private buildOrders(): void {
@@ -96,7 +105,7 @@ export class Hud {
     const mm = Math.max(0, Math.ceil(gm.timeLeft));
     const clock = `${Math.floor(mm / 60)}:${String(mm % 60).padStart(2, '0')}`;
     const label =
-      gm.phase === 'boss' ? 'BOSS !' : gm.phase === 'kitchen' ? `CUISINE ${clock}` : `VAGUE ${Math.min(gm.wave + 1, WAVES.length)}/${WAVES.length} ${clock}`;
+      gm.mode === 'duel' ? `DUEL ${clock}` : gm.phase === 'boss' ? 'BOSS !' : gm.phase === 'kitchen' ? `CUISINE ${clock}` : `VAGUE ${Math.min(gm.wave + 1, WAVES.length)}/${WAVES.length} ${clock}`;
     this.timer.setText(label).setColor(gm.phase === 'kitchen' ? '#ffd23e' : gm.phase === 'boss' ? '#ff6a5a' : '#ffffff');
     this.gold.setText(String(gm.gold));
 
@@ -109,6 +118,18 @@ export class Hud {
       const have = chef.inv[c.ing].n;
       c.text.setText(`${Math.min(have, c.need)}/${c.need}`).setColor(have >= c.need ? '#2f8f2f' : '#b0392b');
     }
+
+    // patience des clients
+    this.patience.clear();
+    this.recipes.orders.forEach((o, i) => {
+      if (o.state !== 'open') return;
+      const p = Math.max(0, o.patience / ORDER_PATIENCE);
+      this.patience.fillStyle(0x3b2414, 0.5).fillRect(6 + i * 178, 63, 170, 2);
+      this.patience.fillStyle(p > 0.5 ? 0x3fae3f : p > 0.25 ? 0xe08a2a : 0xd0342a).fillRect(6 + i * 178, 63, Math.round(170 * p), 2);
+    });
+    const c = gm.combo % COMBO_SIZE;
+    this.combo.setText(gm.combo > 0 ? `COMBO ${gm.combo} ${'*'.repeat(c)}${'.'.repeat(COMBO_SIZE - c)}` : '');
+    this.rival.setText(this.rivalInfo ? `${this.rivalInfo.name} ${this.rivalInfo.gold}` : '');
 
     const active = (Object.keys(chef.powers) as PowerId[]).filter((p) => chef.powers[p] > 0);
     this.powers.setText(active.map((p) => `${POWER_LABEL[p]} ${Math.ceil(chef.powers[p])}s`).join('\n'));

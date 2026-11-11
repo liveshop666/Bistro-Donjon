@@ -37,45 +37,38 @@ Ouvrir l'adresse affichée (idéalement sur un téléphone du même réseau, ou 
 Déroulé d'une partie (≈ 4 min) : 3 vagues de `récolte 45 s → coup de feu 20 s → 1 carte parmi 3`, puis le boss.
 Toutes les valeurs (durées, stats, vagues, recettes, cartes) sont dans `src/core/constants.ts`.
 
-## Ce que contient le prototype
+## Contenu du jeu
 
-- 3 chefs jouables avec arme et ultime propres : Chef Moustachu (Tornade Flambée), Maître Shiba (Onde de Choc Pâte), Mlle Noisette (Danse des Lames).
-- Bestiaire : Champi-Bouclier (vise le stand), Tomate Grognon (meute), Gelée Sucrée (bondit, se divise), Piment Diablotin (tir à distance), Roi Tomate (charge, invoque, fait trembler l'écran).
-- 4 mondes avec leur mécanique : Clairière (standard), Marché de Nuit (monstres en file), Taverne (tonneaux explosifs), Cantine Cyber (tapis roulants).
-- 6 recettes, 8 cartes d'amélioration (couteaux volants, bottes, tourelle, aimant, fourneaux…), meilleur score sauvegardé localement.
-- Son entièrement synthétisé (aucun fichier audio) : une trentaine de bruitages et 4 musiques chiptune (menu, chasse, cuisine, boss). Coupure du son depuis le menu ou avec la touche M.
-- Affichage Pixel Perfect : le canvas est agrandi d'un facteur entier en pixels physiques.
+- **Solo** : 3 vagues puis le Roi Tomate, 3 chefs animés, 5 monstres, 4 mondes à débloquer, 6 recettes, 8 cartes d'amélioration.
+- **Cuisine** : marmite, comptoir, planche à découper, patience des clients, pourboires, combos.
+- **Duel « Guerre des Stands »** : 2 minutes, sabotages, contre l'ordinateur ou en ligne (partie rapide ou salon à code).
+- **Pause et sauvegarde** : enregistrement automatique à chaque vague, reprise depuis le menu.
+- **Boutique** de costumes et d'effets (pièces gagnées en jouant), **Mon compte** (pseudo, assistance, suppression des données).
+- Règles intégrées, son synthétisé, affichage Pixel Perfect.
+
+Documents : [règles du jeu](docs/REGLES.md) · [publication sur le Play Store](docs/PUBLICATION.md) · [fiche du store](store/FICHE_PLAY_STORE.md) · [journal du projet](docs/memoire/JOURNAL.md)
+
+## Jouer en ligne en local
+
+Dans un second terminal :
+
+```bash
+cd server
+```
+
+```bash
+npm install
+```
+
+```bash
+npm start
+```
+
+Le jeu lancé avec `npm run dev` s'y connecte tout seul. Pour jouer avec d'autres personnes par Internet, le serveur doit être hébergé : voir `docs/PUBLICATION.md`.
 
 ## Pas encore fait
 
-- **Multijoueur** (Duo coop, Duel sabotage) : `src/network/MultiplayerClient.ts` ne contient que le contrat de messages, aucun serveur Colyseus n'est branché.
-- **Monétisation** (AdMob récompensé, boutique de skins) et déblocage progressif des mondes.
-- **Sprites animés** : chaque personnage est une image fixe animée par code (rebond, dandinement, élan). Les planches d'animation image par image restent à produire en 32 × 32.
-- **Masques de collision des décors** : seule la ligne cuisine/arène est gérée ; les personnages passent sur les arbres et les murs dessinés.
-- Ingrédient Viande, louche laser.
-- **Projet Android** : la configuration Capacitor est prête mais le dossier `android/` n'est pas généré (voir ci-dessous).
-
-## Générer l'application Android
-
-Nécessite Android Studio et le SDK Android.
-
-```bash
-npm run build
-```
-
-```bash
-npx cap add android
-```
-
-```bash
-npx cap sync android
-```
-
-```bash
-npx cap open android
-```
-
-Puis dans Android Studio : *Build > Generate Signed Bundle* pour obtenir le fichier `.aab` à déposer sur la Google Play Console. Penser à verrouiller l'orientation en portrait dans `AndroidManifest.xml` (`android:screenOrientation="portrait"`).
+Paiements en euros, connexion à un compte et sauvegarde en ligne, mode Duo coopératif, publicités récompensées, iOS, collisions avec les décors. Le jeu n'a pas encore été testé sur un vrai téléphone.
 
 ## Arborescence
 
@@ -90,8 +83,12 @@ src/audio/                      AudioManager (bruitages et musiques synthétisé
 src/core/                       constants, GameManager, WaveManager, RecipeManager
 src/entities/                   Chef, Enemy, Ingredient, CookingPot
 src/input/                      TouchController (joystick flottant + tranchage)
-src/network/                    MultiplayerClient (squelette)
-src/scenes/                     Boot, Menu, Game
+src/network/                    DuelLink (adversaire robot), MultiplayerClient (en ligne)
+src/scenes/                     Boot, Menu, Game, Rules, Duel, Shop, Account
+server/                         serveur de duel en ligne (Node.js + WebSocket)
+android/                        projet Android (Capacitor)
+store/                          visuels et textes de la fiche Play Store
+docs/                           règles, publication, journal du projet
 src/ui/                         HUD, cartes d'amélioration, texte pixel
 ```
 

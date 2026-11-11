@@ -27,12 +27,49 @@ SPRITES = {
     "sprites/chefs/portrait_moustachu": (2, (549, 39, 716, 227), 48, "none", None),
     "sprites/chefs/portrait_shiba": (2, (550, 295, 716, 470), 48, "none", None),
     "sprites/chefs/portrait_noisette": (2, (550, 536, 706, 727), 48, "none", None),
+    # Animations des chefs (i = repos, w = marche, a = attaque)
+    "sprites/chefs/moustachu_i0": (1, 0, 46, "white", "auto"),
+    "sprites/chefs/moustachu_w0": (1, 24, 46, "white", "auto"),
+    "sprites/chefs/moustachu_w1": (1, 25, 46, "white", "auto"),
+    "sprites/chefs/moustachu_w2": (1, 26, 46, "white", "auto"),
+    "sprites/chefs/moustachu_w3": (1, 39, 46, "white", "auto"),
+    "sprites/chefs/moustachu_a0": (1, 29, 46, "white", "auto"),
+    "sprites/chefs/moustachu_a1": (1, 27, 46, "white", "auto"),
+    "sprites/chefs/moustachu_a2": (1, 35, 46, "white", "auto"),
+    "sprites/chefs/shiba_i0": (2, 21, 46, "white", "auto"),
+    "sprites/chefs/shiba_w0": (2, 22, 46, "white", "auto"),
+    "sprites/chefs/shiba_w1": (2, 12, 46, "white", "auto"),
+    "sprites/chefs/shiba_a0": (2, 24, 46, "white", "auto"),
+    "sprites/chefs/shiba_a1": (2, 23, 46, "white", "auto"),
+    "sprites/chefs/shiba_a2": (2, 13, 46, "white", "auto"),
+    "sprites/chefs/noisette_i0": (2, 36, 46, "white", "auto"),
+    "sprites/chefs/noisette_w0": (2, 40, 46, "white", "auto"),
+    "sprites/chefs/noisette_w1": (2, 42, 46, "white", "auto"),
+    "sprites/chefs/noisette_a0": (2, 30, 46, "white", "auto"),
+    "sprites/chefs/noisette_a1": (2, 31, 46, "white", "auto"),
+    "sprites/chefs/noisette_a2": (2, 41, 46, "white", "auto"),
+    # Animations des ennemis
+    "sprites/enemies/champi_w0": (2, 17, 30, "white", "auto"),
+    "sprites/enemies/champi_w1": (2, 18, 30, "white", "auto"),
+    "sprites/enemies/champi_a0": (2, 19, 30, "white", "auto"),
+    "sprites/enemies/tomate_ko": (1, 9, 16, "white", None),
+    "sprites/enemies/gelee_0": (1, 41, 24, "teal", None),
+    "sprites/enemies/gelee_1": (1, 42, 24, "teal", None),
+    "sprites/enemies/gelee_2": (1, 43, 20, "teal", None),
+    "sprites/enemies/gelee_3": (1, 44, 16, "teal", None),
+    # Costumes de la boutique (planche 5) ; 6e valeur = zone à effacer (vignette collée au sprite)
+    "sprites/skins/skin_samourai": (5, 0, 47, "white", "auto"),
+    "sprites/skins/skin_cyber": (5, 6, 47, "white", "auto"),
+    "sprites/skins/skin_patissier": (5, 24, 46, "white", "auto"),
+    "sprites/skins/skin_chevalier": (5, 37, 47, "white", "auto", (268, 645, 345, 740)),
+    "sprites/skins/skin_astronaute": (5, 40, 47, "white", "auto", (995, 645, 1068, 740)),
+    "sprites/skins/skin_shiba_samourai": (5, 20, 47, "white", "auto"),
     # Ennemis
     "sprites/enemies/champi": (2, 16, 30, "white", 880),
     "sprites/enemies/tomate": (1, 21, 22, "white", None),
     "sprites/enemies/gelee": (2, 38, 24, "white", None),
     "sprites/enemies/piment": (2, 46, 28, "white", 1160),
-    "sprites/enemies/roi_tomate": (2, 5, 84, "white", 1048),
+    "sprites/enemies/roi_tomate": (2, (786, 22, 1229, 311), 84, "white", 1048),
     # UI
     "ui/marmite": (4, 0, 44, "white", None),
     "ui/coeur": (4, 53, 12, "white", None),
@@ -67,6 +104,12 @@ def cut(im, box, mode):
     crop = im.crop(box).convert("RGBA")
     a = np.asarray(crop).copy()
     rgb = a[..., :3].astype(int)
+    recolor = mode == "teal"
+    if recolor:
+        mode = "white"
+        hsv = np.asarray(crop.convert("RGB").convert("HSV")).copy()
+        hsv[..., 0] = (hsv[..., 0].astype(int) - 45) % 256  # bleu-vert -> vert gelée
+        a[..., :3] = np.asarray(Image.fromarray(hsv, "HSV").convert("RGB"))
     if mode == "white":
         bg = rgb.min(axis=2) > 232
     elif mode == "corner":
@@ -107,8 +150,12 @@ def shrink(img, h):
 
 
 anchors = {}
-for name, (n, ref, h, mode, ax) in SPRITES.items():
+for name, spec in SPRITES.items():
+    n, ref, h, mode, ax = spec[:5]
     im, boxes = sheet(n)
+    if len(spec) > 5:
+        im = im.copy()
+        im.paste((255, 255, 255), spec[5])
     box = boxes[ref] if isinstance(ref, int) else ref
     full = cut(im, box, mode)
     out = shrink(full, h)
@@ -116,7 +163,12 @@ for name, (n, ref, h, mode, ax) in SPRITES.items():
     os.makedirs(os.path.dirname(path), exist_ok=True)
     out.save(path)
     key = os.path.basename(name)
-    if ax is not None:
+    if ax == "auto":
+        # ancre = centre des pieds (pixels opaques du bas du sprite)
+        al = np.asarray(out)[..., 3]
+        xs = np.nonzero(al[int(al.shape[0] * 0.86):].any(axis=0))[0]
+        anchors[key] = round(float(xs.min() + xs.max() + 1) / 2 / al.shape[1], 3)
+    elif ax is not None:
         anchors[key] = round(min(0.9, max(0.1, (ax - box[0]) / (box[2] - box[0]))), 3)
     print(name, out.size)
 

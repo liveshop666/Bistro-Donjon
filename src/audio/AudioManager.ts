@@ -8,7 +8,7 @@
 export type Sfx =
   | 'clic' | 'coup_poele' | 'coup_rouleau' | 'coup_hachoir' | 'touche' | 'pop' | 'ramasse' | 'tranche'
   | 'marmite' | 'pret' | 'plat' | 'piece' | 'pouvoir' | 'aie' | 'stand' | 'ultime' | 'feu' | 'explosion'
-  | 'laser' | 'rugissement' | 'choc' | 'vague' | 'cloche' | 'cartes' | 'carte' | 'soin' | 'victoire' | 'defaite';
+  | 'hache' | 'parti' | 'laser' | 'rugissement' | 'choc' | 'vague' | 'cloche' | 'cartes' | 'carte' | 'soin' | 'victoire' | 'defaite';
 
 export type Tune = 'menu' | 'chasse' | 'cuisine' | 'boss';
 
@@ -239,6 +239,14 @@ class AudioManager {
       case 'explosion':
         this.noise(b, 0.55, 0.5, 'lowpass', 1800, 0, 120);
         this.tone(b, 120, 0.4, 'triangle', 0.4, 0, 35);
+        break;
+      case 'hache': // couteau sur la planche
+        this.noise(b, 0.04, 0.3, 'highpass', 3000);
+        this.tone(b, 220, 0.05, 'triangle', 0.25, 0.01, 140);
+        break;
+      case 'parti': // client mécontent
+        this.tone(b, 392, 0.14, 'square', 0.12);
+        this.tone(b, 294, 0.24, 'square', 0.12, 0.13);
         break;
       case 'laser':
         this.tone(b, 1500, 0.09, 'square', 0.07, 0, 500);

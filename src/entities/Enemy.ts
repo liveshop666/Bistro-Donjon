@@ -38,7 +38,7 @@ export class Enemy {
   private flash = 0;
   private faceLeft = false;
 
-  constructor(scene: Phaser.Scene, type: EnemyId, x: number, y: number, hpMul: number, public mini = false) {
+  constructor(private scene: Phaser.Scene, type: EnemyId, x: number, y: number, hpMul: number, public mini = false) {
     this.def = ENEMIES[type];
     this.x = x;
     this.y = y;
@@ -47,7 +47,7 @@ export class Enemy {
     this.hp = this.maxHp = Math.round(this.def.hp * hpMul * (mini ? 0.4 : 1));
     this.anchor = (anchors as Record<string, number>)[type] ?? 0.5;
     this.shadow = scene.add.ellipse(x, y, this.radius * 2.2, this.radius * 0.7, 0x000000, 0.3);
-    this.sprite = scene.add.image(x, y, type).setScale(scale);
+    this.sprite = scene.add.image(x, y, type === 'gelee' ? 'gelee_1' : type === 'champi' ? 'champi_w0' : type).setScale(scale);
     this.sprite.setOrigin(this.anchor, type === 'tomate' ? 0.5 : 1);
   }
 
@@ -177,8 +177,18 @@ export class Enemy {
     const s = this.mini ? 0.6 : 1;
     const flying = this.def.ai === 'ranged' ? 10 + Math.sin(this.t * 5) * 2 : 0;
     const lift = this.hop * 12 + flying;
-    const squash = this.def.ai === 'hop' ? 1 + this.hop * 0.25 - (this.hop === 0 ? Math.abs(Math.sin(this.t * 4)) * 0.08 : 0) : 1;
-    const wobble = this.def.ai === 'stand' ? Math.sin(this.t * 6) * 4 : 0;
+    const squash = 1;
+    // images d'animation
+    if (this.def.id === 'gelee') {
+      const landed = this.hop === 0 && this.timer > 0.3;
+      this.sprite.setTexture(this.hop > 0.5 ? 'gelee_0' : this.hop > 0 ? 'gelee_1' : landed ? 'gelee_3' : this.timer > 0.15 ? 'gelee_2' : 'gelee_1');
+    } else if (this.def.id === 'champi') {
+      const step = Math.floor(this.t * 4) % 2;
+      const key = this.atStand ? (step ? 'champi_a0' : 'champi_w0') : step ? 'champi_w1' : 'champi_w0';
+      this.sprite.setTexture(key);
+      this.anchor = (anchors as Record<string, number>)[key] ?? 0.5;
+    }
+    const wobble = this.def.ai === 'stand' && !this.atStand ? Math.sin(this.t * 6) * 3 : 0;
     const yOff = this.def.id === 'tomate' ? this.sprite.displayHeight / 2 : 0;
     this.sprite
       .setFlipX(this.def.id === 'tomate' ? false : this.faceLeft)
@@ -194,8 +204,17 @@ export class Enemy {
     this.shadow.setPosition(this.x, this.y - 1).setDepth(this.y - 1);
   }
 
-  destroy(): void {
-    this.sprite.destroy();
+  /** Retire le monstre ; avec `animated`, joue d'abord une petite animation d'écrasement. */
+  destroy(animated = false): void {
     this.shadow.destroy();
+    if (!animated) {
+      this.sprite.destroy();
+      return;
+    }
+    const sp = this.sprite;
+    if (this.def.id === 'tomate') sp.setTexture('tomate_ko').setRotation(0);
+    sp.setTintFill(0xffffff);
+    this.scene.time.delayedCall(60, () => sp.active && sp.clearTint());
+    this.scene.tweens.add({ targets: sp, scaleY: sp.scaleY * 0.35, scaleX: sp.scaleX * 1.35, alpha: 0, duration: 260, ease: 'Cubic.in', onComplete: () => sp.destroy() });
   }
 }

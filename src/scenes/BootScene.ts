@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { CHEF_ORDER, INGREDIENTS, UPGRADES, WORLD_ORDER } from '../core/constants';
+import { CHEF_ORDER, INGREDIENTS, SHOP, SPRITE_FILES, UPGRADES, WORLD_ORDER } from '../core/constants';
 
 /** Charge les sprites et génère les petites textures procédurales (joystick, plat, effets). */
 export class BootScene extends Phaser.Scene {
@@ -13,7 +13,9 @@ export class BootScene extends Phaser.Scene {
       this.load.image(c, `sprites/chefs/${c}.png`);
       this.load.image('portrait_' + c, `sprites/chefs/portrait_${c}.png`);
     }
-    for (const e of ['champi', 'tomate', 'gelee', 'piment', 'roi_tomate']) this.load.image(e, `sprites/enemies/${e}.png`);
+    for (const f of SPRITE_FILES.chefs) this.load.image(f, `sprites/chefs/${f}.png`);
+    for (const it of SHOP) if (it.sprite) this.load.image(it.sprite, `sprites/skins/${it.sprite}.png`);
+    for (const e of SPRITE_FILES.enemies) this.load.image(e, `sprites/enemies/${e}.png`);
     for (const w of WORLD_ORDER) this.load.image('map_' + w, `maps/${w}.png`);
     for (const i of INGREDIENTS) this.load.image('ing_' + i, `ui/ing_${i}.png`);
     for (const u of UPGRADES) this.load.image(u.icon, `ui/${u.icon}.png`);
@@ -82,6 +84,28 @@ export class BootScene extends Phaser.Scene {
     tex('fleche_tapis', 24, 12, () => {
       g.fillStyle(0x4ff3ff, 0.9);
       g.fillTriangle(4, 1, 12, 6, 4, 11).fillTriangle(14, 1, 22, 6, 14, 11);
+    });
+    // planche à découper
+    tex('planche', 34, 20, () => {
+      g.fillStyle(0x1b1b2b).fillRect(0, 2, 34, 18);
+      g.fillStyle(0xd9a866).fillRect(1, 3, 32, 12);
+      g.fillStyle(0xb98548).fillRect(1, 15, 32, 4).fillRect(4, 7, 14, 1).fillRect(9, 11, 16, 1);
+      g.fillStyle(0xe8483a).fillRect(22, 5, 6, 6);
+      g.fillStyle(0x4f9f3a).fillRect(24, 4, 2, 2);
+    });
+    tex('ico_pause', 14, 14, () => {
+      g.fillStyle(0x3a3f55).fillRect(0, 0, 14, 14);
+      g.fillStyle(0xffffff).fillRect(3, 3, 3, 8).fillRect(8, 3, 3, 8);
+    });
+    tex('fumee', 64, 64, () => {
+      g.fillStyle(0x2a2a33).fillCircle(32, 32, 30);
+      g.fillStyle(0x3d3d4a).fillCircle(26, 26, 18);
+    });
+    tex('cadenas', 16, 18, () => {
+      g.lineStyle(3, 0xd8dcea).strokeRect(4, 2, 8, 9);
+      g.fillStyle(0x1b1b2b).fillRect(0, 7, 16, 11);
+      g.fillStyle(0xffc533).fillRect(1, 8, 14, 9);
+      g.fillStyle(0x1b1b2b).fillRect(7, 11, 2, 4);
     });
     tex('particule', 4, 4, () => g.fillStyle(0xffffff).fillRect(0, 0, 4, 4));
     tex('ico_stand', 12, 10, () => {

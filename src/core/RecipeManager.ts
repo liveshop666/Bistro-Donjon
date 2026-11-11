@@ -1,4 +1,4 @@
-import { IngredientId, RECIPES, RecipeDef, WAVES } from './constants';
+import { IngredientId, ORDER_PATIENCE, RECIPES, RecipeDef, WAVES } from './constants';
 
 export type Inventory = Record<IngredientId, { n: number; sliced: number }>;
 
@@ -7,6 +7,8 @@ export interface Order {
   state: 'open' | 'cooking' | 'ready';
   /** Multiplicateur d'or (1 à 2) selon la part d'ingrédients tranchés. */
   bonus: number;
+  /** Patience restante du client (s). */
+  patience: number;
 }
 
 export const emptyInventory = (): Inventory => ({
@@ -33,7 +35,7 @@ export class RecipeManager {
       const taken = this.orders.map((o) => o.recipe.id);
       const choices = pool.filter((r) => !taken.includes(r.id));
       const list = choices.length ? choices : pool;
-      this.orders.push({ recipe: list[Math.floor(Math.random() * list.length)], state: 'open', bonus: 1 });
+      this.orders.push({ recipe: list[Math.floor(Math.random() * list.length)], state: 'open', bonus: 1, patience: ORDER_PATIENCE });
     }
     this.onChange();
   }
@@ -62,6 +64,21 @@ export class RecipeManager {
     order.bonus = 1 + sliced / total;
     this.onChange();
     return sliced / total;
+  }
+
+  /** Fait baisser la patience des clients ; renvoie le nombre de clients partis. */
+  tick(dt: number, wave: number): number {
+    let gone = 0;
+    for (const o of this.orders) {
+      if (o.state !== 'open') continue;
+      o.patience -= dt;
+      if (o.patience <= 0) gone++;
+    }
+    if (gone) {
+      this.orders = this.orders.filter((o) => o.state !== 'open' || o.patience > 0);
+      this.refill(wave);
+    }
+    return gone;
   }
 
   serve(order: Order, wave: number): void {

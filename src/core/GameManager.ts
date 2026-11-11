@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
-import { HARVEST_TIME, KITCHEN_TIME, STAND_HP, UPGRADES, UpgradeDef, UpgradeId, WAVES } from './constants';
+import { COMBO_SIZE, DUEL_TIME, GameMode, HARVEST_TIME, KITCHEN_TIME, STAND_HP, UPGRADES, UpgradeDef, UpgradeId, WAVES } from './constants';
+import { RunSave } from './Storage';
 
 export type Phase = 'harvest' | 'kitchen' | 'cards' | 'boss' | 'over';
 
@@ -18,7 +19,31 @@ export class GameManager extends Phaser.Events.EventEmitter {
   standHp = STAND_HP;
   standMax = STAND_HP;
   victory = false;
-  private levels: Partial<Record<UpgradeId, number>> = {};
+  levels: Partial<Record<UpgradeId, number>> = {};
+
+  constructor(readonly mode: GameMode = 'solo') {
+    super();
+    if (mode === 'duel') this.timeLeft = DUEL_TIME;
+  }
+
+  /** Reprend une partie sauvegardée au début de sa vague. */
+  restore(s: RunSave): void {
+    this.wave = s.wave;
+    this.gold = s.gold;
+    this.served = s.served;
+    this.kills = s.kills;
+    this.combo = s.combo;
+    this.standHp = s.standHp;
+    this.levels = { ...s.upgrades };
+    if (this.isBossWave) this.phase = 'boss';
+  }
+
+  /** Compte un plat servi ; vrai si le combo vient d'atteindre un palier. */
+  serve(): boolean {
+    this.served++;
+    this.combo++;
+    return this.combo % COMBO_SIZE === 0;
+  }
 
   get isBossWave(): boolean {
     return this.wave >= WAVES.length;
@@ -39,6 +64,13 @@ export class GameManager extends Phaser.Events.EventEmitter {
   }
 
   update(dt: number): void {
+    if (this.mode === 'duel') {
+      // duel : 2 minutes d'affilée, la difficulté monte toutes les 40 s
+      this.timeLeft = Math.max(0, this.timeLeft - dt);
+      this.wave = Math.min(WAVES.length - 1, Math.floor((DUEL_TIME - this.timeLeft) / (DUEL_TIME / WAVES.length)));
+      if (this.timeLeft <= 0 && this.phase !== 'over') this.emit('duelTime');
+      return;
+    }
     if (this.phase === 'harvest' || this.phase === 'kitchen') {
       this.timeLeft -= dt;
       if (this.timeLeft <= 0) {

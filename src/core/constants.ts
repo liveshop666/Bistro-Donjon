@@ -50,7 +50,7 @@ export const CHEFS: Record<ChefId, ChefDef> = {
     id: 'noisette', name: 'MLLE NOISETTE', weapon: 'Doubles hachoirs',
     ultimate: 'dash', ultimateName: 'DANSE DES LAMES',
     stats: { vie: 2, vitesse: 5, degats: 4 },
-    hp: 4, speed: 135, damage: 9, cooldown: 0.22, range: 40, slashColor: 0xdff4ff,
+    hp: 5, speed: 135, damage: 9, cooldown: 0.22, range: 40, slashColor: 0xdff4ff,
   },
 };
 
@@ -147,6 +147,8 @@ export interface WorldDef {
   mechanic: WorldMechanic;
   pot: { x: number; y: number };
   counter: { x: number; y: number };
+  /** Planche à découper : tranche en sécurité les ingrédients portés. */
+  board: { x: number; y: number };
   /** Ligne de séparation cuisine / arène : les monstres s'y arrêtent et attaquent le stand. */
   standLine: number;
 }
@@ -154,22 +156,80 @@ export interface WorldDef {
 export const WORLDS: Record<WorldId, WorldDef> = {
   clairiere: {
     id: 'clairiere', name: 'LA CLAIRIERE', hint: 'Idéal pour apprendre', mechanic: 'none',
-    pot: { x: 140, y: 214 }, counter: { x: 264, y: 200 }, standLine: 252,
+    pot: { x: 140, y: 214 }, counter: { x: 264, y: 200 }, board: { x: 204, y: 232 }, standLine: 252,
   },
   marche: {
     id: 'marche', name: 'MARCHE DE NUIT', hint: 'Monstres en file serrée', mechanic: 'file',
-    pot: { x: 92, y: 276 }, counter: { x: 268, y: 276 }, standLine: 312,
+    pot: { x: 92, y: 276 }, counter: { x: 268, y: 276 }, board: { x: 180, y: 284 }, standLine: 312,
   },
   taverne: {
     id: 'taverne', name: 'LA TAVERNE', hint: 'Tonneaux explosifs', mechanic: 'tonneaux',
-    pot: { x: 84, y: 296 }, counter: { x: 262, y: 296 }, standLine: 330,
+    pot: { x: 84, y: 296 }, counter: { x: 262, y: 296 }, board: { x: 173, y: 304 }, standLine: 330,
   },
   cantine: {
     id: 'cantine', name: 'CANTINE CYBER', hint: 'Tapis roulants rapides', mechanic: 'tapis',
-    pot: { x: 90, y: 284 }, counter: { x: 266, y: 284 }, standLine: 320,
+    pot: { x: 90, y: 284 }, counter: { x: 266, y: 284 }, board: { x: 178, y: 292 }, standLine: 320,
   },
 };
 export const WORLD_ORDER: WorldId[] = ['clairiere', 'marche', 'taverne', 'cantine'];
 export const CHEF_ORDER: ChefId[] = ['moustachu', 'shiba', 'noisette'];
 /** Bandes horizontales des tapis roulants (monde 4). */
 export const CONVEYORS = [{ y: 430, h: 36 }, { y: 540, h: 36 }];
+
+// ---------------------------------------------------------------- Cuisine
+/** Patience d'un client (s). Servi avant la moitié : pourboire. Dépassée : le client part, le combo retombe. */
+export const ORDER_PATIENCE = 50;
+export const TIP_BONUS = 0.25;
+/** Tous les COMBO_SIZE plats servis d'affilée : prime d'or (et sabotage en duel). */
+export const COMBO_SIZE = 3;
+export const COMBO_GOLD = 60;
+/** Durée de découpe d'un ingrédient sur la planche (s). */
+export const CHOP_TIME = 0.4;
+
+// ---------------------------------------------------------------- Duel
+export const DUEL_TIME = 120;
+export type Sabotage = 'roi_tomate' | 'fumee' | 'inverse';
+export const SABOTAGES: Sabotage[] = ['roi_tomate', 'fumee', 'inverse'];
+export const SABOTAGE_LABEL: Record<Sabotage, string> = {
+  roi_tomate: 'MINI ROI TOMATE', fumee: 'NUAGE DE FUMEE', inverse: 'CONTROLES INVERSES',
+};
+export type GameMode = 'solo' | 'duel';
+
+// ---------------------------------------------------------------- Animations (clés de textures)
+export const CHEF_FRAMES: Record<ChefId, { idle: string[]; walk: string[]; attack: string[] }> = {
+  moustachu: { idle: ['moustachu_i0'], walk: ['moustachu_w0', 'moustachu_w1', 'moustachu_w2', 'moustachu_w3'], attack: ['moustachu_a0', 'moustachu_a1', 'moustachu_a2'] },
+  shiba: { idle: ['shiba_i0'], walk: ['shiba_w0', 'shiba_i0', 'shiba_w1', 'shiba_i0'], attack: ['shiba_a0', 'shiba_a1', 'shiba_a2'] },
+  noisette: { idle: ['noisette_i0'], walk: ['noisette_w0', 'noisette_w1'], attack: ['noisette_a0', 'noisette_a1', 'noisette_a2'] },
+};
+export const SPRITE_FILES = {
+  chefs: Object.values(CHEF_FRAMES).flatMap((f) => [...f.idle, ...f.walk, ...f.attack]).filter((k, i, a) => a.indexOf(k) === i),
+  enemies: ['champi', 'champi_w0', 'champi_w1', 'champi_a0', 'tomate', 'tomate_ko', 'gelee_0', 'gelee_1', 'gelee_2', 'gelee_3', 'piment', 'roi_tomate'],
+};
+
+// ---------------------------------------------------------------- Boutique (cosmétiques uniquement)
+export interface ShopItem {
+  id: string;
+  kind: 'skin' | 'effet';
+  /** Chef concerné par le costume. */
+  chef?: ChefId;
+  name: string;
+  desc: string;
+  /** Prix en pièces gagnées en jouant. */
+  coins: number;
+  /** Prix en argent réel (achat intégré). */
+  euro: string;
+  sprite?: string;
+  color?: number;
+}
+
+export const SHOP: ShopItem[] = [
+  { id: 'skin_samourai', kind: 'skin', chef: 'moustachu', name: 'CHAT\nSAMOURAI', desc: 'Armure rouge et casque\ndoré pour Chef Moustachu.', coins: 3000, euro: '0,99 EUR', sprite: 'skin_samourai' },
+  { id: 'skin_chevalier', kind: 'skin', chef: 'moustachu', name: 'CHAT\nCHEVALIER', desc: 'Heaume, bouclier et\nfourchette géante.', coins: 3000, euro: '0,99 EUR', sprite: 'skin_chevalier' },
+  { id: 'skin_cyber', kind: 'skin', chef: 'moustachu', name: 'CHAT\nCYBER', desc: 'Visière néon et poêle\nélectrique.', coins: 3000, euro: '0,99 EUR', sprite: 'skin_cyber' },
+  { id: 'skin_astronaute', kind: 'skin', chef: 'moustachu', name: 'CHAT\nASTRONAUTE', desc: 'Scaphandre et fouet\nlaser.', coins: 3000, euro: '0,99 EUR', sprite: 'skin_astronaute' },
+  { id: 'skin_patissier', kind: 'skin', chef: 'moustachu', name: 'CHAT\nPATISSIER', desc: 'Veste de chef et grand\nfouet de pâtissier.', coins: 1500, euro: '0,49 EUR', sprite: 'skin_patissier' },
+  { id: 'skin_shiba_samourai', kind: 'skin', chef: 'shiba', name: 'SHIBA\nSAMOURAI', desc: 'Armure et sabre de feu\npour Maître Shiba.', coins: 3000, euro: '0,99 EUR', sprite: 'skin_shiba_samourai' },
+  { id: 'fx_bleu', kind: 'effet', name: 'FLAMMES\nBLEUES', desc: 'Tes coups laissent une\ntraînée bleue.', coins: 800, euro: '0,49 EUR', color: 0x4fb8ff },
+  { id: 'fx_or', kind: 'effet', name: 'ETOILES\nDOREES', desc: 'Tes coups laissent une\ntraînée dorée.', coins: 800, euro: '0,49 EUR', color: 0xffe27a },
+  { id: 'fx_rose', kind: 'effet', name: 'LAMES\nROSES', desc: 'Tes coups laissent une\ntraînée rose.', coins: 800, euro: '0,49 EUR', color: 0xff7ad0 },
+];
