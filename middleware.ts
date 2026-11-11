@@ -75,7 +75,9 @@ export default async function middleware(request: Request): Promise<Response> {
     });
 
   // 3) Lien d'entrée secret (QR code) : /entrer/<jeton>. Vercel ne connaît que l'empreinte du jeton.
-  const entry = /^\/entrer\/([A-Za-z0-9_-]{16,})\/?$/.exec(url.pathname)?.[1];
+  //    Tolérant : le jeton est en minuscules et chiffres ; on accepte des majuscules (certaines applis en mettent)
+  //    et on ignore ce qui traîne après (point, espace ajouté par une messagerie).
+  const entry = /^\/entrer\/([A-Za-z0-9]{16,})/.exec(url.pathname)?.[1]?.toLowerCase();
   if (entry) {
     if (entryHash && (await sha256(entry)) === entryHash) return allow(entryCookie);
     await new Promise((resolve) => setTimeout(resolve, 1500)); // ralentit ceux qui essaient des liens au hasard
