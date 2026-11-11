@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Bistro Donjon</string>
+    <string name="title_activity_main">Bistro Donjon</string>
+    <string name="package_name">fr.solvelab.bistrodonjon</string>
+    <string name="custom_url_scheme">fr.solvelab.bistrodonjon</string>
+</resources>
