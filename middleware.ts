@@ -1,11 +1,13 @@
 /**
  * Porte d'entrée de la version en ligne (Vercel) : sans le code d'accès, rien du jeu n'est servi.
  *
- * Deux façons d'entrer, toutes deux réglées dans Vercel (variables d'environnement), jamais dans le dépôt :
+ * Trois façons d'entrer, toutes réglées dans Vercel (variables d'environnement), jamais dans le dépôt :
+ *  - ENTRY_HASH : empreinte SHA-256 du jeton d'un lien d'entrée secret (/entrer/<jeton>, donné en QR code).
+ *    Ouvrir ce lien une fois autorise l'appareil pendant un an ; le jeu s'installe ensuite sur l'écran d'accueil ;
  *  - APP_KEY_HASH : empreinte SHA-256 de la clé secrète que l'APK de test envoie tout seul (rien à taper sur le
  *    téléphone). La clé elle-même n'existe que dans les secrets GitHub (BD_APP_KEY), Vercel n'en a que l'empreinte ;
  *  - ACCESS_CODE (facultatif) : code à taper pour entrer depuis un navigateur, mémorisé un an par un cookie.
- * Tant que les deux variables sont vides, le site reste fermé à tout le monde.
+ * Tant que ces variables sont vides, le site reste fermé à tout le monde. Changer ENTRY_HASH annule les accès donnés.
  * Ce fichier n'est utilisé que par Vercel : il ne fait pas partie du jeu ni de l'APK du Play Store.
  */
 declare const process: { env: Record<string, string | undefined> };
@@ -42,31 +44,49 @@ function page(message: string, withForm: boolean): string {
 </main></body></html>`;
 }
 
+/** Fichiers sans secret, laissés ouverts pour que le téléphone puisse installer le jeu sur l'écran d'accueil. */
+const PUBLIC = new Set(['/manifest.webmanifest', '/icon-192.png', '/icon-512.png']);
+
 export default async function middleware(request: Request): Promise<Response> {
   const headers = { 'content-type': 'text/html; charset=utf-8', 'x-robots-tag': 'noindex, nofollow', 'cache-control': 'no-store' };
+  const next = () => new Response(null, { headers: { 'x-middleware-next': '1' } });
+  const url = new URL(request.url);
+  if (PUBLIC.has(url.pathname)) return next();
+
   const code = (process.env.ACCESS_CODE ?? '').trim();
   const keyHash = (process.env.APP_KEY_HASH ?? '').trim().toLowerCase();
-  if (!code && !keyHash) return new Response(page('Le jeu est fermé pour le moment.', false), { status: 503, headers });
+  const entryHash = (process.env.ENTRY_HASH ?? '').trim().toLowerCase();
+  if (!code && !keyHash && !entryHash) return new Response(page('Le jeu est fermé pour le moment.', false), { status: 503, headers });
 
-  // L'appli de test se présente toute seule avec sa clé secrète (ajoutée à son « user-agent ») : rien à taper.
-  // Vercel ne connaît que l'empreinte de la clé : on compare l'empreinte de ce que l'appli présente.
+  // 1) L'appli de test se présente toute seule avec sa clé secrète (ajoutée à son « user-agent ») : rien à taper.
+  //    Vercel ne connaît que l'empreinte de la clé : on compare l'empreinte de ce que l'appli présente.
   const shown = /BistroDonjonApp\/([A-Za-z0-9_-]{16,})/.exec(request.headers.get('user-agent') ?? '')?.[1];
-  if (keyHash && shown && (await sha256(shown)) === keyHash) return new Response(null, { headers: { 'x-middleware-next': '1' } });
+  if (keyHash && shown && (await sha256(shown)) === keyHash) return next();
+
+  // 2) Appareil déjà autorisé (lien d'entrée ouvert, ou code tapé) : un cookie d'un an le reconnaît.
+  const codeCookie = code ? await sha256('bistro-donjon:' + code) : '';
+  const entryCookie = entryHash ? await sha256('bistro-donjon:lien:' + entryHash) : '';
+  const cookies = (request.headers.get('cookie') ?? '').split(/;\s*/);
+  if ((codeCookie && cookies.includes(`${COOKIE}=${codeCookie}`)) || (entryCookie && cookies.includes(`${COOKIE}=${entryCookie}`))) return next();
+  const allow = (value: string) =>
+    new Response(null, {
+      status: 303,
+      headers: { location: '/', 'referrer-policy': 'no-referrer', 'set-cookie': `${COOKIE}=${value}; Path=/; Max-Age=31536000; HttpOnly; Secure; SameSite=Lax` },
+    });
+
+  // 3) Lien d'entrée secret (QR code) : /entrer/<jeton>. Vercel ne connaît que l'empreinte du jeton.
+  const entry = /^\/entrer\/([A-Za-z0-9_-]{16,})\/?$/.exec(url.pathname)?.[1];
+  if (entry) {
+    if (entryHash && (await sha256(entry)) === entryHash) return allow(entryCookie);
+    await new Promise((resolve) => setTimeout(resolve, 1500)); // ralentit ceux qui essaient des liens au hasard
+    return new Response(page('Ce lien n’est plus valable.', false), { status: 403, headers });
+  }
   if (!code) return new Response(page('Version de test privée.', false), { status: 403, headers });
 
-  const token = await sha256('bistro-donjon:' + code);
-  const cookies = (request.headers.get('cookie') ?? '').split(/;\s*/);
-  if (cookies.includes(`${COOKIE}=${token}`)) return new Response(null, { headers: { 'x-middleware-next': '1' } });
-
-  const url = new URL(request.url);
+  // 4) Code à taper (facultatif)
   if (request.method === 'POST' && url.pathname === '/__acces') {
     const given = String((await request.formData()).get('code') ?? '').trim();
-    if (given === code) {
-      return new Response(null, {
-        status: 303,
-        headers: { location: '/', 'set-cookie': `${COOKIE}=${token}; Path=/; Max-Age=31536000; HttpOnly; Secure; SameSite=Lax` },
-      });
-    }
+    if (given === code) return allow(codeCookie);
     await new Promise((resolve) => setTimeout(resolve, 1500)); // ralentit ceux qui essaient des codes au hasard
     return new Response(page('Code incorrect. Réessaie.', true), { status: 401, headers });
   }

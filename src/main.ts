@@ -78,5 +78,13 @@ document.fonts.load('8px "Press Start 2P"').finally(() => {
   window.addEventListener('focus', checkUpdate);
   void App.addListener('resume', checkUpdate);
   game.events.on('menu', checkUpdate);
+  // Installation sur l'écran d'accueil (version en ligne ouverte dans Chrome) : le navigateur nous confie
+  // la demande d'installation, le menu la propose au joueur (voir MenuScene).
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    game.registry.set('installPrompt', e);
+    game.events.emit('installable');
+  });
+  window.addEventListener('appinstalled', () => game.registry.remove('installPrompt'));
   Object.assign(window, { game, audio }); // accès console pour le débogage
 });

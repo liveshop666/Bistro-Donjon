@@ -118,13 +118,37 @@ export class MenuScene extends Phaser.Scene {
     this.refresh();
     txt(this, 6, 6, `V ${BUILD_LABEL}`, 8, '#6b7391'); // date de la version chargée : pour vérifier d'un coup d'œil qu'on est à jour
     this.game.events.emit('menu');
+    // Proposer d'installer le jeu sur l'écran d'accueil (seulement dans Chrome, pas dans l'appli déjà installée)
+    // (après le cadeau du jour s'il y en a un, pour ne pas empiler deux fenêtres)
+    let giftOpen = !!gift;
+    const offer = () => !giftOpen && this.scene.isActive() && this.offerInstall();
+    offer();
+    this.game.events.on('installable', offer);
+    this.events.once('shutdown', () => this.game.events.off('installable', offer));
     if (gift) {
       const tomorrow = DAILY_GIFT[Math.min(gift.streak + 1, DAILY_GIFT.length) - 1];
       const lines = [`Jour ${gift.streak} d'affilée : +${gift.coins} pièces !`, `Reviens demain : +${tomorrow} pièces.`];
       for (const g of gift.gifts) lines.push(`Cadeau débloqué : ${itemLabel(g)} !`);
       audio.sfx('piece');
-      openModal(this, 'CADEAU DU JOUR', [{ label: 'MERCI !', color: 0xe8642a, action: () => {} }], lines.join('\n'));
+      openModal(this, 'CADEAU DU JOUR', [{
+        label: 'MERCI !', color: 0xe8642a,
+        action: () => {
+          giftOpen = false;
+          this.time.delayedCall(80, offer);
+        },
+      }], lines.join('\n'));
     }
+  }
+
+  /** Propose une fois par ouverture d'installer le jeu comme une appli (icône, plein écran, mises à jour toutes seules). */
+  private offerInstall(): void {
+    const prompt = this.registry.get('installPrompt') as { prompt: () => Promise<unknown> } | undefined;
+    if (!prompt || this.registry.get('installAsked')) return;
+    this.registry.set('installAsked', true);
+    openModal(this, 'INSTALLER LE JEU', [
+      { label: 'INSTALLER', color: 0xe8642a, action: () => void prompt.prompt().catch(() => {}) },
+      { label: 'PLUS TARD', action: () => {} },
+    ], "Ajoute Bistro Donjon à ton écran\nd'accueil : une icône, le plein\nécran, et les mises à jour se font\ntoutes seules.");
   }
 
   private refresh(): void {
