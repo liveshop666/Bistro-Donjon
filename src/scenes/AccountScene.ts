@@ -3,6 +3,7 @@ import { H, W, playerLevel } from '../core/constants';
 import { deleteAllData, loadProfile, saveProfile } from '../core/Storage';
 import { openKeyboard } from '../ui/Keyboard';
 import { openModal } from '../ui/Modal';
+import { BUILD_LABEL } from '../core/update';
 import { button, txt } from '../ui/text';
 
 export const APP_VERSION = '1.0.0';
@@ -35,7 +36,7 @@ export class AccountScene extends Phaser.Scene {
     ];
     items.forEach(([label, color, cb], i) => button(this, W / 2, 262 + i * 44, 260, 36, label, color, cb));
     txt(this, W / 2, 440, 'Tes données sont enregistrées\nsur cet appareil uniquement.\nLa sauvegarde en ligne (connexion\navec un compte) arrivera dans une\nprochaine version.', 8, '#6b7391').setOrigin(0.5, 0);
-    txt(this, W / 2, 540, `BISTRO DONJON v${APP_VERSION}\nUn jeu SolveLab`, 8, '#6b7391').setOrigin(0.5, 0);
+    txt(this, W / 2, 540, `BISTRO DONJON v${APP_VERSION}\nVersion du ${BUILD_LABEL}\nUn jeu SolveLab`, 8, '#6b7391').setOrigin(0.5, 0);
     button(this, W / 2, 606, 160, 32, 'RETOUR', 0x4a4f66, () => this.scene.start('Menu'));
     void H;
   }

@@ -3,6 +3,7 @@ import { audio } from '../audio/AudioManager';
 import { CHEF_ORDER, CHEFS, ChefId, DAILY_GIFT, H, itemLabel, playerLevel, W, WORLD_ORDER, WorldId, WORLDS } from '../core/constants';
 import { claimDailyGift, loadProfile, loadRun, saveProfile } from '../core/Storage';
 import { openModal } from '../ui/Modal';
+import { BUILD_LABEL } from '../core/update';
 import { button, txt } from '../ui/text';
 
 /** Ecran titre : choix du chef et du monde, accès au solo, au duel, à la reprise et aux règles. */
@@ -115,6 +116,8 @@ export class MenuScene extends Phaser.Scene {
     });
     audio.music('menu');
     this.refresh();
+    txt(this, 6, 6, `V ${BUILD_LABEL}`, 8, '#6b7391'); // date de la version chargée : pour vérifier d'un coup d'œil qu'on est à jour
+    this.game.events.emit('menu');
     if (gift) {
       const tomorrow = DAILY_GIFT[Math.min(gift.streak + 1, DAILY_GIFT.length) - 1];
       const lines = [`Jour ${gift.streak} d'affilée : +${gift.coins} pièces !`, `Reviens demain : +${tomorrow} pièces.`];

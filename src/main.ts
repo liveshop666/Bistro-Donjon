@@ -10,6 +10,7 @@ import { DuelScene } from './scenes/DuelScene';
 import { ShopScene } from './scenes/ShopScene';
 import { AccountScene } from './scenes/AccountScene';
 import { App } from '@capacitor/app';
+import { reloadIfUpdated } from './core/update';
 
 const parent = document.getElementById('game') as HTMLDivElement;
 
@@ -68,5 +69,14 @@ document.fonts.load('8px "Press Start 2P"').finally(() => {
       game.scene.start('Menu');
     }
   });
+  // Mise à jour automatique : à chaque retour dans l'appli et à chaque retour au menu, on vérifie s'il existe
+  // une version plus récente en ligne. Jamais pendant une partie, pour ne pas la couper.
+  const checkUpdate = () => {
+    if (!game.scene.isActive('Game')) void reloadIfUpdated();
+  };
+  document.addEventListener('visibilitychange', () => !document.hidden && checkUpdate());
+  window.addEventListener('focus', checkUpdate);
+  void App.addListener('resume', checkUpdate);
+  game.events.on('menu', checkUpdate);
   Object.assign(window, { game, audio }); // accès console pour le débogage
 });
