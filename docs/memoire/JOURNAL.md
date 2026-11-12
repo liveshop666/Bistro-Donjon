@@ -57,6 +57,8 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
   - Le bouton DASH de la maquette n'existe pas dans le jeu (le dash n'est qu'un effet d'ultime) : non ajouté, à proposer à Rudy.
   - Testé : 15 vérifications sur le menu et la boutique, plus celles de la partie en paysage et en portrait.
 - Commandes des clients plus légères (12/11, demande de Rudy : elles gênaient la vue) : cartes moins hautes (30 au lieu de 38), un peu transparentes, petites icônes d'ingrédients.
+- Rendu 2 fois plus fin dans tout le jeu (12/11 au soir, demande de Rudy « meilleure qualité ») : le canvas a 2 fois plus de pixels et toutes les caméras sont zoomées x2 (`RES` et `pageCam()` dans `src/core/layout.ts`) ; les positions du jeu n'ont pas changé. Les pixels sont plus réguliers à l'écran et l'image remplit l'écran (agrandissement non entier). Ce n'est pas de la « 4K » : les dessins en pixel art gardent leur nombre de pixels ; pour plus de détails, il faut de nouveaux dessins.
+- Tour de l'appli du 12/11 au soir, corrigé : lignes noires entre la map et le décor prolongé en paysage (plusieurs maps avaient une bordure sombre de 1 à 4 pixels sur les côtés : bordure effacée dans les images, originaux gardés dans `reference/maps-originales/`) ; en paysage, l'interface de jeu s'efface quand une fenêtre (pause, cartes, fin) est ouverte, pour que les textes ne se chevauchent plus. Restent : en portrait, bandes noires en haut et en bas sur les téléphones très allongés (réglé par les futures maps) ; Mon compte, Règles et Duel encore en deux colonnes en paysage.
 - La politique de confidentialité (`/privacy.html`) est maintenant lisible sans code d'accès : Google exige une adresse publique.
 - Écran de fin : le texte se resserre quand il y a beaucoup de lignes (avant, il débordait sur le titre et les boutons).
 - Mon compte affiche la moyenne de pièces validées sur les 20 dernières parties solo : c'est la mesure à utiliser pour régler les prix.
@@ -97,6 +99,7 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
 - Connexion par compte : avec quel service (Google Play Jeux, e-mail via Supabase…).
 
 ## Erreurs commises et leçons
+- Corriger les images des maps au chargement du jeu (canvas recréés avec `textures.addCanvas`) rendait le lancement d'une partie très lent (environ 10 s dans le navigateur de test) -> corriger les images une fois pour toutes dans les fichiers, jamais au chargement.
 - **Adresse e-mail en dur** : j'ai failli publier l'adresse du propriétaire dans le jeu et la page de confidentialité sans demander. Leçon : toute donnée personnelle passe par `.env` et se demande d'abord.
 - **Stand détruit dès la première vague** : tous les monstres attaquaient le stand. Leçon : seuls les Champi-Boucliers et le boss l'attaquent ; toujours faire tourner une partie complète après un changement d'équilibrage.
 - **Robot de test inactif** : remplacer `scene.update` ne fait rien, Phaser garde la fonction en cache. Leçon : remplacer `scene.sys.sceneUpdate`.

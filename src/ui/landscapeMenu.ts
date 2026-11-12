@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { H, W } from '../core/constants';
-import { landscapeWanted } from '../core/layout';
+import { landscapeWanted, pageCam, RES } from '../core/layout';
 
 /**
  * Écrans de menu (titre, boutique, compte, règles, duel) quand le téléphone est en paysage.
@@ -69,11 +69,11 @@ export function setupLandscapeMenu(scene: Phaser.Scene, fixedSplit?: number, bg 
     }
     const main = scene.cameras.main;
     if (!land) {
-      if (scene.scale.width !== W || scene.scale.height !== H) {
-        scene.scale.setGameSize(W, H);
+      if (scene.scale.width !== W * RES || scene.scale.height !== H * RES) {
+        scene.scale.setGameSize(W * RES, H * RES);
         scene.game.events.emit('refit');
       }
-      main.setViewport(0, 0, W, H).setScroll(0, 0).setBackgroundColor('rgba(0,0,0,0)');
+      pageCam(main, 0, 0, W, H).setBackgroundColor('rgba(0,0,0,0)');
       for (const o of scene.children.list) o.cameraFilter = 0;
       return;
     }
@@ -81,18 +81,18 @@ export function setupLandscapeMenu(scene: Phaser.Scene, fixedSplit?: number, bg 
     const ch = Math.max(split, H - split);
     const ratio = window.innerWidth / Math.max(1, window.innerHeight);
     const cw = Math.max(2 * W + 16, Math.round(ch * Math.min(2.4, ratio)));
-    if (scene.scale.width !== cw || scene.scale.height !== ch) {
-      scene.scale.setGameSize(cw, ch);
+    if (scene.scale.width !== cw * RES || scene.scale.height !== ch * RES) {
+      scene.scale.setGameSize(cw * RES, ch * RES);
       scene.game.events.emit('refit');
     }
     const gap = Math.min(40, cw - 2 * W);
     const x1 = Math.round(cw / 2 - W - gap / 2);
     const x2 = Math.round(cw / 2 + gap / 2);
     // la caméra principale ne sert plus que de fond (elle regarde ailleurs)
-    main.setViewport(0, 0, cw, ch).setScroll(-100000, -100000).setBackgroundColor(bg);
-    const left = scene.cameras.add(x1, Math.round((ch - split) / 2), W, split).setScroll(0, 0);
-    const right = scene.cameras.add(x2, Math.round((ch - (H - split)) / 2), W, H - split).setScroll(0, split);
-    const modal = scene.cameras.add(0, 0, cw, ch);
+    pageCam(main, 0, 0, cw, ch, -100000, -100000).setBackgroundColor(bg);
+    const left = pageCam(scene.cameras.add(), x1, Math.round((ch - split) / 2), W, split, 0, 0);
+    const right = pageCam(scene.cameras.add(), x2, Math.round((ch - (H - split)) / 2), W, H - split, 0, split);
+    const modal = pageCam(scene.cameras.add(), 0, 0, cw, ch);
     CAMS.set(scene, { left, right, modal, split });
   };
 
@@ -118,7 +118,7 @@ export function setupLandscapeMenu(scene: Phaser.Scene, fixedSplit?: number, bg 
     c.right.setAlpha(open ? 0.3 : 1).inputEnabled = !open;
     c.modal.inputEnabled = open;
     if (box) {
-      c.modal.setZoom(Math.min(1, (c.modal.height - 4) / (box.height + 12)));
+      c.modal.setZoom(RES * Math.min(1, (c.modal.height / RES - 4) / (box.height + 12)));
       c.modal.centerOn(W / 2, box.centerY);
     }
   };
@@ -147,7 +147,7 @@ export function pageToWorld(scene: Phaser.Scene, x: number, y: number): { x: num
 /** Hauteur des écrans de menu dessinés exprès pour le paysage (titre, boutique), en coordonnées de page. */
 export const MENU_LH = 360;
 /** Le canvas de ces écrans est rendu 2 fois plus fin (caméras zoomées x2) : dessins HD nets, positions inchangées. */
-export const MENU_SCALE = 2;
+export const MENU_SCALE = RES;
 
 /** Redémarre l'écran quand on tourne le téléphone (portrait <-> paysage ou autre largeur), pour qu'il se redessine. */
 function restartOnRotate(scene: Phaser.Scene, land: boolean, width: number, beforeRestart?: () => void): void {
@@ -175,11 +175,11 @@ export function landscapeMenuWidth(): number {
 
 /** Écran de menu en portrait (360 x 640) qui se redessine en paysage quand on tourne le téléphone. */
 export function portraitMenu(scene: Phaser.Scene, beforeRestart?: () => void): void {
-  if (scene.scale.width !== W || scene.scale.height !== H) {
-    scene.scale.setGameSize(W, H);
+  if (scene.scale.width !== W * RES || scene.scale.height !== H * RES) {
+    scene.scale.setGameSize(W * RES, H * RES);
     scene.game.events.emit('refit');
   }
-  scene.cameras.main.setViewport(0, 0, W, H);
+  pageCam(scene.cameras.main, 0, 0, W, H);
   restartOnRotate(scene, false, W, beforeRestart);
 }
 

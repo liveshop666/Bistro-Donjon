@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
-import { landscapeMenu, MENU_SCALE, pageToWorld, portraitMenu } from '../ui/landscapeMenu';
-import { landscapeWanted } from '../core/layout';
+import { landscapeMenu, MENU_SCALE, portraitMenu } from '../ui/landscapeMenu';
+import { landscapeWanted, RES } from '../core/layout';
 import { audio } from '../audio/AudioManager';
 import { CHEF_ORDER, CHEFS, ChefId, DAILY_GIFT, FREE_WORLDS, H, itemLabel, playerLevel, W, worldUnlocked, WORLD_ORDER, WorldId, WORLDS } from '../core/constants';
 import { claimDailyGift, loadProfile, loadRun, saveProfile } from '../core/Storage';
@@ -87,9 +87,9 @@ export class MenuScene extends Phaser.Scene {
     // Glisser le doigt vers la gauche ou la droite sur les cartes change de page (comme un carrousel)
     this.input.on('pointerup', (p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
       if (over.some((o) => (o as Phaser.GameObjects.Image).depth >= 3000)) return; // une fenêtre est ouverte par-dessus
-      const dx = p.x - p.downX;
-      const downY = pageToWorld(this, p.downX, p.downY).y; // en paysage, les mondes sont dans la colonne de droite
-      if (downY < 312 || downY > 462 || Math.abs(dx) < 30 || Math.abs(dx) < Math.abs(p.y - p.downY)) return;
+      const dx = (p.x - p.downX) / RES; // le canvas est RES fois plus fin que la page
+      const downY = p.downY / RES;
+      if (downY < 312 || downY > 462 || Math.abs(dx) < 30 || Math.abs(dx) < Math.abs(p.y - p.downY) / RES) return;
       this.setWorldPage(this.worldPage + (dx < 0 ? 1 : -1));
     });
     this.drawWorlds();
@@ -366,7 +366,7 @@ export class MenuScene extends Phaser.Scene {
         add(this.add.image(x, 378, 'cadenas'));
       }
       img.setInteractive({ useHandCursor: true }).on('pointerup', (p: Phaser.Input.Pointer) => {
-        if (Math.abs(p.x - p.downX) > 12) return; // c'était un glissement, pas un appui
+        if (Math.abs(p.x - p.downX) / RES > 12) return; // c'était un glissement, pas un appui
         audio.sfx(locked ? 'parti' : 'clic');
         if (locked) this.worldInfo.setText(`${WORLDS[id].name}\n${i < FREE_WORLDS ? `Termine d'abord le monde ${i}` : 'A débloquer : BOUTIQUE > PACKS'}`);
         else {

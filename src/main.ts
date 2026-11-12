@@ -11,6 +11,7 @@ import { ShopScene } from './scenes/ShopScene';
 import { AccountScene } from './scenes/AccountScene';
 import { App } from '@capacitor/app';
 import { reloadIfUpdated } from './core/update';
+import { RES } from './core/layout';
 
 const parent = document.getElementById('game') as HTMLDivElement;
 
@@ -23,18 +24,18 @@ function fitParent(w = W, h = H): void {
   const zoom = Math.floor(Math.min((window.innerWidth * dpr) / w, (window.innerHeight * dpr) / h));
   // paysage (canvas plus large que haut) : on remplit tout l'écran, même avec un agrandissement non entier
   const fill = Math.min(window.innerWidth / w, window.innerHeight / h);
-  const css = w > h ? fill : zoom >= 1 ? zoom / dpr : fill;
+  const css = w > h || RES > 1 ? fill : zoom >= 1 ? zoom / dpr : fill;
   parent.style.width = `${w * css}px`;
   parent.style.height = `${h * css}px`;
 }
-fitParent();
+fitParent(W * RES, H * RES);
 
 document.fonts.load('8px "Press Start 2P"').finally(() => {
   const game = new Phaser.Game({
     type: Phaser.AUTO,
     parent,
-    width: W,
-    height: H,
+    width: W * RES, // rendu RES fois plus fin (voir core/layout.ts)
+    height: H * RES,
     backgroundColor: '#000000',
     pixelArt: true,
     roundPixels: true,

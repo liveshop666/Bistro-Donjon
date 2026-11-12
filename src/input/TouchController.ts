@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { RES } from '../core/layout';
 
 const JOY_RADIUS = 34;
 const DEADZONE = 5;
@@ -48,33 +49,35 @@ export class TouchController {
   }
 
   private down(p: Phaser.Input.Pointer): void {
-    if (!this.enabled || this.isUi(p.x, p.y)) return;
-    this.tracks.set(p.id, { x: p.x, y: p.y, t: p.downTime });
+    const P = { x: p.x / RES, y: p.y / RES }; // coordonnées de page (le canvas est RES fois plus fin)
+    if (!this.enabled || this.isUi(P.x, P.y)) return;
+    this.tracks.set(p.id, { x: P.x, y: P.y, t: p.downTime });
     if (this.joyId === -1) {
       this.joyId = p.id;
-      this.origin.set(p.x, p.y);
-      this.base.setPosition(p.x, p.y).setVisible(true);
-      this.thumb.setPosition(p.x, p.y).setVisible(true);
+      this.origin.set(P.x, P.y);
+      this.base.setPosition(P.x, P.y).setVisible(true);
+      this.thumb.setPosition(P.x, P.y).setVisible(true);
     }
   }
 
   private moved(p: Phaser.Input.Pointer): void {
+    const P = { x: p.x / RES, y: p.y / RES }; // coordonnées de page (le canvas est RES fois plus fin)
     const tr = this.tracks.get(p.id);
     if (!this.enabled || !tr || !p.isDown) return;
     const now = p.event.timeStamp;
     const dt = Math.max(1, now - tr.t);
-    const len = Math.hypot(p.x - tr.x, p.y - tr.y);
+    const len = Math.hypot(P.x - tr.x, P.y - tr.y);
     if (len >= 3) {
       if (len / dt >= SLICE_SPEED) {
-        this.segs.push({ x1: tr.x, y1: tr.y, x2: p.x, y2: p.y, life: 1 });
-        this.onSlice(tr.x, tr.y, p.x, p.y);
+        this.segs.push({ x1: tr.x, y1: tr.y, x2: P.x, y2: P.y, life: 1 });
+        this.onSlice(tr.x, tr.y, P.x, P.y);
       }
-      tr.x = p.x;
-      tr.y = p.y;
+      tr.x = P.x;
+      tr.y = P.y;
       tr.t = now;
     }
     if (p.id === this.joyId) {
-      const v = new Phaser.Math.Vector2(p.x - this.origin.x, p.y - this.origin.y);
+      const v = new Phaser.Math.Vector2(P.x - this.origin.x, P.y - this.origin.y);
       const d = v.length();
       if (d > JOY_RADIUS) {
         // le joystick suit le pouce

@@ -4,6 +4,7 @@ import { GameManager } from '../core/GameManager';
 import { RecipeManager } from '../core/RecipeManager';
 import { Chef } from '../entities/Chef';
 import { txt } from './text';
+import { RES } from '../core/layout';
 
 const D = 2000;
 
@@ -44,8 +45,8 @@ export class Hud {
 
   constructor(private scene: Phaser.Scene, private gm: GameManager, private chef: Chef, private recipes: RecipeManager, onUlt: () => void, onPause: () => void) {
     const before = new Set(scene.children.list);
-    const sw = scene.scale.width;
-    const sh = scene.scale.height;
+    const sw = scene.scale.width / RES;
+    const sh = scene.scale.height / RES;
     const land = sw > sh;
     this.sw = sw;
     this.land = land;

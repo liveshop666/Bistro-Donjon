@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { landscapeHeight, landscapeWanted, landscapeWidth } from '../core/layout';
+import { landscapeHeight, landscapeWanted, landscapeWidth, pageCam, RES } from '../core/layout';
 import { audio, Sfx, Tune } from '../audio/AudioManager';
 import {
   BOSS_REWARD, ChefId, ENEMIES, FREE_WORLDS, ShopItem, WORLD_HP_STEP, worldRank, CHEFS, CHOP_TIME, COMBO_GOLD, COMBO_SIZE, CONVEYORS, EnemyId, GameMode, H, IngredientId, INGREDIENTS, itemLabel, playerLevel, ORDER_PATIENCE,
@@ -137,7 +137,8 @@ export class GameScene extends Phaser.Scene {
     // Paysage : en attendant les maps dessinées en largeur, le décor est prolongé de chaque côté (copies en miroir,
     // un peu assombries) pour que la map remplisse tout l'écran. On ne peut pas y marcher (hors du terrain).
     for (const k of [-2, -1, 1, 2]) {
-      this.add.image(k * W, 0, 'map_' + this.worldId).setOrigin(0).setDepth(-101).setFlipX(k % 2 !== 0);
+      // copies posées 2 pixels à cheval sur leur voisine : pas de fine ligne noire entre deux morceaux
+      this.add.image(k * W - Math.sign(k) * 2 * Math.abs(k), 0, 'map_' + this.worldId).setOrigin(0).setDepth(-101 - Math.abs(k)).setFlipX(k % 2 !== 0);
     }
     if (this.world.mechanic === 'tapis') {
       for (const c of CONVEYORS) {
@@ -187,15 +188,15 @@ export class GameScene extends Phaser.Scene {
     this.touch = new TouchController(this, (x, y) => this.hud.isUi(x, y));
     // le doigt glisse en coordonnées d'écran : on les ramène sur la carte (utile en paysage, caméra qui suit le chef)
     this.touch.onSlice = (x1, y1, x2, y2) => {
-      const a = this.cameras.main.getWorldPoint(x1, y1);
-      const b = this.cameras.main.getWorldPoint(x2, y2);
+      const a = this.cameras.main.getWorldPoint(x1 * RES, y1 * RES);
+      const b = this.cameras.main.getWorldPoint(x2 * RES, y2 * RES);
       this.slice(a.x, a.y, b.x, b.y);
     };
     // téléphone tourné en pleine partie : on refait l'écran (Android met parfois un instant à donner la bonne taille)
     const relayout = () => {
       if (!this.sys.isActive() && !this.sys.isPaused()) return;
       const land = landscapeWanted();
-      if (land === this.land && (!land || (landscapeWidth() === this.scale.width && landscapeHeight() === this.scale.height))) return;
+      if (land === this.land && (!land || (landscapeWidth() * RES === this.scale.width && landscapeHeight() * RES === this.scale.height))) return;
       this.setupLayout();
       const rival = this.hud.rivalInfo;
       this.hud.destroy();
@@ -210,8 +211,8 @@ export class GameScene extends Phaser.Scene {
       this.events.off('prerender', this.filterCameras, this);
       this.land = false;
       this.hudCam = this.ovlCam = undefined;
-      if (this.scale.width !== W || this.scale.height !== H) {
-        this.scale.setGameSize(W, H);
+      if (this.scale.width !== W * RES || this.scale.height !== H * RES) {
+        this.scale.setGameSize(W * RES, H * RES);
         this.game.events.emit('refit');
       }
     });
@@ -831,7 +832,7 @@ export class GameScene extends Phaser.Scene {
     const land = landscapeWanted();
     const gw = land ? landscapeWidth() : W;
     const gh = land ? landscapeHeight() : H;
-    if (this.scale.width !== gw || this.scale.height !== gh) this.scale.setGameSize(gw, gh);
+    if (this.scale.width !== gw * RES || this.scale.height !== gh * RES) this.scale.setGameSize(gw * RES, gh * RES);
     this.game.events.emit('refit');
     if (this.hudCam) this.cameras.remove(this.hudCam);
     if (this.ovlCam) this.cameras.remove(this.ovlCam);
@@ -839,24 +840,26 @@ export class GameScene extends Phaser.Scene {
     this.land = land;
     const main = this.cameras.main;
     if (!land) {
-      main.setViewport(0, 0, W, H).removeBounds().setScroll(0, 0);
+      pageCam(main.removeBounds(), 0, 0, W, H);
       for (const o of this.children.list) o.cameraFilter = 0;
       return;
     }
     // la map remplit tout l'écran et la caméra suit le chef ; interface et fenêtres par-dessus
-    main.setViewport(0, 0, gw, gh).setBounds(-2 * W, 0, 5 * W, H);
-    this.hudCam = this.cameras.add(0, 0, gw, gh);
-    this.ovlCam = this.cameras.add(0, 0, gw, gh);
+    pageCam(main, 0, 0, gw, gh).setBounds(-2 * W, 0, 5 * W, H);
+    this.hudCam = pageCam(this.cameras.add(), 0, 0, gw, gh);
+    this.ovlCam = pageCam(this.cameras.add(), 0, 0, gw, gh);
     this.followChef(1);
   }
 
   /** En paysage, la map défile pour garder le chef au milieu de l'écran. */
   private followChef(k: number): void {
     const main = this.cameras.main;
-    const ty = Phaser.Math.Clamp(this.chef.y - main.height / 2, 0, H - main.height);
-    const tx = this.chef.x - main.width / 2;
-    main.scrollY += (ty - main.scrollY) * k;
-    main.scrollX += (tx - main.scrollX) * k;
+    const vw = main.width / main.zoom;
+    const vh = main.height / main.zoom;
+    const tx = Phaser.Math.Clamp(this.chef.x, -2 * W + vw / 2, 3 * W - vw / 2);
+    const ty = Phaser.Math.Clamp(this.chef.y, vh / 2, H - vh / 2);
+    const c = main.midPoint;
+    main.centerOn(c.x + (tx - c.x) * k, c.y + (ty - c.y) * k);
   }
 
   /** Chaque objet n'est dessiné que par sa caméra (en paysage seulement). */
@@ -880,11 +883,14 @@ export class GameScene extends Phaser.Scene {
       }
     }
     const ov = this.ovlCam;
+    const oh = ov.height / RES;
+    // une fenêtre est ouverte : l'interface de jeu s'efface derrière (pas de texte qui se chevauche)
+    this.hudCam.setVisible(!box);
     if (box) {
-      ov.setZoom(Math.min(1, (ov.height - 6) / (box.height + 16)));
+      ov.setZoom(RES * Math.min(1, (oh - 6) / (box.height + 16)));
       ov.centerOn(W / 2, box.centerY);
     } else {
-      ov.setZoom(Math.min(1, ov.height / 330));
+      ov.setZoom(RES * Math.min(1, oh / 330));
       ov.centerOn(W / 2, 320);
     }
   }
