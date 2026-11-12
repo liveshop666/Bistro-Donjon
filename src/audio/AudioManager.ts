@@ -253,12 +253,15 @@ class AudioManager {
         this.noise(b, 0.05, 0.168, 'highpass', 6000);
         this.tone(b, 1200, 0.05, 'square', 0.04, 0.03, 300);
         break;
-      case 'touche':
-        this.tone(b, 300, 0.05, 'square', 0.08, 0, 180);
+      case 'touche': // monstre touché : « Couinement » (choix de Rudy, 12/11)
+        this.tone(b, 900, 0.07, 'square', 0.07, 0, 1400);
+        this.tone(b, 200, 0.06, 'sine', 0.25, 0, 90);
         break;
-      case 'pop': // monstre vaincu
-        this.tone(b, 520, 0.11, 'square', 0.13, 0, 110);
-        this.noise(b, 0.07, 0.12, 'lowpass', 1400);
+      case 'pop': // monstre vaincu : « Pouf étoilé » (choix de Rudy, 12/11)
+        this.noise(b, 0.15, 0.25, 'lowpass', 1500, 0, 300);
+        this.tone(b, 1046.5, 0.075, 'square', 0.06, 0.05);
+        this.tone(b, 1318.51, 0.075, 'square', 0.06, 0.1);
+        this.tone(b, 1567.98, 0.075, 'square', 0.06, 0.15);
         break;
       case 'ramasse':
         this.tone(b, 880, 0.05, 'square', 0.14);
@@ -288,26 +291,33 @@ class AudioManager {
       case 'pouvoir':
         this.arp([72, 76, 79, 84, 88], 0.045, 'triangle', 0.14);
         break;
-      case 'aie':
-        this.tone(b, 330, 0.22, 'sawtooth', 0.2, 0, 90);
-        this.noise(b, 0.1, 0.14, 'lowpass', 900);
+      case 'aie': // chef touché : « Ouille ! » (choix de Rudy, 12/11)
+        this.tone(b, 700, 0.08, 'square', 0.1, 0, 900);
+        this.tone(b, 500, 0.2, 'square', 0.1, 0.08, 250);
+        this.tone(b, 150, 0.16, 'sine', 0.4, 0, 45);
         break;
-      case 'stand': // bois qui craque
-        this.tone(b, 110, 0.18, 'square', 0.22, 0, 50);
-        this.noise(b, 0.16, 0.25, 'lowpass', 700);
+      case 'stand': // stand attaqué : « Cloche d'alerte » (choix de Rudy, 12/11)
+        this.tone(b, 1047, 0.3, 'triangle', 0.15);
+        this.tone(b, 1047, 0.3, 'triangle', 0.12, 0.18);
+        this.tone(b, 120, 0.16, 'sine', 0.35, 0, 40);
         break;
       case 'ultime':
         this.tone(b, 180, 0.5, 'sawtooth', 0.2, 0, 1400);
         this.noise(b, 0.6, 0.25, 'bandpass', 400, 0, 5000);
         this.arp([72, 79, 84, 91], 0.07, 'square', 0.12, 2);
         break;
-      case 'feu': // boule de feu du piment
-        this.noise(b, 0.2, 0.32, 'bandpass', 1800, 0, 500);
-        this.tone(b, 700, 0.14, 'square', 0.05, 0, 260);
+      case 'feu': // tir des monstres : « Sarbacane » (choix de Rudy, 12/11)
+        this.noise(b, 0.03, 0.3, 'highpass', 4000);
+        this.tone(b, 1200, 0.12, 'triangle', 0.1, 0.02, 600);
         break;
-      case 'explosion':
-        this.noise(b, 0.55, 0.5, 'lowpass', 1800, 0, 120);
-        this.tone(b, 120, 0.4, 'triangle', 0.4, 0, 35);
+      case 'explosion': // boss vaincu : « Victoire royale » (choix de Rudy, 12/11)
+        this.noise(b, 0.4, 0.5, 'lowpass', 2500, 0, 100);
+        this.tone(b, 100, 0.16, 'sine', 0.7, 0, 28);
+        this.tone(b, 523.25, 0.18, 'square', 0.1, 0.35);
+        this.tone(b, 659.26, 0.18, 'square', 0.1, 0.44);
+        this.tone(b, 783.99, 0.18, 'square', 0.1, 0.53);
+        this.tone(b, 1046.5, 0.18, 'square', 0.1, 0.62);
+        this.tone(b, 1318.51, 0.18, 'square', 0.1, 0.71);
         break;
       case 'hache': // couteau sur la planche
         this.noise(b, 0.04, 0.3, 'highpass', 3000);
@@ -320,10 +330,13 @@ class AudioManager {
       case 'laser':
         this.tone(b, 1500, 0.09, 'square', 0.07, 0, 500);
         break;
-      case 'rugissement': // le Roi Tomate
-        this.tone(b, 95, 0.7, 'sawtooth', 0.32, 0, 48);
-        this.tone(b, 143, 0.7, 'sawtooth', 0.2, 0, 70);
-        this.noise(b, 0.6, 0.2, 'lowpass', 600);
+      case 'rugissement': // le boss arrive : « Trompettes sombres » (choix de Rudy, 12/11)
+        this.tone(b, 110.0, 0.324, 'sawtooth', 0.15);
+        this.tone(b, 110.0, 0.324, 'sawtooth', 0.15, 0.18);
+        this.tone(b, 130.81, 0.324, 'sawtooth', 0.15, 0.36);
+        this.tone(b, 103.83, 0.324, 'sawtooth', 0.15, 0.54);
+        this.tone(b, 70, 0.3, 'sine', 0.6, 0, 30);
+        this.tone(b, 70, 0.4, 'sine', 0.6, 0.54, 30);
         break;
       case 'choc':
         this.tone(b, 90, 0.3, 'triangle', 0.45, 0, 32);
@@ -374,13 +387,15 @@ class AudioManager {
         this.tone(b, 3136, 0.1, 'triangle', 0.067, 0.08);
         this.tone(b, 3951, 0.1, 'triangle', 0.054, 0.12);
         break;
-      case 'splat': // monstre mou écrasé (aubergine, citrouille, hot-dog, fromage)
-        this.tone(b, 260, 0.12, 'sine', 0.25, 0, 80);
-        this.noise(b, 0.1, 0.2, 'lowpass', 900);
+      case 'splat': // monstre mou écrasé : « Explose en jus » (choix de Rudy, 12/11)
+        this.noise(b, 0.04, 0.4, 'highpass', 3000);
+        this.tone(b, 170, 0.16, 'sine', 0.45, 0, 50);
+        this.noise(b, 0.3, 0.3, 'bandpass', 900, 0.03, 200);
         break;
-      case 'fantome': // oignon fantôme qui s'évapore
-        this.tone(b, 700, 0.3, 'sine', 0.14, 0, 300);
-        this.tone(b, 1050, 0.3, 'sine', 0.07, 0, 450);
+      case 'fantome': // oignon fantôme : « Sanglot » (choix de Rudy, 12/11)
+        this.tone(b, 600, 0.15, 'sine', 0.14, 0, 450);
+        this.tone(b, 560, 0.15, 'sine', 0.14, 0.17, 420);
+        this.tone(b, 520, 0.3, 'sine', 0.14, 0.34, 260);
         break;
       case 'defaite':
         this.arp([72, 71, 69, 67, 65, 64, 60], 0.16, 'triangle', 0.18, 1.8);
