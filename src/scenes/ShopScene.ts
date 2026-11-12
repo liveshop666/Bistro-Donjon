@@ -34,6 +34,7 @@ export class ShopScene extends Phaser.Scene {
     txt(this, W / 2, 506, 'PREMIUM : les plus rares, à acheter.', 8, '#ff9ad0').setOrigin(0.5, 0);
     txt(this, W / 2, 530, 'Pour le style : aucun avantage en jeu.', 8, '#bfc8e0').setOrigin(0.5, 0);
     button(this, W / 2, 610, 160, 32, 'RETOUR', 0x4a4f66, () => this.scene.start('Menu'));
+    audio.music('boutique');
     this.draw();
   }
 

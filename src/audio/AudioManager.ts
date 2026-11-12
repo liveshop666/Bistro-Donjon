@@ -2,7 +2,7 @@
  * Son de Bistro Donjon, 100 % synthétisé (Web Audio) : aucun fichier audio à charger.
  * Style « puce 16-bits » : ondes carrées/triangle + bruit, pour coller au pixel art.
  *  - sfx(nom)   : bruitages courts
- *  - music(nom) : boucles chiptune (menu, une musique de chasse par monde, cuisine, boss)
+ *  - music(nom) : boucles chiptune (menu, boutique, duel, une musique de chasse par monde, cuisine, boss)
  */
 
 export type Sfx =
@@ -13,7 +13,7 @@ export type Sfx =
 
 export type Tune =
   | 'menu' | 'chasse' | 'chasse_marche' | 'chasse_taverne' | 'chasse_cantine'
-  | 'chasse_glaciere' | 'chasse_volcan' | 'chasse_bateau' | 'chasse_bonbons' | 'cuisine' | 'boss';
+  | 'chasse_glaciere' | 'chasse_volcan' | 'chasse_bateau' | 'chasse_bonbons' | 'cuisine' | 'boss' | 'boutique' | 'duel';
 
 interface TuneDef {
   bpm: number;
@@ -28,13 +28,20 @@ interface TuneDef {
 /** Basse « fondamentale / quinte » sur 4 accords. */
 const bounce = (roots: number[]): number[] => roots.flatMap((r) => [r, r + 7, r, r + 7, r, r + 7, r, r + 7]);
 const pedal = (roots: number[]): number[] => roots.flatMap((r) => [r, r, r + 12, r, r, r + 12, r, r]);
+/**
+ * Mélodie en arpèges : pour chaque accord [fondamentale, majeur/mineur], suit un motif de 8 croches
+ * (indices dans l'accord : 0 fondamentale, 1 tierce, 2 quinte, 3 octave, 4 et + : octave du dessus ; -1 = silence).
+ */
+const CHORD = { M: [0, 4, 7, 12], m: [0, 3, 7, 12] };
+const arp = (chords: [number, 'M' | 'm'][], pattern: number[], up = 24): number[] =>
+  chords.flatMap(([r, q]) => pattern.map((i) => (i < 0 ? 0 : r + up + CHORD[q][i % 4] + 12 * Math.floor(i / 4))));
 
 const TUNES: Record<Tune, TuneDef> = {
-  // Fa majeur, tranquille : l'accueil du bistro
+  // Écran titre : aventure épique en ré mineur (choix de Rudy, 12/11)
   menu: {
-    bpm: 96, leadWave: 'triangle', drums: false,
-    lead: [69, 72, 77, 0, 72, 69, 72, 0, 69, 74, 77, 0, 74, 69, 74, 0, 70, 74, 77, 0, 74, 70, 74, 77, 79, 76, 72, 0, 76, 79, 76, 0],
-    bass: [41, 0, 48, 0, 41, 0, 48, 0, 38, 0, 45, 0, 38, 0, 45, 0, 46, 0, 53, 0, 46, 0, 53, 0, 48, 0, 55, 0, 48, 0, 55, 0],
+    bpm: 118, leadWave: 'square', drums: true,
+    lead: arp([[50, 'm'], [46, 'M'], [48, 'M'], [45, 'm']], [4, 2, 0, 2, 4, 5, 4, 2]),
+    bass: pedal([38, 34, 36, 33]),
   },
   // Clairière : do majeur, sautillant : la chasse aux ingrédients
   chasse: {
@@ -42,11 +49,11 @@ const TUNES: Record<Tune, TuneDef> = {
     lead: [76, 79, 84, 79, 76, 79, 84, 0, 76, 81, 84, 81, 76, 81, 83, 0, 77, 81, 84, 81, 77, 81, 86, 84, 83, 86, 79, 83, 86, 0, 83, 79],
     bass: bounce([48, 45, 41, 43]),
   },
-  // Marché de nuit : gamme japonaise (mi fa la si do), posé et mystérieux
+  // Marché de nuit : « Lanternes », la mineur (choix de Rudy, 12/11)
   chasse_marche: {
-    bpm: 124, leadWave: 'triangle', drums: true,
-    lead: [76, 77, 81, 0, 83, 81, 77, 76, 81, 83, 84, 0, 83, 81, 77, 0, 76, 77, 81, 83, 84, 83, 81, 77, 76, 0, 77, 76, 72, 0, 71, 0],
-    bass: pedal([45, 45, 41, 40]),
+    bpm: 112, leadWave: 'square', drums: true,
+    lead: arp([[57, 'm'], [53, 'M'], [52, 'm'], [57, 'm']], [0, -1, 2, 4, 5, 4, -1, 2]),
+    bass: pedal([45, 41, 40, 45]),
   },
   // Taverne : gigue médiévale en ré dorien, qui tape du pied
   chasse_taverne: {
@@ -54,11 +61,11 @@ const TUNES: Record<Tune, TuneDef> = {
     lead: [74, 77, 81, 77, 74, 77, 81, 0, 72, 76, 79, 76, 72, 76, 79, 0, 74, 77, 81, 84, 83, 81, 79, 77, 76, 74, 72, 76, 74, 0, 74, 0],
     bass: bounce([38, 36, 38, 33]),
   },
-  // Cantine cyber : arpèges de synthé rapides en mi mineur
+  // Cantine cyber : « Néon », mi mineur (choix de Rudy, 12/11)
   chasse_cantine: {
-    bpm: 162, leadWave: 'sawtooth', drums: true,
-    lead: [76, 83, 88, 83, 76, 83, 88, 91, 74, 81, 86, 81, 74, 81, 86, 90, 72, 79, 84, 79, 72, 79, 84, 88, 71, 78, 83, 78, 87, 83, 78, 75],
-    bass: pedal([40, 38, 36, 35]),
+    bpm: 150, leadWave: 'square', drums: true,
+    lead: arp([[52, 'm'], [48, 'M'], [55, 'M'], [50, 'M']], [0, 4, 2, 4, 5, 4, 2, 0]),
+    bass: bounce([40, 36, 43, 38]),
   },
   // Glacière : notes cristallines et espacées, froid et calme
   chasse_glaciere: {
@@ -72,11 +79,11 @@ const TUNES: Record<Tune, TuneDef> = {
     lead: [74, 74, 77, 74, 81, 74, 77, 74, 72, 72, 76, 72, 79, 72, 76, 72, 70, 70, 74, 70, 77, 70, 74, 77, 69, 73, 76, 81, 79, 76, 73, 69],
     bass: pedal([38, 36, 34, 33]),
   },
-  // Galion pirate : chant de marin en sol majeur, qui tangue
+  // Galion pirate : « À l'abordage », ré mineur (choix de Rudy, 12/11)
   chasse_bateau: {
-    bpm: 144, leadWave: 'square', drums: true,
-    lead: [67, 71, 74, 71, 79, 74, 71, 74, 72, 76, 79, 76, 84, 79, 76, 0, 74, 78, 81, 78, 86, 81, 78, 74, 79, 78, 76, 74, 72, 71, 69, 67],
-    bass: bounce([43, 48, 50, 43]),
+    bpm: 156, leadWave: 'sawtooth', drums: true,
+    lead: arp([[50, 'm'], [46, 'M'], [48, 'M'], [45, 'M']], [0, 2, 4, 5, 4, 2, 0, -1]),
+    bass: bounce([38, 34, 36, 33]),
   },
   // Usine hantée : intervalles inquiétants, comme une boîte à musique détraquée
   chasse_bonbons: {
@@ -84,17 +91,29 @@ const TUNES: Record<Tune, TuneDef> = {
     lead: [72, 0, 78, 0, 75, 0, 81, 0, 72, 75, 78, 81, 84, 81, 78, 75, 71, 0, 77, 0, 74, 0, 80, 0, 71, 74, 77, 80, 83, 80, 77, 0],
     bass: pedal([36, 39, 35, 38]),
   },
-  // Sol majeur, pressé : le coup de feu en cuisine
+  // Coup de feu en cuisine : « Casseroles qui tapent » (choix de Rudy, 12/11)
   cuisine: {
-    bpm: 172, leadWave: 'square', drums: true,
-    lead: [74, 79, 83, 79, 74, 79, 83, 86, 76, 79, 83, 79, 76, 79, 83, 88, 76, 79, 84, 79, 76, 79, 84, 88, 78, 81, 86, 81, 90, 86, 81, 78],
-    bass: bounce([43, 40, 48, 50]),
+    bpm: 164, leadWave: 'sawtooth', drums: true,
+    lead: arp([[50, 'm'], [53, 'M'], [48, 'M'], [52, 'M']], [0, 0, 4, 0, 2, 0, 5, 4]),
+    bass: pedal([38, 41, 36, 40]),
   },
   // La mineur, menaçant : le Roi Tomate
   boss: {
     bpm: 156, leadWave: 'sawtooth', drums: true,
     lead: [69, 0, 69, 72, 76, 0, 74, 72, 69, 0, 69, 72, 76, 79, 76, 0, 65, 0, 65, 69, 72, 0, 71, 69, 64, 68, 71, 76, 80, 0, 76, 0],
     bass: pedal([33, 33, 29, 28]),
+  },
+  // Boutique : « Marchand funky », la mineur (choix de Rudy, 12/11)
+  boutique: {
+    bpm: 116, leadWave: 'square', drums: true,
+    lead: arp([[45, 'm'], [50, 'm'], [52, 'M'], [45, 'm']], [0, 0, 2, -1, 4, -1, 2, 5]),
+    bass: bounce([33, 38, 40, 33]),
+  },
+  // Duel : « Rivalité », mi mineur (choix de Rudy, 12/11)
+  duel: {
+    bpm: 160, leadWave: 'sawtooth', drums: true,
+    lead: arp([[52, 'm'], [48, 'M'], [50, 'M'], [47, 'M']], [0, 2, 4, 2, 5, 4, 2, 4]),
+    bass: pedal([40, 36, 38, 35]),
   },
 };
 

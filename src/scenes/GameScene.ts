@@ -187,7 +187,7 @@ export class GameScene extends Phaser.Scene {
     if (this.mode === 'duel') {
       this.setupDuel();
       this.hud.banner('DUEL !\n2 MINUTES', '#ff6a5a');
-      audio.music('cuisine');
+      audio.music('duel');
     } else if (this.gm.phase === 'boss') {
       this.hud.banner(`LE ${this.world.bossName ?? 'ROI TOMATE'}\nARRIVE !`, '#ff6a5a');
       audio.music('boss');
