@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { audio, Sfx, Tune } from '../audio/AudioManager';
 import {
-  BOSS_REWARD, ChefId, ENEMIES, ShopItem, WORLD_HP_STEP, worldRank, CHEFS, CHOP_TIME, COMBO_GOLD, COMBO_SIZE, CONVEYORS, EnemyId, GameMode, H, IngredientId, INGREDIENTS, itemLabel, playerLevel, ORDER_PATIENCE,
+  BOSS_REWARD, ChefId, ENEMIES, FREE_WORLDS, ShopItem, WORLD_HP_STEP, worldRank, CHEFS, CHOP_TIME, COMBO_GOLD, COMBO_SIZE, CONVEYORS, EnemyId, GameMode, H, IngredientId, INGREDIENTS, itemLabel, playerLevel, ORDER_PATIENCE,
   POWER_LABEL, POWER_TIME, SHOP, Sabotage, SABOTAGE_LABEL, SABOTAGES, TIP_BONUS, UpgradeDef, W, WAVES, WORLD_ORDER, WorldDef, WorldId, WORLDS,
 } from '../core/constants';
 import { GameManager, Phase } from '../core/GameManager';
@@ -710,7 +710,10 @@ export class GameScene extends Phaser.Scene {
     audio.sfx(gm.victory ? 'victoire' : 'defaite');
     const profile = loadProfile();
     const levelBefore = playerLevel(profile.earned).level;
-    const gifts = addCoins(gm.gold); // l'or de la partie devient des pièces (et compte pour les cadeaux de palier)
+    // L'or de la partie ne devient des pièces que si les 3 vagues ont été terminées (boss atteint) ou le duel joué.
+    const validated = duel || gm.victory === true || gm.wave >= WAVES.length;
+    const gifts = validated ? addCoins(gm.gold) : [];
+    if (!duel) saveProfile({ runs: [...loadProfile().runs, validated ? gm.gold : 0].slice(-20) });
     const lines: string[] = [];
     let title: string;
     if (duel) {
@@ -725,14 +728,14 @@ export class GameScene extends Phaser.Scene {
       const record = gm.gold > profile.best;
       if (record) saveProfile({ best: gm.gold });
       const next = WORLD_ORDER.indexOf(this.worldId) + 2;
-      if (gm.victory && next > profile.unlocked && next <= WORLD_ORDER.length) {
+      if (gm.victory && next > profile.unlocked && next <= FREE_WORLDS) {
         saveProfile({ unlocked: next });
         this.unlockedWorld = true;
       }
       lines.push(`OR GAGNE : ${gm.gold}`, `PLATS SERVIS : ${gm.served}`, `MONSTRES VAINCUS : ${gm.kills}`, record ? 'NOUVEAU RECORD !' : `RECORD : ${profile.best}`);
       if (this.unlockedWorld) lines.push('NOUVEAU MONDE DEBLOQUE !');
     }
-    lines.push(`+${gm.gold} PIECES POUR LA BOUTIQUE`);
+    lines.push(validated ? `+${gm.gold} PIECES POUR LA BOUTIQUE` : 'PIECES PERDUES : TERMINE\nLES 3 VAGUES POUR LES GARDER');
     const levelNow = playerLevel(loadProfile().earned);
     if (levelNow.level > levelBefore) lines.push(`NIVEAU ${levelNow.level} ATTEINT !`);
     else lines.push(`NIVEAU ${levelNow.level} : ${levelNow.into}/${levelNow.span}`);

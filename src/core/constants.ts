@@ -242,6 +242,17 @@ export const WORLD_HP_STEP = 0.08;
 export const WORLD_PACE_STEP = 0.03;
 export const worldRank = (id: WorldId): number => Math.max(0, WORLD_ORDER.indexOf(id));
 
+/**
+ * Les 4 premiers mondes se débloquent en battant le boss du précédent.
+ * Les mondes 5 à 8 s'obtiennent avec un pack de la boutique (payant, ou énormément de pièces).
+ */
+export const FREE_WORLDS = 4;
+export const worldKey = (id: WorldId): string => 'monde_' + id;
+export function worldUnlocked(id: WorldId, unlocked: number, owned: string[]): boolean {
+  const i = WORLD_ORDER.indexOf(id);
+  return i < FREE_WORLDS ? i < unlocked : owned.includes(worldKey(id));
+}
+
 export const WORLD_ORDER: WorldId[] = ['clairiere', 'marche', 'taverne', 'cantine', 'glaciere', 'volcan', 'bateau', 'bonbons'];
 export const CHEF_ORDER: ChefId[] = ['moustachu', 'shiba', 'noisette'];
 /** Bandes horizontales des tapis roulants (monde 4). */
@@ -312,8 +323,10 @@ export interface ShopItem {
   /** Bruitage et couleur des coups propres à l'arme de ce costume. */
   hit?: string;
   slash?: number;
-  /** Pack : identifiants des articles qu'il contient. */
+  /** Pack : identifiants de ce qu'il contient (articles, ou « monde_<id> » pour un monde). */
   items?: string[];
+  /** Pack de monde : le monde qu'il débloque (pour l'aperçu). */
+  world?: WorldId;
 }
 
 export const SHOP: ShopItem[] = [
@@ -336,9 +349,13 @@ export const SHOP: ShopItem[] = [
   { id: 'skin_gorille', kind: 'skin', fighter: true, rarity: 'legendaire', chef: 'moustachu', name: 'GORILLE\nTONNERRE', desc: 'Deux poêles-gants de boxe\nchargées d\'éclairs.', euro: '1,99 EUR', sprite: 'skin_gorille', hit: 'coup_elec', slash: 0xffe84a },
   { id: 'skin_tigre', kind: 'skin', fighter: true, rarity: 'legendaire', chef: 'noisette', name: 'TIGRE\nDES WOKS', desc: 'Nunchakus de woks aux\nflammes bleues.', euro: '1,99 EUR', sprite: 'skin_tigre', hit: 'coup_wok', slash: 0x4fb8ff },
   { id: 'skin_ours', kind: 'skin', fighter: true, rarity: 'legendaire', chef: 'shiba', name: 'OURS\nGLACIER', desc: 'Marteau attendrisseur géant\ncouvert de glace.', euro: '1,99 EUR', sprite: 'skin_ours', hit: 'coup_glace', slash: 0x9fe0ff },
-  // --- packs (premium) : contenu connu d'avance, moins cher qu'à l'unité
-  { id: 'pack_brigade', kind: 'pack', rarity: 'legendaire', name: 'PACK\nBRIGADE', desc: 'Les 4 chefs combattants :\nTaureau, Gorille, Tigre, Ours.\n(7,96 EUR à l\'unité)', euro: '5,99 EUR', sprite: 'skin_taureau', items: ['skin_taureau', 'skin_gorille', 'skin_tigre', 'skin_ours'] },
-  { id: 'pack_legende', kind: 'pack', rarity: 'legendaire', name: 'PACK\nLEGENDE', desc: 'Tout le premium : les 4\ncombattants, Chat Cyber, Chat\nAstronaute, Eclairs Violets.\n(12,93 EUR à l\'unité)', euro: '8,99 EUR', sprite: 'skin_gorille', items: ['skin_taureau', 'skin_gorille', 'skin_tigre', 'skin_ours', 'skin_cyber', 'skin_astronaute', 'fx_violet'] },
+  // --- packs : un monde + son chef combattant. Deux façons de les avoir : payer, ou énormément de pièces.
+  //     Contenu connu d'avance (pas de tirage au hasard).
+  { id: 'pack_glaciere', kind: 'pack', rarity: 'legendaire', world: 'glaciere', name: 'PACK\nGLACIERE', desc: 'Le monde La Glacière\net le chef Ours Glacier.', euro: '2,99 EUR', coins: 100000, sprite: 'skin_ours', items: ['monde_glaciere', 'skin_ours'] },
+  { id: 'pack_volcan', kind: 'pack', rarity: 'legendaire', world: 'volcan', name: 'PACK\nVOLCAN', desc: 'Le monde Volcan Barbecue\net le chef Taureau Boucher.', euro: '2,99 EUR', coins: 150000, sprite: 'skin_taureau', items: ['monde_volcan', 'skin_taureau'] },
+  { id: 'pack_pirate', kind: 'pack', rarity: 'legendaire', world: 'bateau', name: 'PACK\nPIRATE', desc: 'Le monde Galion Pirate\net le chef Gorille Tonnerre.', euro: '2,99 EUR', coins: 200000, sprite: 'skin_gorille', items: ['monde_bateau', 'skin_gorille'] },
+  { id: 'pack_hante', kind: 'pack', rarity: 'legendaire', world: 'bonbons', name: 'PACK\nHANTE', desc: 'Le monde Usine Hantée\net le chef Tigre des Woks.', euro: '2,99 EUR', coins: 250000, sprite: 'skin_tigre', items: ['monde_bonbons', 'skin_tigre'] },
+  { id: 'pack_integral', kind: 'pack', rarity: 'legendaire', name: 'PACK\nINTEGRAL', desc: 'Les 4 packs de mondes, Chat\nCyber, Chat Astronaute et\nEclairs Violets.\n(16,93 EUR à l\'unité)', euro: '12,99 EUR', sprite: 'skin_gorille', items: ['monde_glaciere', 'monde_volcan', 'monde_bateau', 'monde_bonbons', 'skin_ours', 'skin_taureau', 'skin_gorille', 'skin_tigre', 'skin_cyber', 'skin_astronaute', 'fx_violet'] },
 ];
 
 /** Nom d'un article sur une seule ligne. */

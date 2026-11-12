@@ -37,6 +37,11 @@ export class Enemy {
   private hop = 0;
   private flash = 0;
   private faceLeft = false;
+  // Chaque monstre a sa propre façon d'avancer, tirée au hasard : aucun ne prend le même chemin.
+  private weaveAmp = 8 + Math.random() * 26; // ampleur du zigzag (px/s)
+  private weaveFreq = 0.7 + Math.random() * 1.6;
+  private flank = (Math.random() - 0.5) * 1.6; // angle de contournement (rad), re-tiré régulièrement
+  private flankT = 1.5 + Math.random() * 2.5;
 
   constructor(private scene: Phaser.Scene, type: EnemyId, x: number, y: number, hpMul: number, public mini = false) {
     this.def = ENEMIES[type];
@@ -75,19 +80,28 @@ export class Enemy {
     switch (this.def.ai) {
       case 'stand': // avance en ligne droite vers le stand
         vy = -this.def.speed;
+        vx = Math.cos(this.t * this.weaveFreq) * this.weaveAmp; // monte vers le stand en zigzaguant
         if (this.x < 20) vx = this.def.speed;
         else if (this.x > W - 20) vx = -this.def.speed;
         break;
-      case 'chase':
-        vx = (dx / dist) * this.def.speed;
-        vy = (dy / dist) * this.def.speed;
+      case 'chase': {
+        // fonce sur le chef, mais en le contournant d'un angle qui change : jamais deux fois le même trajet
+        this.flankT -= dt;
+        if (this.flankT <= 0) {
+          this.flankT = 1.5 + Math.random() * 2.5;
+          this.flank = (Math.random() - 0.5) * 1.6;
+        }
+        const a = Math.atan2(dy, dx) + this.flank * Phaser.Math.Clamp((dist - 40) / 120, 0, 1);
+        vx = Math.cos(a) * this.def.speed;
+        vy = Math.sin(a) * this.def.speed;
         break;
+      }
       case 'hop': {
         // bondit par à-coups
         this.timer -= dt;
         if (this.timer <= 0) {
           this.timer = 0.9;
-          this.dir.set(dx / dist, dy / dist);
+          this.dir.set(dx / dist, dy / dist).rotate((Math.random() - 0.5) * 1.1); // chaque bond dévie un peu
         }
         const jumping = this.timer > 0.45;
         this.hop = jumping ? Math.sin(((this.timer - 0.45) / 0.45) * Math.PI) : 0;
@@ -100,8 +114,9 @@ export class Enemy {
       case 'ranged': {
         // reste à distance et crache des boules de feu
         const want = dist > 150 ? 1 : dist < 100 ? -1 : 0;
-        vx = (dx / dist) * this.def.speed * want + (-dy / dist) * this.def.speed * 0.5 * Math.sin(this.t);
-        vy = (dy / dist) * this.def.speed * want + (dx / dist) * this.def.speed * 0.5 * Math.sin(this.t);
+        const orbit = 0.5 * Math.sin(this.t * this.weaveFreq) * (this.flank < 0 ? -1 : 1); // tourne autour du chef, chacun à son rythme
+        vx = (dx / dist) * this.def.speed * want + (-dy / dist) * this.def.speed * orbit;
+        vy = (dy / dist) * this.def.speed * want + (dx / dist) * this.def.speed * orbit;
         this.timer -= dt;
         if (this.timer <= 0 && this.y < H - 10 && this.x > 0 && this.x < W) {
           this.timer = 2.6;

@@ -80,12 +80,15 @@ export class ShopScene extends Phaser.Scene {
       g.fillStyle(r.color).fillRect(-54, -74, 108, 148);
       g.fillStyle(owned ? 0x2f5a3a : 0x2a2a44).fillRect(-51, -71, 102, 142);
       g.fillStyle(0x14141f, 0.6).fillRect(-46, -40, 92, 62);
-      const preview = it.sprite ? this.fit(this.add.image(0, -8, it.sprite)) : this.slash(it.color ?? 0xffffff, !!it.rainbow);
+      const preview = it.world
+        ? this.add.container(0, 0, [this.add.image(-24, -9, 'map_' + it.world).setScale(58 / 640), this.fit(this.add.image(16, -6, it.sprite!), 52, 52)])
+        : it.sprite ? this.fit(this.add.image(0, -8, it.sprite)) : this.slash(it.color ?? 0xffffff, !!it.rainbow);
       let status: string;
       let detail = '';
       let color = '#ffd23e';
       if (equipped) [status, color] = ['EQUIPE', '#ffc533'];
       else if (owned) [status, color] = ['OBTENU', '#7dff7d'];
+      else if (it.kind === 'pack') [status, detail, color] = [it.euro ?? '', it.coins ? `ou ${it.coins} P.` : '', '#ff9ad0'];
       else if (it.coins !== undefined) status = `${it.coins} PIECES`;
       else if (it.palier !== undefined) [status, detail, color] = ['CADEAU', `A ${it.palier}`, '#7dff7d'];
       else [status, detail, color] = ['PREMIUM', it.euro ?? '', '#ff9ad0'];
@@ -104,8 +107,8 @@ export class ShopScene extends Phaser.Scene {
   }
 
   /** Réduit une image trop grande (chefs combattants avec leur arme) pour qu'elle tienne dans sa carte. */
-  private fit(img: Phaser.GameObjects.Image): Phaser.GameObjects.Image {
-    return img.setScale(Math.min(1, 88 / img.width, 58 / img.height));
+  private fit(img: Phaser.GameObjects.Image, w = 88, h = 58): Phaser.GameObjects.Image {
+    return img.setScale(Math.min(1, w / img.width, h / img.height));
   }
 
   /** Aperçu d'un effet d'arme : un arc de la couleur de l'effet (plusieurs couleurs pour l'arc-en-ciel). */
@@ -144,25 +147,41 @@ export class ShopScene extends Phaser.Scene {
       openModal(this, title, [{ label: equipped ? 'RETIRER' : 'EQUIPER', color: 0xe8642a, action: () => equip(!equipped) }, close], note);
       return;
     }
+    // Achat réel (premium). Le paiement n'est pas encore branché : voir core/Billing.ts.
+    const grant = () => {
+      const q = loadProfile();
+      saveProfile({ owned: [...new Set([...q.owned, it.id, ...(it.items ?? [])])] });
+      audio.sfx('piece');
+      if (it.kind === 'pack') this.draw();
+      else equip(true);
+    };
+    const euroBtn = {
+      label: `ACHETER : ${it.euro}`, color: 0xb03a5a,
+      action: () => {
+        void billing.buy(it.id).then((ok) => {
+          if (ok) grant();
+          else if (!billing.available) info('BIENTOT', 'Le paiement arrive bientôt.\nCet article sera en vente\nà la sortie du jeu.');
+        });
+      },
+    };
     if (it.coins !== undefined) {
       const price = it.coins;
-      openModal(this, title, [
-        {
-          label: `ACHETER : ${price} PIECES`, color: p.coins >= price ? 0x3d7a4a : 0x4a4f66,
-          action: () => {
-            const q = loadProfile();
-            if (q.coins < price) {
-              audio.sfx('parti');
-              info('PAS ASSEZ', `Il te manque ${price - q.coins} pièces.\nJoue pour en gagner !`);
-              return;
-            }
-            saveProfile({ coins: q.coins - price, owned: [...q.owned, it.id] });
-            audio.sfx('piece');
-            equip(true);
-          },
+      const coinBtn = {
+        label: `ACHETER : ${price} PIECES`, color: p.coins >= price ? 0x3d7a4a : 0x4a4f66,
+        action: () => {
+          const q = loadProfile();
+          if (q.coins < price) {
+            audio.sfx('parti');
+            info('PAS ASSEZ', `Il te manque ${price - q.coins} pièces.\nJoue pour en gagner !`);
+            return;
+          }
+          saveProfile({ coins: q.coins - price });
+          grant();
         },
-        close,
-      ], note);
+      };
+      // un pack de monde s'obtient en payant, ou avec énormément de pièces
+      const extra = it.euro ? `\n\nGratuit avec ${price} pièces,\nou tout de suite en payant.` : '';
+      openModal(this, title, it.euro ? [euroBtn, coinBtn, close] : [coinBtn, close], note + extra);
       return;
     }
     if (it.palier !== undefined) {
@@ -170,22 +189,6 @@ export class ShopScene extends Phaser.Scene {
       openModal(this, title, [close], `${note}\n\nCadeau gratuit à ${it.palier} pièces gagnées.\nEncore ${left} pièces à gagner en jouant !`);
       return;
     }
-    openModal(this, title, [
-      {
-        label: `ACHETER : ${it.euro}`, color: 0xb03a5a,
-        action: () => {
-          void billing.buy(it.id).then((ok) => {
-            if (ok) {
-              const q = loadProfile();
-              saveProfile({ owned: [...new Set([...q.owned, it.id, ...(it.items ?? [])])] });
-              audio.sfx('piece');
-              if (it.kind === 'pack') this.draw();
-              else equip(true);
-            } else if (!billing.available) info('BIENTOT', 'Le paiement arrive bientôt.\nCet article sera en vente\nà la sortie du jeu.');
-          });
-        },
-      },
-      close,
-    ], `${note}\n\nPremium : achat réel uniquement.`);
+    openModal(this, title, [euroBtn, close], `${note}\n\nPremium : achat réel uniquement.`);
   }
 }

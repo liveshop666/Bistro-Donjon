@@ -17,7 +17,7 @@ C'est le joueur qui frappe : tant que le bouton d'attaque est appuyé, le chef t
 Chaque monde a sa propre musique de chasse.
 
 ## Les mondes
-Huit mondes, à débloquer dans l'ordre en battant le boss du précédent : la Clairière, le Marché de nuit, la Taverne, la Cantine cyber (boss : Roi Tomate), puis la Glacière, le Volcan barbecue, le Galion pirate et l'Usine hantée (boss : Roi Fromage, avec de nouveaux monstres qui se comportent comme ceux des premiers mondes). Chaque monde est un peu plus dur que le précédent : les monstres ont 8 % de vie en plus par monde et arrivent 3 % plus vite.
+Huit mondes. Les quatre premiers se débloquent dans l'ordre en battant le boss du précédent : la Clairière, le Marché de nuit, la Taverne, la Cantine cyber (boss : Roi Tomate). Les quatre suivants s'obtiennent chacun avec un pack de la boutique, qui contient aussi un chef combattant : la Glacière, le Volcan barbecue, le Galion pirate et l'Usine hantée (boss : Roi Fromage, avec de nouveaux monstres qui se comportent comme ceux des premiers mondes). Chaque monde est un peu plus dur que le précédent : les monstres ont 8 % de vie en plus par monde et arrivent 3 % plus vite.
 
 ## Déroulement d'une partie solo (environ 4 minutes)
 Trois vagues, chacune en 3 temps, puis le boss.
@@ -45,6 +45,8 @@ Puis le **Roi Tomate** : il charge, invoque des sbires et fait trembler l'écran
 | Brochette Épicée | 2 piments, 1 champignon | 70 | Feu (dégâts +50 %) |
 | Soupe du Diable | 1 piment, 1 sucre, 1 tomate | 75 | Bouclier de flammes |
 
+Les monstres ne suivent jamais deux fois le même chemin : chacun zigzague, contourne ou bondit à sa façon.
+
 ## Les monstres
 | Monstre | Comportement | Lâche |
 | --- | --- | --- |
@@ -69,10 +71,11 @@ La partie solo est enregistrée automatiquement au début de chaque vague. « Sa
 - Se joue contre l'ordinateur, ou en ligne : partie rapide (adversaire au hasard) ou salon privé avec un code à 4 chiffres.
 
 ## La boutique
-L'or gagné en partie devient des pièces. La boutique vend des costumes de chefs et des effets d'arme, purement décoratifs : aucun article ne rend plus fort. Chaque article a une rareté (commun, rare, épique, légendaire) et s'obtient d'une seule façon :
+L'or gagné en partie devient des pièces, **à condition d'avoir terminé les 3 vagues** (atteindre le boss suffit, même sans le battre). Sinon l'or de la partie est perdu. En duel, l'or est toujours gardé. La boutique vend des costumes de chefs et des effets d'arme, purement décoratifs : aucun article ne rend plus fort. Chaque article a une rareté (commun, rare, épique, légendaire) et s'obtient d'une seule façon :
 
 - **Pièces** : acheté avec les pièces gagnées en jouant (2 500 à 25 000).
 - **Cadeau de palier** : gratuit, débloqué tout seul quand le total de pièces gagnées depuis le début atteint 5 000, 15 000, 40 000, 120 000 ou 300 000. Dépenser ses pièces ne fait pas baisser ce total.
 - **Premium** : les articles les plus rares, en argent réel uniquement (paiement pas encore branché).
+- **Packs de monde** : un monde et son chef combattant, à 2,99 €, ou avec énormément de pièces (100 000 à 250 000). Le Pack Intégral réunit tout le premium à 12,99 €.
 
 **Cadeau du jour** : à la première ouverture du jeu chaque jour, des pièces sont offertes (100 le premier jour, jusqu'à 500 le 7e jour d'affilée). Sauter un jour remet la série à 1.

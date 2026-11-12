@@ -20,6 +20,8 @@ export interface Profile {
   /** Dernier jour où le cadeau du jour a été pris (AAAA-MM-JJ) et nombre de jours d'affilée. */
   lastGift: string;
   streak: number;
+  /** Pièces validées des 20 dernières parties solo (0 si les 3 vagues n'ont pas été terminées) : sert à régler les prix. */
+  runs: number[];
   /** Identifiants des articles de boutique possédés. */
   owned: string[];
   /** Costume équipé par chef. */
@@ -47,7 +49,7 @@ export interface RunSave {
   inv: Record<IngredientId, { n: number; sliced: number }>;
 }
 
-const DEFAULT: Profile = { best: 0, chef: 'moustachu', world: 'clairiere', unlocked: 1, rulesSeen: false, duelWins: 0, coins: 0, earned: 0, lastGift: '', streak: 0, owned: [], skins: {}, effect: null, pseudo: '' };
+const DEFAULT: Profile = { best: 0, chef: 'moustachu', world: 'clairiere', unlocked: 1, rulesSeen: false, duelWins: 0, coins: 0, earned: 0, lastGift: '', streak: 0, runs: [], owned: [], skins: {}, effect: null, pseudo: '' };
 
 function read<T>(key: string): T | null {
   try {

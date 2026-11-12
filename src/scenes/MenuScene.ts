@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { audio } from '../audio/AudioManager';
-import { CHEF_ORDER, CHEFS, ChefId, DAILY_GIFT, H, itemLabel, playerLevel, W, WORLD_ORDER, WorldId, WORLDS } from '../core/constants';
+import { CHEF_ORDER, CHEFS, ChefId, DAILY_GIFT, FREE_WORLDS, H, itemLabel, playerLevel, W, worldUnlocked, WORLD_ORDER, WorldId, WORLDS } from '../core/constants';
 import { claimDailyGift, loadProfile, loadRun, saveProfile } from '../core/Storage';
 import { openModal } from '../ui/Modal';
 import { BUILD_LABEL } from '../core/update';
@@ -11,6 +11,7 @@ export class MenuScene extends Phaser.Scene {
   private chef: ChefId = 'moustachu';
   private world: WorldId = 'clairiere';
   private unlocked = 1;
+  private owned: string[] = [];
   /** Les mondes s'affichent 4 par 4. */
   private worldPage = 0;
   private worldObjs: Phaser.GameObjects.GameObject[] = [];
@@ -36,7 +37,8 @@ export class MenuScene extends Phaser.Scene {
     const profile = loadProfile();
     this.chef = profile.chef;
     this.unlocked = profile.unlocked;
-    this.world = WORLD_ORDER.indexOf(profile.world) < this.unlocked ? profile.world : 'clairiere';
+    this.owned = profile.owned;
+    this.world = worldUnlocked(profile.world, this.unlocked, this.owned) ? profile.world : 'clairiere';
 
     this.bg = this.add.image(0, 0, 'map_' + this.world).setOrigin(0);
     this.add.rectangle(0, 0, W, H, 0x0c0c18, 0.72).setOrigin(0);
@@ -165,7 +167,7 @@ export class MenuScene extends Phaser.Scene {
     WORLD_ORDER.slice(first, first + 4).forEach((id, k) => {
       const i = first + k;
       const x = 51 + k * 86;
-      const locked = i >= this.unlocked;
+      const locked = !worldUnlocked(id, this.unlocked, this.owned);
       const img = add(this.add.image(x, 378, 'map_' + id).setScale(0.2));
       if (locked) {
         img.setTint(0x333344);
@@ -174,7 +176,7 @@ export class MenuScene extends Phaser.Scene {
       img.setInteractive({ useHandCursor: true }).on('pointerup', (p: Phaser.Input.Pointer) => {
         if (Math.abs(p.x - p.downX) > 12) return; // c'était un glissement, pas un appui
         audio.sfx(locked ? 'parti' : 'clic');
-        if (locked) this.worldInfo.setText(`${WORLDS[id].name}\nTermine d'abord le monde ${i}`);
+        if (locked) this.worldInfo.setText(`${WORLDS[id].name}\n${i < FREE_WORLDS ? `Termine d'abord le monde ${i}` : 'A débloquer : BOUTIQUE > PACKS'}`);
         else {
           this.world = id;
           this.refresh();
