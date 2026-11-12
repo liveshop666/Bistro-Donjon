@@ -167,24 +167,25 @@ export class Hud {
     this.recipes.orders.forEach((o, i) => {
       const { x, y } = this.orderPos(i);
       const g = this.scene.add.graphics().setDepth(D);
-      g.fillStyle(0x3b2414).fillRect(x, y, 174, 38);
-      g.fillStyle(o.state === 'open' ? 0xf0dcae : 0xffe27a).fillRect(x + 1, y + 1, 172, 36);
+      // commandes plus légères (demande de Rudy, 12/11) : plus fines et un peu transparentes pour voir le jeu derrière
+      g.fillStyle(0x3b2414, 0.55).fillRect(x, y, 174, 30);
+      g.fillStyle(o.state === 'open' ? 0xf0dcae : 0xffe27a, 0.72).fillRect(x + 1, y + 1, 172, 28);
       this.orderUi.push(g);
       const name = this.scene.add
-        .text(x + 87, y + 4, o.recipe.name, { fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#3b2414' })
+        .text(x + 87, y + 3, o.recipe.name, { fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#3b2414' })
         .setOrigin(0.5, 0)
         .setDepth(D + 1);
       this.orderUi.push(name);
       if (o.state !== 'open') {
         const label = o.state === 'cooking' ? 'CUISSON...' : 'PRET ! A SERVIR';
-        this.orderUi.push(txt(this.scene, x + 87, y + 20, label, 8, '#ffffff').setOrigin(0.5, 0).setDepth(D + 1));
+        this.orderUi.push(txt(this.scene, x + 87, y + 15, label, 8, '#ffffff').setOrigin(0.5, 0).setDepth(D + 1));
         return;
       }
       const needs = Object.entries(o.recipe.needs) as [IngredientId, number][];
       needs.forEach(([ing, need], j) => {
         const ix = x + 87 - (needs.length * 52) / 2 + j * 52 + 10;
-        this.orderUi.push(this.scene.add.image(ix, y + 25, 'ing_' + ing).setDepth(D + 1));
-        const t = txt(this.scene, ix + 10, y + 21, '', 8).setDepth(D + 1);
+        this.orderUi.push(this.scene.add.image(ix, y + 20, 'ing_' + ing).setScale(0.7).setDepth(D + 1));
+        const t = txt(this.scene, ix + 8, y + 16, '', 8).setDepth(D + 1);
         this.orderUi.push(t);
         this.orderCounts.push({ text: t, ing, need });
       });
@@ -221,8 +222,8 @@ export class Hud {
       if (o.state !== 'open') return;
       const p = Math.max(0, o.patience / ORDER_PATIENCE);
       const { x, y } = this.orderPos(i);
-      this.patience.fillStyle(0x3b2414, 0.5).fillRect(x + 2, y + 34, 170, 2);
-      this.patience.fillStyle(p > 0.5 ? 0x3fae3f : p > 0.25 ? 0xe08a2a : 0xd0342a).fillRect(x + 2, y + 34, Math.round(170 * p), 2);
+      this.patience.fillStyle(0x3b2414, 0.5).fillRect(x + 2, y + 27, 170, 2);
+      this.patience.fillStyle(p > 0.5 ? 0x3fae3f : p > 0.25 ? 0xe08a2a : 0xd0342a).fillRect(x + 2, y + 27, Math.round(170 * p), 2);
     });
     const c = gm.combo % COMBO_SIZE;
     this.combo.setText(gm.combo > 0 ? `COMBO ${gm.combo} ${'*'.repeat(c)}${'.'.repeat(COMBO_SIZE - c)}` : '');

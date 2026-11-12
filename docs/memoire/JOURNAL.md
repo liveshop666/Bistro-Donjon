@@ -56,6 +56,7 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
   - Mon compte, Règles et Duel : encore en deux colonnes (pas de maquette pour eux).
   - Le bouton DASH de la maquette n'existe pas dans le jeu (le dash n'est qu'un effet d'ultime) : non ajouté, à proposer à Rudy.
   - Testé : 15 vérifications sur le menu et la boutique, plus celles de la partie en paysage et en portrait.
+- Commandes des clients plus légères (12/11, demande de Rudy : elles gênaient la vue) : cartes moins hautes (30 au lieu de 38), un peu transparentes, petites icônes d'ingrédients.
 - La politique de confidentialité (`/privacy.html`) est maintenant lisible sans code d'accès : Google exige une adresse publique.
 - Écran de fin : le texte se resserre quand il y a beaucoup de lignes (avant, il débordait sur le titre et les boutons).
 - Mon compte affiche la moyenne de pièces validées sur les 20 dernières parties solo : c'est la mesure à utiliser pour régler les prix.
@@ -66,6 +67,7 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
 
 **Pas fait**
 - **Demande de Rudy du 12/11 au soir (prioritaire pour la prochaine séance)** :
+  0b. Rudy aimerait aussi « un peu plus de fluidité » en jeu (à regarder : nombre d'images par seconde sur son téléphone, effets, particules).
   0. Décision de Rudy (12/11) : *attendre Canva* pour générer les maps correctement. L'essai « Clairière agrandie » fait avec des morceaux de la map d'origine est refusé : raccords visibles, et on sent toujours un mur invisible à gauche et à droite. Ne pas reproposer de maps assemblées à partir de morceaux.
   1. *Une seule grande map qui remplit tout l'écran du téléphone* (Android ou iPhone), sans les copies en miroir ni la séparation, *sans murs invisibles* : le chef va partout, à gauche comme à droite, et la caméra le suit, en paysage ET en portrait (principe des jeux de tir mobiles). Il faut les 8 maps dessinées en largeur, au format d'un téléphone (environ 20:9), avec des décors en plus. Les 3 déjà générées dans Canva (Clairière, Marché, Taverne) ne sont disponibles qu'en aperçu de 200 px : il faut les télécharger en taille réelle, et générer les 5 autres quand les crédits Canva reviennent. Ensuite : nouvelle géométrie de chaque monde (cuisine, comptoir, décors solides, apparitions des monstres, limites du terrain).
   1b. Fait le 12/11 au soir : en paysage, les personnages ont la même taille qu'en portrait (canvas paysage 640 de large, à la forme de l'écran) et l'écran est rempli. Le menu en paysage montre les chefs en haute définition : grands dessins découpés dans `reference/2.jpg` par `tools/extract_hd_chefs.py` (`hd_<chef>`, `hdp_<chef>` pour les portraits), écran du menu et de la boutique rendu 2 fois plus fin (`MENU_SCALE`). Reste : les personnages *dans la partie*, dont les images d'animation ne font que 46 px dans les planches. Pour les rendre plus nets, il faut soit un rendu de la partie 2 fois plus fin avec les dessins HD animés par le code (comme les costumes), soit de nouveaux dessins plus grands (Canva).
