@@ -228,7 +228,7 @@ export class MenuScene extends Phaser.Scene {
     glow.fillStyle(0xffc533, 0.18).fillEllipse(cx, 236, 190, 26);
     const skin = p.skins[this.chef];
     const img = add(this.add.image(cx, 240, skin && p.owned.includes(skin) ? skin : this.chef).setOrigin(0.5, 1));
-    img.setScale(Math.min(3, 170 / img.width, 150 / img.height));
+    img.setScale(Math.max(1, Math.floor(Math.min(3, 190 / img.width, 160 / img.height)))); // agrandissement entier : pixels nets
     add(txt(this, cx, 250, c.name, 8, '#ffc533').setOrigin(0.5, 0));
     add(txt(this, cx, 264, `${c.weapon}\n${c.ultimateName}`, 8, '#bfc8e0').setOrigin(0.5, 0).setAlign('center'));
     CHEF_ORDER.forEach((id, i) => {

@@ -21,7 +21,9 @@ const parent = document.getElementById('game') as HTMLDivElement;
 function fitParent(w = W, h = H): void {
   const dpr = window.devicePixelRatio || 1;
   const zoom = Math.floor(Math.min((window.innerWidth * dpr) / w, (window.innerHeight * dpr) / h));
-  const css = zoom >= 1 ? zoom / dpr : Math.min(window.innerWidth / w, window.innerHeight / h);
+  // paysage (canvas plus large que haut) : on remplit tout l'écran, même avec un agrandissement non entier
+  const fill = Math.min(window.innerWidth / w, window.innerHeight / h);
+  const css = w > h ? fill : zoom >= 1 ? zoom / dpr : fill;
   parent.style.width = `${w * css}px`;
   parent.style.height = `${h * css}px`;
 }

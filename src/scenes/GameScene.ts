@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { LH, landscapeWanted, landscapeWidth } from '../core/layout';
+import { landscapeHeight, landscapeWanted, landscapeWidth } from '../core/layout';
 import { audio, Sfx, Tune } from '../audio/AudioManager';
 import {
   BOSS_REWARD, ChefId, ENEMIES, FREE_WORLDS, ShopItem, WORLD_HP_STEP, worldRank, CHEFS, CHOP_TIME, COMBO_GOLD, COMBO_SIZE, CONVEYORS, EnemyId, GameMode, H, IngredientId, INGREDIENTS, itemLabel, playerLevel, ORDER_PATIENCE,
@@ -137,7 +137,7 @@ export class GameScene extends Phaser.Scene {
     // Paysage : en attendant les maps dessinées en largeur, le décor est prolongé de chaque côté (copies en miroir,
     // un peu assombries) pour que la map remplisse tout l'écran. On ne peut pas y marcher (hors du terrain).
     for (const k of [-2, -1, 1, 2]) {
-      this.add.image(k * W, 0, 'map_' + this.worldId).setOrigin(0).setDepth(-101).setFlipX(k % 2 !== 0).setTint(0xb8b8c8);
+      this.add.image(k * W, 0, 'map_' + this.worldId).setOrigin(0).setDepth(-101).setFlipX(k % 2 !== 0);
     }
     if (this.world.mechanic === 'tapis') {
       for (const c of CONVEYORS) {
@@ -195,7 +195,7 @@ export class GameScene extends Phaser.Scene {
     const relayout = () => {
       if (!this.sys.isActive() && !this.sys.isPaused()) return;
       const land = landscapeWanted();
-      if (land === this.land && (!land || landscapeWidth() === this.scale.width)) return;
+      if (land === this.land && (!land || (landscapeWidth() === this.scale.width && landscapeHeight() === this.scale.height))) return;
       this.setupLayout();
       const rival = this.hud.rivalInfo;
       this.hud.destroy();
@@ -830,7 +830,7 @@ export class GameScene extends Phaser.Scene {
   private setupLayout(): void {
     const land = landscapeWanted();
     const gw = land ? landscapeWidth() : W;
-    const gh = land ? LH : H;
+    const gh = land ? landscapeHeight() : H;
     if (this.scale.width !== gw || this.scale.height !== gh) this.scale.setGameSize(gw, gh);
     this.game.events.emit('refit');
     if (this.hudCam) this.cameras.remove(this.hudCam);
@@ -846,7 +846,7 @@ export class GameScene extends Phaser.Scene {
     // la map remplit tout l'écran et la caméra suit le chef ; interface et fenêtres par-dessus
     main.setViewport(0, 0, gw, gh).setBounds(-2 * W, 0, 5 * W, H);
     this.hudCam = this.cameras.add(0, 0, gw, gh);
-    this.ovlCam = this.cameras.add(0, 0, gw, gh).setScroll(-(gw - W) / 2, (H - gh) / 2);
+    this.ovlCam = this.cameras.add(0, 0, gw, gh);
     this.followChef(1);
   }
 
@@ -866,9 +866,26 @@ export class GameScene extends Phaser.Scene {
     const h = this.hudCam.id;
     const o = this.ovlCam.id;
     const all = m | h | o;
+    let box: Phaser.Geom.Rectangle | null = null;
     for (const obj of this.children.list) {
-      const cam = this.hud.owns(obj) || this.touch.owns(obj) ? h : (obj as Phaser.GameObjects.Components.Depth & Phaser.GameObjects.GameObject).depth >= 2040 ? o : m;
+      const depth = (obj as Phaser.GameObjects.Components.Depth & Phaser.GameObjects.GameObject).depth;
+      const cam = this.hud.owns(obj) || this.touch.owns(obj) ? h : depth >= 2040 ? o : m;
       obj.cameraFilter = all & ~cam;
+      // fenêtres (pause, cartes, fin de partie) : on mesure leur taille pour les afficher en entier
+      if (depth >= 3000 && (obj as unknown as Phaser.GameObjects.Components.Visible).visible) {
+        const c = obj as unknown as Phaser.GameObjects.Container;
+        const b = obj.type === 'Container' && c.width > 0 ? new Phaser.Geom.Rectangle(c.x - c.width / 2, c.y - c.height / 2, c.width, c.height)
+          : (obj as unknown as { getBounds?: () => Phaser.Geom.Rectangle }).getBounds?.();
+        if (b && b.width > 0 && !(b.width >= W && b.height >= H)) box = box ? Phaser.Geom.Rectangle.Union(box, b, box) : Phaser.Geom.Rectangle.Clone(b);
+      }
+    }
+    const ov = this.ovlCam;
+    if (box) {
+      ov.setZoom(Math.min(1, (ov.height - 6) / (box.height + 16)));
+      ov.centerOn(W / 2, box.centerY);
+    } else {
+      ov.setZoom(Math.min(1, ov.height / 330));
+      ov.centerOn(W / 2, 320);
     }
   }
 
