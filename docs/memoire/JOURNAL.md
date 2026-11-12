@@ -2,7 +2,9 @@
 
 Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en haut à chaque session.
 
-## Où on en est (11/11/2026)
+## Où on en est (12/11/2026)
+**La liste détaillée de ce qui reste jusqu'au Play Store (qui fait quoi, dans quel ordre) est dans `docs/PUBLICATION.md`.**
+
 **Fait et testé dans un navigateur**
 - Solo complet : 3 vagues (chasse 45 s, cuisine 20 s, carte), boss Roi Tomate, victoire/défaite, déblocage des mondes.
 - 3 chefs animés (marche, attaque), 5 monstres, 4 mondes avec leur mécanique.
@@ -45,6 +47,8 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
 - Missions du jour (12/11) : 3 missions tirées au sort chaque jour parmi 12 (battre des monstres, servir des plats, faire de l'or en une partie, finir les 3 vagues, battre un boss, faire un combo, trancher). 300 à 800 pièces chacune, bonus de 1 000 pour les trois. Bouton MISSIONS en haut à gauche de l'écran titre (clignote en vert quand une récompense attend). L'or, les vagues et le boss ne comptent que si les 3 vagues sont terminées.
 - Armes (12/11, onglet ARMES) : Lame Foudre, Marteau Givre, Hache de Lave, Wok Bleu. Elles changent la couleur ET le bruit des coups de tous les chefs (elles prennent la place de l'effet équipé). 0,99 € ou 40 000 pièces chacune ; Pack Armes 2,49 € ou 120 000 pièces.
 - Animation de marche (12/11) : les monstres qui n'ont qu'une image (les 7 nouveaux, les deux boss, le piment) rebondissent, s'écrasent et se balancent en marchant, dessiné par le code.
+- Paysage (12/11, demande de Rudy) : quand on tourne le téléphone pendant une partie, le jeu passe en paysage. La carte reste au centre et défile pour suivre le chef, la vie, les commandes et les ingrédients vont dans le bandeau de gauche, le chrono, l'or et les boutons (attaque, feu, pause) dans celui de droite. Les fenêtres (pause, cartes d'amélioration, fin de partie) s'affichent au centre. On peut tourner le téléphone en pleine partie, dans les deux sens. Les menus et la boutique restent en portrait (centrés). Dans l'appli Android, la rotation était verrouillée : débloquée, mais il faut **réinstaller l'appli une fois** (fichier de GitHub Actions) pour en profiter ; la version installée par lien (Chrome) tourne sans rien faire. Testé : 13 vérifications en paysage + les 12 d'avant en portrait.
+- La politique de confidentialité (`/privacy.html`) est maintenant lisible sans code d'accès : Google exige une adresse publique.
 - Écran de fin : le texte se resserre quand il y a beaucoup de lignes (avant, il débordait sur le titre et les boutons).
 - Mon compte affiche la moyenne de pièces validées sur les 20 dernières parties solo : c'est la mesure à utiliser pour régler les prix.
 - Menu : on glisse le doigt vers la gauche ou la droite sur les cartes pour passer des mondes 1-4 aux mondes 5-8 (le bouton reste).
@@ -60,12 +64,11 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
 - Classement mondial : pas fait, il faut un serveur en ligne (voir décisions). Idées proposées à Rudy pour faire revenir les joueurs, pas encore faites : missions du jour, classement mondial hebdomadaire, saisons avec récompenses.
 - Articles premium : aucun article premium (costumes, combattants, effet, packs) ne peut encore être obtenu, le paiement n'étant pas branché.
 - Mode duo à deux sur le même jeu et publicités récompensées : demandés le 12/11, pas faits. Le duo demande de revoir les commandes (deux joueurs sur un écran de téléphone) ; les publicités demandent un compte AdMob (Google) à créer par Rudy.
-- Rotation en paysage : redemandée par Rudy le 12/11, toujours pas faite (voir plus haut : il faut redessiner les cartes et refaire chaque écran).
+- Menus, boutique et écrans de compte en paysage : ils restent en portrait au centre de l'écran (seule la partie passe en paysage). Les refaire en largeur demanderait de redessiner chaque écran.
 - Durées de déblocage : estimées, pas mesurées (environ 3 500 pièces par heure pour un joueur moyen, 9 000 pour un bon joueur). À recalculer avec la moyenne affichée dans Mon compte.
 - Difficulté par monde et nouveaux prix : choisis sans mesure réelle du nombre de pièces gagnées par heure. À régler après les essais de Rudy (`WORLD_HP_STEP`, `WORLD_PACE_STEP` et les prix dans `SHOP`, tous dans `constants.ts`).
-- Nouveaux mondes et monstres jamais essayés par un humain : à jouer sur le téléphone pour régler la difficulté. Les nouveaux monstres n'ont qu'une image (pas d'animation de marche). Pack d'armes : demandé par Rudy, remis à plus tard. De nouveaux costumes « les plus beaux » demandent de nouveaux dessins dans `reference/`.
+- Nouveaux mondes et monstres jamais essayés par un humain : à jouer sur le téléphone pour régler la difficulté. De nouveaux costumes « les plus beaux » demandent de nouveaux dessins dans `reference/`.
 - Jeu en ligne contre de vrais joueurs (partie rapide, créer un salon, rejoindre) et classement mondial : les boutons existent, mais il n'y a pas de serveur en ligne. Plan retenu : un projet Supabase gratuit (mise en relation + relais des scores + table du classement). La création du projet a été refusée par la sécurité de l'application : il faut l'accord direct de Rudy.
-- Rotation en paysage : pas faite. Le jeu et ses 4 cartes sont dessinés en hauteur (360 x 640) ; débloquer la rotation afficherait juste le jeu en tout petit. Un vrai mode paysage demande de redessiner les cartes et de refaire chaque écran.
 - Effets d'ultime dans la boutique et page d'accueil séparée : demandés par Rudy, pas encore faits (à préciser : effets seulement visuels, ou nouveaux pouvoirs).
 - Les monstres traversent encore les décors (laissé exprès pour ne pas changer leur comportement ni l'équilibrage).
 - Murs du fond de la Taverne et de la Cantine : laissés libres, car la marmite et le comptoir sont posés devant.
@@ -93,6 +96,7 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
 - **Scène relancée à moitié pendant le test** : arrêter toutes les scènes et démarrer « Game » dans la même image laisse une scène sans caméra. Leçon : arrêter, attendre un instant, puis démarrer.
 
 ## Notes techniques
+- Paysage : `src/core/layout.ts` (canvas large, 480 de haut). `GameScene.setupLayout()` change la taille du canvas et crée 2 caméras en plus : `hudCam` (interface fixe, coordonnées d'écran) et `ovlCam` (objets de profondeur >= 2040 : bannières, fumée, fenêtres, dessinés en coordonnées portrait au centre). `filterCameras()` (événement `prerender`) choisit la caméra de chaque objet. Le `Hud` calcule ses positions selon la taille du canvas et est reconstruit à chaque rotation. Les gestes de tranche sont convertis en coordonnées de la carte (`getWorldPoint`). En quittant la partie, le canvas revient à 360 x 640. Rotation Android : `screenOrientation="fullUser"` dans `AndroidManifest.xml` (suit le réglage de rotation auto du téléphone).
 - Les costumes de boutique sont une seule image animée par code ; les chefs de base ont de vraies images de marche et d'attaque.
 - Le duel ne synchronise pas les arènes : chaque joueur joue la sienne, le serveur relaie scores et sabotages. Les scores sont déclarés par le client (trichable).
 - La reprise d'une sauvegarde repart du début de la vague, avec l'or et l'inventaire du moment de la sauvegarde.

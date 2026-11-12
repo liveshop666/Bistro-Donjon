@@ -45,7 +45,7 @@ function page(message: string, withForm: boolean): string {
 }
 
 /** Fichiers sans secret, laissés ouverts pour que le téléphone puisse installer le jeu sur l'écran d'accueil. */
-const PUBLIC = new Set(['/manifest.webmanifest', '/icon-192.png', '/icon-512.png']);
+const PUBLIC = new Set(['/privacy.html', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png']);
 
 export default async function middleware(request: Request): Promise<Response> {
   const headers = { 'content-type': 'text/html; charset=utf-8', 'x-robots-tag': 'noindex, nofollow', 'cache-control': 'no-store' };
