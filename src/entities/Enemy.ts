@@ -11,6 +11,9 @@ export interface EnemyApi {
   shake(): void;
 }
 
+/** Monstres qui n'ont qu'une image : leur marche est animée par le code. */
+const WALK_BY_CODE = new Set<EnemyId>(['ail', 'aubergine', 'mais', 'oignon', 'citrouille', 'hotdog', 'cube_fromage', 'roi_fromage', 'piment', 'roi_tomate']);
+
 /** Monstre-ingrédient. Le comportement dépend de `def.ai`. */
 export class Enemy {
   x: number;
@@ -37,6 +40,8 @@ export class Enemy {
   private hop = 0;
   private flash = 0;
   private faceLeft = false;
+  /** Vitesse du moment (pour l'animation de marche des monstres sans images de marche). */
+  private moveSpeed = 0;
   // Chaque monstre a sa propre façon d'avancer, tirée au hasard : aucun ne prend le même chemin.
   private weaveAmp = 8 + Math.random() * 26; // ampleur du zigzag (px/s)
   private weaveFreq = 0.7 + Math.random() * 1.6;
@@ -129,6 +134,7 @@ export class Enemy {
         break;
     }
 
+    this.moveSpeed = Math.hypot(vx, vy);
     this.x += vx * dt;
     this.y += vy * dt;
     if (this.y < this.standY) this.y = this.standY;
@@ -191,8 +197,15 @@ export class Enemy {
   private render(): void {
     const s = this.mini ? 0.6 : 1;
     const flying = this.def.id === 'piment' ? 10 + Math.sin(this.t * 5) * 2 : 0; // seul le piment ailé vole
-    const lift = this.hop * 12 + flying;
-    const squash = 1;
+    let lift = this.hop * 12 + flying;
+    let squash = 1;
+    // Nouveaux monstres (une seule image) : marche dessinée par le code, rebond + écrasement + balancement
+    const walking = WALK_BY_CODE.has(this.def.id) && this.moveSpeed > 2 && this.stun <= 0;
+    const step = Math.abs(Math.sin(this.t * (6 + this.moveSpeed / 12)));
+    if (walking) {
+      lift += step * 2.5;
+      squash = 1 - 0.07 * (1 - step);
+    }
     // images d'animation
     if (this.def.id === 'gelee') {
       const landed = this.hop === 0 && this.timer > 0.3;
@@ -203,7 +216,7 @@ export class Enemy {
       this.sprite.setTexture(key);
       this.anchor = (anchors as Record<string, number>)[key] ?? 0.5;
     }
-    const wobble = this.def.ai === 'stand' && !this.atStand ? Math.sin(this.t * 6) * 3 : 0;
+    const wobble = walking ? Math.sin(this.t * (6 + this.moveSpeed / 12)) * 6 : this.def.ai === 'stand' && !this.atStand ? Math.sin(this.t * 6) * 3 : 0;
     const yOff = this.def.id === 'tomate' ? this.sprite.displayHeight / 2 : 0;
     this.sprite
       .setFlipX(this.def.id === 'tomate' ? false : this.faceLeft)

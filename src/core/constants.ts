@@ -320,6 +320,8 @@ export interface ShopItem {
   rainbow?: boolean;
   /** Chef combattant (onglet à part dans la boutique). */
   fighter?: boolean;
+  /** Arme (onglet ARMES) : un effet qui change aussi le bruit des coups, pour tous les chefs. */
+  weapon?: boolean;
   /** Bruitage et couleur des coups propres à l'arme de ce costume. */
   hit?: string;
   slash?: number;
@@ -349,12 +351,18 @@ export const SHOP: ShopItem[] = [
   { id: 'skin_gorille', kind: 'skin', fighter: true, rarity: 'legendaire', chef: 'moustachu', name: 'GORILLE\nTONNERRE', desc: 'Deux poêles-gants de boxe\nchargées d\'éclairs.', euro: '1,99 EUR', sprite: 'skin_gorille', hit: 'coup_elec', slash: 0xffe84a },
   { id: 'skin_tigre', kind: 'skin', fighter: true, rarity: 'legendaire', chef: 'noisette', name: 'TIGRE\nDES WOKS', desc: 'Nunchakus de woks aux\nflammes bleues.', euro: '1,99 EUR', sprite: 'skin_tigre', hit: 'coup_wok', slash: 0x4fb8ff },
   { id: 'skin_ours', kind: 'skin', fighter: true, rarity: 'legendaire', chef: 'shiba', name: 'OURS\nGLACIER', desc: 'Marteau attendrisseur géant\ncouvert de glace.', euro: '1,99 EUR', sprite: 'skin_ours', hit: 'coup_glace', slash: 0x9fe0ff },
+  // --- armes : changent la couleur ET le bruit des coups de tous les chefs. Payantes, ou beaucoup de pièces.
+  { id: 'arme_foudre', kind: 'effet', weapon: true, rarity: 'epique', name: 'LAME\nFOUDRE', desc: 'Tes coups claquent comme\nla foudre.', euro: '0,99 EUR', coins: 40000, color: 0xffe84a, hit: 'coup_elec' },
+  { id: 'arme_givre', kind: 'effet', weapon: true, rarity: 'epique', name: 'MARTEAU\nGIVRE', desc: 'Tes coups brisent la\nglace.', euro: '0,99 EUR', coins: 40000, color: 0x9fe0ff, hit: 'coup_glace' },
+  { id: 'arme_lave', kind: 'effet', weapon: true, rarity: 'epique', name: 'HACHE\nDE LAVE', desc: 'Tes coups font trembler\nle sol.', euro: '0,99 EUR', coins: 40000, color: 0xff5a1e, hit: 'coup_hache' },
+  { id: 'arme_wok', kind: 'effet', weapon: true, rarity: 'epique', name: 'WOK\nBLEU', desc: 'Tes coups crachent des\nflammes bleues.', euro: '0,99 EUR', coins: 40000, color: 0x4fb8ff, hit: 'coup_wok' },
   // --- packs : un monde + son chef combattant. Deux façons de les avoir : payer, ou énormément de pièces.
   //     Contenu connu d'avance (pas de tirage au hasard).
   { id: 'pack_glaciere', kind: 'pack', rarity: 'legendaire', world: 'glaciere', name: 'PACK\nGLACIERE', desc: 'Le monde La Glacière\net le chef Ours Glacier.', euro: '2,99 EUR', coins: 100000, sprite: 'skin_ours', items: ['monde_glaciere', 'skin_ours'] },
   { id: 'pack_volcan', kind: 'pack', rarity: 'legendaire', world: 'volcan', name: 'PACK\nVOLCAN', desc: 'Le monde Volcan Barbecue\net le chef Taureau Boucher.', euro: '2,99 EUR', coins: 150000, sprite: 'skin_taureau', items: ['monde_volcan', 'skin_taureau'] },
   { id: 'pack_pirate', kind: 'pack', rarity: 'legendaire', world: 'bateau', name: 'PACK\nPIRATE', desc: 'Le monde Galion Pirate\net le chef Gorille Tonnerre.', euro: '2,99 EUR', coins: 200000, sprite: 'skin_gorille', items: ['monde_bateau', 'skin_gorille'] },
   { id: 'pack_hante', kind: 'pack', rarity: 'legendaire', world: 'bonbons', name: 'PACK\nHANTE', desc: 'Le monde Usine Hantée\net le chef Tigre des Woks.', euro: '2,99 EUR', coins: 250000, sprite: 'skin_tigre', items: ['monde_bonbons', 'skin_tigre'] },
+  { id: 'pack_armes', kind: 'pack', rarity: 'legendaire', name: 'PACK\nARMES', desc: 'Les 4 armes : Lame Foudre,\nMarteau Givre, Hache de Lave,\nWok Bleu. (3,96 EUR à l\'unité)', euro: '2,49 EUR', coins: 120000, color: 0xffe84a, rainbow: true, items: ['arme_foudre', 'arme_givre', 'arme_lave', 'arme_wok'] },
   { id: 'pack_integral', kind: 'pack', rarity: 'legendaire', name: 'PACK\nINTEGRAL', desc: 'Les 4 packs de mondes, Chat\nCyber, Chat Astronaute et\nEclairs Violets.\n(16,93 EUR à l\'unité)', euro: '12,99 EUR', sprite: 'skin_gorille', items: ['monde_glaciere', 'monde_volcan', 'monde_bateau', 'monde_bonbons', 'skin_ours', 'skin_taureau', 'skin_gorille', 'skin_tigre', 'skin_cyber', 'skin_astronaute', 'fx_violet'] },
 ];
 

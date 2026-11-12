@@ -6,9 +6,9 @@ import { Chef } from '../entities/Chef';
 import { txt } from './text';
 
 const D = 2000;
-const ULT = { x: 322, y: 514, r: 32 };
+const ULT = { x: 322, y: 594, r: 32 }; // en bas à droite, sous le bouton d'attaque (choix de Rudy, 12/11)
 /** Bouton d'attaque : sous le pouce droit, on le garde appuyé pour frapper en continu. */
-const ATK = { x: 316, y: 592, r: 34 };
+const ATK = { x: 316, y: 512, r: 34 };
 /** Bouton PAUSE en bas de l'écran, facile à atteindre. */
 const PAUSE = { x: 233, y: 622, w: 70, h: 26 };
 

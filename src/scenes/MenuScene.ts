@@ -3,6 +3,7 @@ import { audio } from '../audio/AudioManager';
 import { CHEF_ORDER, CHEFS, ChefId, DAILY_GIFT, FREE_WORLDS, H, itemLabel, playerLevel, W, worldUnlocked, WORLD_ORDER, WorldId, WORLDS } from '../core/constants';
 import { claimDailyGift, loadProfile, loadRun, saveProfile } from '../core/Storage';
 import { openModal } from '../ui/Modal';
+import { claimBonus, claimMission, dailyMissions, MISSION_BONUS, MISSIONS, missionsStatus } from '../core/Missions';
 import { BUILD_LABEL } from '../core/update';
 import { button, txt } from '../ui/text';
 
@@ -116,6 +117,7 @@ export class MenuScene extends Phaser.Scene {
     });
     audio.music('menu');
     this.refresh();
+    this.missionsButton();
     txt(this, 6, 6, `V ${BUILD_LABEL}`, 8, '#6b7391'); // date de la version chargée : pour vérifier d'un coup d'œil qu'on est à jour
     this.game.events.emit('menu');
     // Proposer d'installer le jeu sur l'écran d'accueil (seulement dans Chrome, pas dans l'appli déjà installée)
@@ -138,6 +140,48 @@ export class MenuScene extends Phaser.Scene {
         },
       }], lines.join('\n'));
     }
+  }
+
+  /** Bouton des missions du jour, en haut à gauche (clignote quand une récompense attend). */
+  private missionsButton(): void {
+    const st = missionsStatus();
+    const b = button(this, 40, 34, 72, 22, 'MISSIONS', st.claimable ? 0x3d7a4a : 0x3d5c8f, () => this.openMissions());
+    txt(this, 40, 54, `${st.done}/3`, 8, st.claimable ? '#7dff7d' : '#bfc8e0').setOrigin(0.5, 0);
+    if (st.claimable) this.tweens.add({ targets: b, scale: 1.08, duration: 450, yoyo: true, repeat: -1 });
+  }
+
+  /** Fenêtre des missions du jour : progression, récompenses à récupérer, bonus. */
+  private openMissions(): void {
+    const m = dailyMissions();
+    const items = m.list.map((it, i) => {
+      const def = MISSIONS[it.id];
+      return {
+        label: () => {
+          const cur = dailyMissions().list[i];
+          if (cur.claimed) return `${def.label} : OK`;
+          if (cur.progress >= def.target) return `${def.label} +${def.reward}`;
+          return `${def.label} ${Math.min(cur.progress, def.target)}/${def.target}`;
+        },
+        color: it.progress >= def.target && !it.claimed ? 0x3d7a4a : 0x4a4f66,
+        action: () => {
+          if (claimMission(i)) audio.sfx('piece');
+          return false;
+        },
+      };
+    });
+    const bonus = {
+      label: () => {
+        const cur = dailyMissions();
+        return cur.bonus ? 'BONUS : OK' : `BONUS 3 MISSIONS +${MISSION_BONUS}`;
+      },
+      color: 0xc98a1e,
+      action: () => {
+        if (claimBonus()) audio.sfx('legendaire');
+        return false;
+      },
+    };
+    openModal(this, 'MISSIONS DU JOUR', [...items, bonus, { label: 'FERMER', action: () => void this.scene.restart() }],
+      "Appuie sur une mission terminée pour\nrécupérer ses pièces. Nouvelles\nmissions chaque jour !");
   }
 
   /** Change de page de mondes (bouton ou glissement du doigt), avec un petit glissement des cartes. */

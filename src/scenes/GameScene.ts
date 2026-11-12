@@ -15,6 +15,7 @@ import { TouchController } from '../input/TouchController';
 import { Hud } from '../ui/Hud';
 import { button, txt } from '../ui/text';
 import { UpgradeCards } from '../ui/UpgradeCards';
+import { recordRun } from '../core/Missions';
 import { addCoins, clearRun, loadProfile, nextMilestone, RunSave, saveProfile, saveRun } from '../core/Storage';
 import { BotLink, DuelLink } from '../network/DuelLink';
 import { openModal } from '../ui/Modal';
@@ -88,6 +89,11 @@ export class GameScene extends Phaser.Scene {
   private unlockedWorld = false;
   private effectColor: number | null = null;
   private effectRainbow = false;
+  /** Bruit de l'arme équipée (onglet ARMES de la boutique). */
+  private effectHit: string | null = null;
+  /** Pour les missions du jour. */
+  private sliced = 0;
+  private maxCombo = 0;
   /** Costume équipé (pour le bruit et la couleur de son arme). */
   private skinItem: ShopItem | null = null;
   private atkKeys: Phaser.Input.Keyboard.Key[] = [];
@@ -152,6 +158,8 @@ export class GameScene extends Phaser.Scene {
     const effect = SHOP.find((i) => i.id === profile.effect && profile.owned.includes(i.id));
     this.effectColor = effect?.color ?? null;
     this.effectRainbow = !!effect?.rainbow;
+    this.effectHit = effect?.hit ?? null;
+    this.sliced = this.maxCombo = 0;
     this.chef = new Chef(this, CHEFS[this.chefId], W / 2, standLine + 100, skin && profile.owned.includes(skin) ? skin : null);
     if (this.resume) {
       const r = this.resume;
@@ -235,6 +243,7 @@ export class GameScene extends Phaser.Scene {
       this.hud.float(this.pot.x, this.pot.y - 60, 'PRET !', '#7dff7d');
       audio.sfx('pret');
     }
+    this.maxCombo = Math.max(this.maxCombo, gm.combo);
     this.drawAuras(time);
     this.hud.refresh(time);
     for (const c of this.conveyors) c.tilePositionX -= 60 * dt;
@@ -294,7 +303,7 @@ export class GameScene extends Phaser.Scene {
     c.cooldown = c.def.cooldown;
     c.strike(tx, ty);
     // chaque arme a son bruit : celui du costume équipé s'il en a un, sinon celui du chef
-    audio.sfx((this.skinItem?.hit as Sfx | undefined) ?? (c.def.id === 'moustachu' ? 'coup_poele' : c.def.id === 'shiba' ? 'coup_rouleau' : 'coup_hachoir'));
+    audio.sfx(((this.effectHit ?? this.skinItem?.hit) as Sfx | undefined) ?? (c.def.id === 'moustachu' ? 'coup_poele' : c.def.id === 'shiba' ? 'coup_rouleau' : 'coup_hachoir'));
     const dmg = this.attackDamage();
     const ang = Math.atan2(ty - c.y, tx - c.x);
     const color = c.powers.feu > 0 ? 0xff3b1e : (this.fxColor() ?? this.skinItem?.slash ?? c.def.slashColor);
@@ -520,6 +529,7 @@ export class GameScene extends Phaser.Scene {
     for (const i of this.ingredients) {
       if (i.trySlice(x1, y1, x2, y2)) {
         this.hud.float(i.x, i.y - 16, 'TRANCHE ! x2', '#8fe0ff');
+        this.sliced++;
         audio.sfx('tranche');
       }
     }
@@ -714,6 +724,10 @@ export class GameScene extends Phaser.Scene {
     const validated = duel || gm.victory === true || gm.wave >= WAVES.length;
     const gifts = validated ? addCoins(gm.gold) : [];
     if (!duel) saveProfile({ runs: [...loadProfile().runs, validated ? gm.gold : 0].slice(-20) });
+    const missionsDone = recordRun({
+      kills: gm.kills, served: gm.served, sliced: this.sliced, combo: this.maxCombo >= COMBO_SIZE ? 1 : 0,
+      gold: !duel && validated ? gm.gold : 0, waves: !duel && validated ? 1 : 0, boss: !duel && gm.victory === true ? 1 : 0,
+    });
     const lines: string[] = [];
     let title: string;
     if (duel) {
@@ -742,13 +756,17 @@ export class GameScene extends Phaser.Scene {
       this.time.delayedCall(1700, () => audio.sfx('niveau')); // après la musique de fin
     }
     else lines.push(`NIVEAU ${levelNow.level} : ${levelNow.into}/${levelNow.span}`);
-    for (const g of gifts) lines.push(`CADEAU DEBLOQUE : ${itemLabel(g)} !`);
+    if (gifts.length === 1) lines.push(`CADEAU DEBLOQUE : ${itemLabel(gifts[0])} !`);
+    else if (gifts.length > 1) lines.push(`${gifts.length} CADEAUX DEBLOQUES ! (BOUTIQUE)`);
+    if (missionsDone.length) lines.push(`MISSION DU JOUR ACCOMPLIE !${missionsDone.length > 1 ? ` (x${missionsDone.length})` : ''}`);
     const milestone = nextMilestone();
     if (milestone) lines.push(`PROCHAIN CADEAU DANS ${milestone.left} PIECES`);
     const D = 3000;
     this.add.rectangle(0, 0, W, H, 0x0c0c18, 0.8).setOrigin(0).setDepth(D).setInteractive();
-    txt(this, W / 2, 150, title, 16, gm.victory ? '#ffc533' : '#ff6a5a').setOrigin(0.5).setDepth(D + 1);
-    txt(this, W / 2, 280, lines.join('\n\n'), 8).setOrigin(0.5).setDepth(D + 1);
+    // le bloc de texte se resserre quand il y a beaucoup de lignes, pour ne jamais toucher le titre ni les boutons
+    const body = txt(this, W / 2, 0, lines.join(lines.length > 7 ? '\n' : '\n\n'), 8).setOrigin(0.5, 0).setDepth(D + 1);
+    body.setY(Math.round(Math.max(118, 282 - body.height / 2)));
+    txt(this, W / 2, Math.min(150, body.y - 30), title, 16, gm.victory ? '#ffc533' : '#ff6a5a').setOrigin(0.5).setDepth(D + 1);
     const again = duel && this.link?.online ? null : duel ? 'REVANCHE' : 'REJOUER';
     if (again) {
       button(this, W / 2, 400, 160, 36, again, 0xe8642a, () =>

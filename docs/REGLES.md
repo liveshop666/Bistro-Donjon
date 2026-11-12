@@ -7,9 +7,9 @@ Tu es un chef cuisinier ambulant dans un monde peuplé de monstres-aliments. Cha
 | Action | Téléphone | Ordinateur |
 | --- | --- | --- |
 | Se déplacer | poser le pouce n'importe où et glisser (joystick flottant) | cliquer-glisser, ou flèches / ZQSD |
-| Attaquer | garder appuyé le bouton rouge en bas à droite : le chef frappe le monstre le plus proche, ou devant lui | touche K ou E |
+| Attaquer | garder appuyé le bouton rouge à droite, au-dessus du bouton de feu : le chef frappe le monstre le plus proche, ou devant lui | touche K ou E |
 | Trancher | glisser vite le doigt sur un ingrédient au sol | cliquer-glisser vite dessus |
-| Attaque ultime | bouton de feu au-dessus du bouton d'attaque, quand la jauge est pleine | Espace |
+| Attaque ultime | bouton de feu tout en bas à droite, quand la jauge est pleine | Espace |
 | Pause | bouton PAUSE en bas de l'écran (ou l'icône en haut à droite) | Échap ou P |
 
 C'est le joueur qui frappe : tant que le bouton d'attaque est appuyé, le chef tape. À l'arrêt, il frappe à pleine cadence. En mouvement, il esquive mais frappe deux fois moins vite.
@@ -77,5 +77,9 @@ L'or gagné en partie devient des pièces, **à condition d'avoir terminé les 3
 - **Cadeau de palier** : gratuit, débloqué tout seul quand le total de pièces gagnées depuis le début atteint 5 000, 15 000, 40 000, 120 000 ou 300 000. Dépenser ses pièces ne fait pas baisser ce total.
 - **Premium** : les articles les plus rares, en argent réel uniquement (paiement pas encore branché).
 - **Packs de monde** : un monde et son chef combattant, à 2,99 €, ou avec énormément de pièces (100 000 à 250 000). Le Pack Intégral réunit tout le premium à 12,99 €.
+
+**Missions du jour** : trois missions changent chaque jour (battre des monstres, servir des plats, finir les 3 vagues, battre un boss…). Chacune rapporte 300 à 800 pièces, et les trois ensemble un bonus de 1 000 pièces. Bouton MISSIONS en haut à gauche de l'écran titre.
+
+**Armes** (onglet ARMES) : elles changent la couleur et le bruit des coups de tous les chefs. 0,99 € chacune ou 40 000 pièces ; Pack Armes à 2,49 € ou 120 000 pièces.
 
 **Cadeau du jour** : à la première ouverture du jeu chaque jour, des pièces sont offertes (100 le premier jour, jusqu'à 500 le 7e jour d'affilée). Sauter un jour remet la série à 1.

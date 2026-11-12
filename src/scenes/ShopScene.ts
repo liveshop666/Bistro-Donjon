@@ -6,8 +6,8 @@ import { addCoins, loadProfile, nextMilestone, saveProfile } from '../core/Stora
 import { openModal } from '../ui/Modal';
 import { button, txt } from '../ui/text';
 
-type Tab = 'skin' | 'combattant' | 'effet' | 'pack';
-const tabOf = (it: ShopItem): Tab => (it.kind === 'skin' ? (it.fighter ? 'combattant' : 'skin') : it.kind);
+type Tab = 'skin' | 'combattant' | 'effet' | 'arme' | 'pack';
+const tabOf = (it: ShopItem): Tab => (it.kind === 'skin' ? (it.fighter ? 'combattant' : 'skin') : it.weapon ? 'arme' : it.kind);
 /** Un pack est possédé quand tout son contenu l'est. */
 const has = (owned: string[], it: ShopItem): boolean => (it.kind === 'pack' ? (it.items ?? []).every((id) => owned.includes(id)) : owned.includes(it.id));
 
@@ -62,14 +62,15 @@ export class ShopScene extends Phaser.Scene {
 
     // onglets
     const tabBtn = (x: number, tab: Tab, label: string) =>
-      add(button(this, x, 124, 82, 26, label, this.tab === tab ? 0xe8642a : 0x3a3f55, () => {
+      add(button(this, x, 124, 68, 26, label, this.tab === tab ? 0xe8642a : 0x3a3f55, () => {
         this.tab = tab;
         this.draw();
       }));
-    tabBtn(49, 'skin', 'COSTUMES');
-    tabBtn(136, 'combattant', 'COMBAT');
-    tabBtn(223, 'effet', 'EFFETS');
-    tabBtn(310, 'pack', 'PACKS');
+    tabBtn(37, 'skin', 'COSTUMES');
+    tabBtn(108, 'combattant', 'COMBAT');
+    tabBtn(180, 'effet', 'EFFETS');
+    tabBtn(252, 'arme', 'ARMES');
+    tabBtn(323, 'pack', 'PACKS');
 
     SHOP.filter((it) => tabOf(it) === this.tab).forEach((it, i) => {
       const x = 64 + (i % 3) * 116;
@@ -90,8 +91,8 @@ export class ShopScene extends Phaser.Scene {
       let detailColor = '#bfc8e0';
       if (equipped) [status, color] = ['EQUIPE', '#ffc533'];
       else if (owned) [status, color] = ['OBTENU', '#7dff7d'];
-      else if (it.kind === 'pack') {
-        // pack de monde : le prix en euros, et bien en vert qu'il peut aussi être gratuit
+      else if (it.euro && it.coins) {
+        // payant en euros, ou gratuit avec beaucoup de pièces : les deux bien visibles
         [status, color] = [it.euro ?? '', '#ff9ad0'];
         if (it.coins) [detail, detailColor] = [`GRATUIT ${Math.round(it.coins / 1000)}K`, '#7dff7d'];
       }
@@ -134,7 +135,7 @@ export class ShopScene extends Phaser.Scene {
     const p = loadProfile();
     const owned = has(p.owned, it);
     const equipped = owned && (it.kind === 'skin' ? p.skins[it.chef!] === it.id : p.effect === it.id);
-    const who = it.kind === 'skin' ? `Costume pour ${CHEFS[it.chef!].name}` : it.kind === 'pack' ? 'Pack premium' : 'Effet pour tous les chefs';
+    const who = it.kind === 'skin' ? `Costume pour ${CHEFS[it.chef!].name}` : it.kind === 'pack' ? 'Pack premium' : it.weapon ? 'Arme pour tous les chefs' : 'Effet pour tous les chefs';
     const title = itemLabel(it);
     const note = `${RARITY[it.rarity].label}\n${who}\n${it.desc}`;
     const equip = (on: boolean) => {
