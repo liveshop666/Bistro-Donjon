@@ -236,17 +236,22 @@ class AudioManager {
       case 'clic':
         this.tone(b, 660, 0.06, 'square', 0.12);
         break;
-      case 'coup_poele': // « woush » enflammé + tintement de poêle
-        this.noise(b, 0.14, 0.5, 'bandpass', 900, 0, 2600);
-        this.tone(b, 520, 0.07, 'triangle', 0.18, 0.03, 380);
+      case 'coup_poele': // poêle de Chef Moustachu : « Gong de poêle » (choix de Rudy, 12/11)
+        this.tone(b, 180, 0.16, 'sine', 0.335, 0, 60);
+        this.tone(b, 740, 0.35, 'triangle', 0.147, 0.01);
+        this.tone(b, 1110, 0.25, 'triangle', 0.067, 0.01);
+        this.noise(b, 0.06, 0.201, 'highpass', 3000);
         break;
-      case 'coup_rouleau': // coup lourd
-        this.tone(b, 150, 0.16, 'triangle', 0.4, 0, 55);
-        this.noise(b, 0.1, 0.22, 'lowpass', 500);
+      case 'coup_rouleau': // rouleau de Maître Shiba : « Bois qui craque » (choix de Rudy, 12/11)
+        this.noise(b, 0.03, 0.335, 'highpass', 2000);
+        this.tone(b, 380, 0.05, 'square', 0.101, 0, 190);
+        this.tone(b, 140, 0.16, 'sine', 0.369, 0.01, 45);
+        this.noise(b, 0.12, 0.134, 'bandpass', 600, 0.03);
         break;
-      case 'coup_hachoir': // lame rapide
-        this.noise(b, 0.05, 0.16, 'highpass', 3500);
-        this.tone(b, 1900, 0.04, 'square', 0.04, 0, 1300);
+      case 'coup_hachoir': // hachoirs de Mlle Noisette : « Laser cuisine » (choix de Rudy, 12/11)
+        this.tone(b, 2400, 0.09, 'sawtooth', 0.054, 0, 600);
+        this.noise(b, 0.05, 0.168, 'highpass', 6000);
+        this.tone(b, 1200, 0.05, 'square', 0.04, 0.03, 300);
         break;
       case 'touche':
         this.tone(b, 300, 0.05, 'square', 0.08, 0, 180);
@@ -346,25 +351,28 @@ class AudioManager {
         this.arp([72, 76, 79, 84, 0, 79, 84, 88, 91, 96], 0.11, 'square', 0.15, 2.2);
         this.arp([48, 0, 0, 0, 0, 55, 0, 0, 60, 60], 0.11, 'triangle', 0.22, 3);
         break;
-      case 'coup_hache': // hachoir géant enflammé : souffle de feu + choc lourd
-        this.noise(b, 0.16, 0.45, 'bandpass', 700, 0, 2200);
-        this.tone(b, 110, 0.14, 'triangle', 0.4, 0.02, 50);
+      case 'coup_hache': // hachoir géant du Taureau Boucher : « Séisme » (choix de Rudy, 12/11)
+        this.tone(b, 80, 0.16, 'sine', 0.536, 0, 28);
+        this.tone(b, 45, 0.6, 'triangle', 0.302, 0, 28);
+        this.noise(b, 0.5, 0.234, 'lowpass', 300, 0.02, 60);
+        this.noise(b, 0.04, 0.201, 'highpass', 5000);
         break;
       case 'coup_elec': // poêles électriques : claquement + grésillement
         this.tone(b, 1600, 0.09, 'sawtooth', 0.12, 0, 220);
         this.noise(b, 0.08, 0.25, 'highpass', 5000);
         this.tone(b, 2400, 0.05, 'square', 0.06, 0.05, 900);
         break;
-      case 'coup_wok': // wok : « clang » métallique + souffle
-        this.tone(b, 880, 0.12, 'triangle', 0.2);
-        this.tone(b, 1318, 0.1, 'triangle', 0.14, 0.01);
-        this.noise(b, 0.1, 0.3, 'bandpass', 1200, 0, 3000);
+      case 'coup_wok': // woks du Tigre des Woks : « Flamme bleue » (choix de Rudy, 12/11)
+        this.tone(b, 400, 0.18, 'sine', 0.121, 0, 1800);
+        this.noise(b, 0.2, 0.234, 'bandpass', 2500, 0, 7000);
+        this.tone(b, 180, 0.16, 'sine', 0.302, 0.05, 50);
         break;
-      case 'coup_glace': // marteau de glace : choc sourd + éclats cristallins
-        this.tone(b, 140, 0.12, 'triangle', 0.3, 0, 60);
-        this.tone(b, 2093, 0.08, 'triangle', 0.16, 0.02);
-        this.tone(b, 2637, 0.1, 'triangle', 0.12, 0.05);
-        this.noise(b, 0.07, 0.22, 'highpass', 6000, 0.02);
+      case 'coup_glace': // marteau de l'Ours Glacier : « Bloc de glace » (choix de Rudy, 12/11)
+        this.tone(b, 100, 0.16, 'sine', 0.536, 0, 30);
+        this.noise(b, 0.3, 0.234, 'highpass', 3500, 0.02);
+        this.tone(b, 2637, 0.1, 'triangle', 0.08, 0.04);
+        this.tone(b, 3136, 0.1, 'triangle', 0.067, 0.08);
+        this.tone(b, 3951, 0.1, 'triangle', 0.054, 0.12);
         break;
       case 'splat': // monstre mou écrasé (aubergine, citrouille, hot-dog, fromage)
         this.tone(b, 260, 0.12, 'sine', 0.25, 0, 80);
