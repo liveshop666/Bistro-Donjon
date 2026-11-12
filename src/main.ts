@@ -53,6 +53,19 @@ document.fonts.load('8px "Press Start 2P"').finally(() => {
     window.setTimeout(refit, 250);
     window.setTimeout(refit, 1000);
   };
+  // Rotation : le jeu installé depuis Chrome garde l'orientation « portrait » de son ancienne installation
+  // (Chrome ne la met à jour qu'après plusieurs jours). On la débloque nous-mêmes à chaque ouverture.
+  const unlockRotation = () => {
+    const so = screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> };
+    try {
+      void so?.lock?.('any').catch(() => undefined);
+    } catch {
+      /* navigateur sans verrouillage d'orientation : rien à faire */
+    }
+  };
+  unlockRotation();
+  document.addEventListener('pointerdown', unlockRotation, { once: true });
+  document.addEventListener('visibilitychange', () => !document.hidden && unlockRotation());
   window.addEventListener('resize', refitSoon);
   // la partie passe en paysage ou revient en portrait (taille du canvas changée par GameScene)
   game.events.on('refit', refitSoon);
