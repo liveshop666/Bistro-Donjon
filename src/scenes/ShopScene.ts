@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
-import { setupLandscapeMenu } from '../ui/landscapeMenu';
+import { landscapeMenu, portraitMenu } from '../ui/landscapeMenu';
+import { landscapeWanted } from '../core/layout';
 import { audio } from '../audio/AudioManager';
 import { billing } from '../core/Billing';
 import { CHEFS, H, itemLabel, RARITY, SHOP, ShopItem, W } from '../core/constants';
@@ -19,6 +20,10 @@ const has = (owned: string[], it: ShopItem): boolean => (it.kind === 'pack' ? (i
 export class ShopScene extends Phaser.Scene {
   private tab: Tab = 'skin';
   private dyn: Phaser.GameObjects.GameObject[] = [];
+  /** Paysage : article affiché en grand à droite, et page d'articles. */
+  private land = false;
+  private selected: string | null = null;
+  private page = 0;
 
   constructor() {
     super('Shop');
@@ -27,6 +32,11 @@ export class ShopScene extends Phaser.Scene {
   create(): void {
     this.dyn = [];
     addCoins(0); // débloque les cadeaux de palier déjà mérités (anciens profils)
+    this.land = landscapeWanted();
+    if (this.land) {
+      this.createLandscape();
+      return;
+    }
     this.add.image(0, 0, 'map_marche').setOrigin(0);
     this.add.rectangle(0, 0, W, H, 0x0c0c18, 0.84).setOrigin(0);
     txt(this, W / 2, 24, 'BOUTIQUE', 16, '#ffc533').setOrigin(0.5);
@@ -37,12 +47,145 @@ export class ShopScene extends Phaser.Scene {
     button(this, W / 2, 610, 160, 32, 'RETOUR', 0x4a4f66, () => this.scene.start('Menu'));
     audio.music('boutique');
     this.draw();
-    setupLandscapeMenu(this, 301); // entre les deux rangées d'articles ; paysage : la page en deux colonnes qui remplissent l'écran
+    portraitMenu(this);
+  }
+
+  // ------------------------------------------------------------------ paysage (maquette validée par Rudy le 12/11)
+  /** Boutique en paysage : onglets à gauche, articles au centre, article choisi en grand à droite. */
+  private createLandscape(): void {
+    const { w, h } = landscapeMenu(this);
+    this.add.image(w / 2, h / 2, 'map_marche').setScale(w / W);
+    this.add.rectangle(0, 0, w, h, 0x0c0c18, 0.8).setOrigin(0);
+    this.add.rectangle(0, 0, w, 30, 0x0c0c18, 0.9).setOrigin(0);
+    this.add.rectangle(0, 30, w, 2, 0x3a3f55).setOrigin(0);
+    button(this, 38, 15, 68, 20, '< MENU', 0x4a4f66, () => this.scene.start('Menu'));
+    txt(this, w / 2, 16, 'BOUTIQUE', 16, '#ffc533').setOrigin(0.5);
+    audio.music('boutique');
+    this.draw();
+  }
+
+  private drawLandscape(): void {
+    const add = <T extends Phaser.GameObjects.GameObject>(o: T): T => (this.dyn.push(o), o);
+    const p = loadProfile();
+    const { width: w, height: h } = this.scale;
+    add(this.add.image(w - 150, 15, 'piece'));
+    add(txt(this, w - 138, 15, String(p.coins), 8, '#ffd23e').setOrigin(0, 0.5));
+    const next = nextMilestone();
+    add(txt(this, 6, h - 12, next ? `PROCHAIN CADEAU A ${next.item.palier} : ${itemLabel(next.item)}` : 'TOUS LES CADEAUX SONT DEBLOQUES !', 8, '#7dff7d'));
+
+    // onglets à gauche
+    const tabs: [Tab, string, number][] = [['skin', 'COSTUMES', 0x3a3f55], ['combattant', 'COMBAT', 0x3a3f55], ['effet', 'EFFETS', 0x3a3f55], ['arme', 'ARMES', 0x3a3f55], ['pack', 'PACKS', 0xc98a1e]];
+    tabs.forEach(([tab, label, color], i) => {
+      add(button(this, 62, 59 + i * 36, 112, 30, label, this.tab === tab ? 0xe8642a : color, () => {
+        this.tab = tab;
+        this.page = 0;
+        this.selected = null;
+        audio.sfx('clic');
+        this.draw();
+      }));
+      if (this.tab === tab) add(this.add.graphics()).lineStyle(2, 0xffc533).strokeRect(4, 59 + i * 36 - 17, 116, 34);
+    });
+
+    // articles au centre (2 rangées, autant de colonnes que la largeur le permet)
+    const items = SHOP.filter((it) => tabOf(it) === this.tab);
+    const panelW = 204;
+    const cols = Math.max(2, Math.min(4, Math.floor((w - 128 - panelW - 8) / 116)));
+    const perPage = cols * 2;
+    const pages = Math.ceil(items.length / perPage);
+    this.page = Math.min(this.page, pages - 1);
+    if (!this.selected || !items.some((it) => it.id === this.selected)) this.selected = items[0]?.id ?? null;
+    const gridX = 128 + Math.round((w - 128 - panelW - 8 - cols * 116) / 2);
+    items.slice(this.page * perPage, (this.page + 1) * perPage).forEach((it, i) => {
+      const c = add(this.card(it, p, gridX + 58 + (i % cols) * 116, 112 + Math.floor(i / cols) * 156));
+      if (it.id === this.selected) add(this.add.graphics()).lineStyle(2, 0xffffff).strokeRect(c.x - 56, c.y - 76, 112, 152);
+    });
+    if (pages > 1) {
+      const mid = gridX + (cols * 116) / 2;
+      add(button(this, mid - 70, h - 13, 40, 18, '<', 0x3a3f55, () => this.turnPage(-1, pages)));
+      add(txt(this, mid, h - 13, `${this.page + 1}/${pages}`, 8, '#bfc8e0').setOrigin(0.5));
+      add(button(this, mid + 70, h - 13, 40, 18, '>', 0x3a3f55, () => this.turnPage(1, pages)));
+    }
+
+    // article choisi, en grand à droite
+    const it = items.find((x) => x.id === this.selected);
+    if (!it) return;
+    const px = w - panelW - 6;
+    const r = RARITY[it.rarity];
+    add(this.add.rectangle(px, 40, panelW, h - 60, 0x14141f, 0.85).setOrigin(0).setStrokeStyle(2, r.color));
+    add(txt(this, px + panelW / 2, 50, itemLabel(it), 8, '#ffc533').setOrigin(0.5, 0));
+    add(txt(this, px + panelW / 2, 64, r.label, 8, r.text).setOrigin(0.5, 0));
+    add(this.add.rectangle(px + 22, 80, panelW - 44, 104, 0x1b1b2b).setOrigin(0));
+    const cy = 132;
+    if (it.world) {
+      add(this.add.image(px + 60, cy, 'map_' + it.world).setScale(96 / 640));
+      add(this.fit(this.add.image(px + 130, cy, it.sprite!), 90, 90));
+    } else if (it.sprite) add(this.fit(this.add.image(px + panelW / 2, cy, it.sprite), panelW - 56, 96).setScale(Math.min(2, (panelW - 56) / this.textures.get(it.sprite).getSourceImage().width, 96 / this.textures.get(it.sprite).getSourceImage().height)));
+    else add(this.slash(it.color ?? 0xffffff, !!it.rainbow).setPosition(px + panelW / 2, cy).setScale(1.6));
+    add(txt(this, px + panelW / 2, 192, it.desc, 8, '#bfc8e0').setOrigin(0.5, 0).setAlign('center').setWordWrapWidth(panelW - 16));
+    const owned = has(p.owned, it);
+    const equipped = owned && (it.kind === 'skin' ? p.skins[it.chef!] === it.id : p.effect === it.id);
+    const label = owned ? (it.kind === 'pack' ? 'DEJA A TOI' : equipped ? 'RETIRER' : 'EQUIPER') : it.coins !== undefined ? (it.euro ? 'OBTENIR' : `ACHETER : ${it.coins}`) : it.palier !== undefined ? 'CADEAU : VOIR' : `ACHETER : ${it.euro}`;
+    add(button(this, px + panelW / 2, h - 52, panelW - 24, 30, label, owned ? 0x3d7a4a : 0xb03a5a, () => this.open(it)));
+  }
+
+  private turnPage(d: number, pages: number): void {
+    this.page = (this.page + d + pages) % pages;
+    this.selected = null;
+    audio.sfx('clic');
+    this.draw();
+  }
+
+  /** Carte d'un article (108 x 148), centrée en (x, y). */
+  private card(it: ShopItem, p: ReturnType<typeof loadProfile>, x: number, y: number): Phaser.GameObjects.Container {
+    const owned = has(p.owned, it);
+    const equipped = owned && (it.kind === 'skin' ? p.skins[it.chef!] === it.id : p.effect === it.id);
+    const r = RARITY[it.rarity];
+    const g = this.add.graphics();
+    g.fillStyle(r.color).fillRect(-54, -74, 108, 148);
+    g.fillStyle(owned ? 0x2f5a3a : 0x2a2a44).fillRect(-51, -71, 102, 142);
+    g.fillStyle(0x14141f, 0.6).fillRect(-46, -40, 92, 62);
+    const preview = it.world
+      ? this.add.container(0, 0, [this.add.image(-24, -9, 'map_' + it.world).setScale(58 / 640), this.fit(this.add.image(16, -6, it.sprite!), 52, 52)])
+      : it.sprite ? this.fit(this.add.image(0, -8, it.sprite)) : this.slash(it.color ?? 0xffffff, !!it.rainbow);
+    let status: string;
+    let detail = '';
+    let color = '#ffd23e';
+    let detailColor = '#bfc8e0';
+    if (equipped) [status, color] = ['EQUIPE', '#ffc533'];
+    else if (owned) [status, color] = ['OBTENU', '#7dff7d'];
+    else if (it.euro && it.coins) {
+      // payant en euros, ou gratuit avec beaucoup de pièces : les deux bien visibles
+      [status, color] = [it.euro ?? '', '#ff9ad0'];
+      if (it.coins) [detail, detailColor] = [`GRATUIT ${Math.round(it.coins / 1000)}K`, '#7dff7d'];
+    }
+    else if (it.coins !== undefined) status = `${it.coins} PIECES`;
+    else if (it.palier !== undefined) [status, detail, color] = ['CADEAU', `A ${it.palier}`, '#7dff7d'];
+    else [status, detail, color] = ['PREMIUM', it.euro ?? '', '#ff9ad0'];
+    const parts: Phaser.GameObjects.GameObject[] = [
+      g,
+      txt(this, 0, -57, it.name).setOrigin(0.5),
+      preview,
+      txt(this, 0, 30, r.label, 8, r.text).setOrigin(0.5),
+      txt(this, 0, 46, status, 8, color).setOrigin(0.5),
+      txt(this, 0, 60, detail, 8, detailColor).setOrigin(0.5),
+    ];
+    if (!owned && it.coins === undefined) parts.push(this.add.image(36, -30, 'cadenas'));
+    const c = this.add.container(x, y, parts).setSize(108, 148).setInteractive({ useHandCursor: true });
+    c.on('pointerup', () => {
+      if (!this.land) return this.open(it);
+      // en paysage, un appui montre l'article en grand ; un deuxième appui ouvre l'achat
+      if (this.selected === it.id) return this.open(it);
+      this.selected = it.id;
+      audio.sfx('clic');
+      this.draw();
+    });
+    return c;
   }
 
   private draw(): void {
     this.dyn.forEach((c) => c.destroy());
     this.dyn = [];
+    if (this.land) return this.drawLandscape();
     const add = <T extends Phaser.GameObjects.GameObject>(o: T): T => (this.dyn.push(o), o);
     const p = loadProfile();
 
@@ -75,43 +218,7 @@ export class ShopScene extends Phaser.Scene {
     tabBtn(323, 'pack', 'PACKS');
 
     SHOP.filter((it) => tabOf(it) === this.tab).forEach((it, i) => {
-      const x = 64 + (i % 3) * 116;
-      const y = 222 + Math.floor(i / 3) * 158;
-      const owned = has(p.owned, it);
-      const equipped = owned && (it.kind === 'skin' ? p.skins[it.chef!] === it.id : p.effect === it.id);
-      const r = RARITY[it.rarity];
-      const g = this.add.graphics();
-      g.fillStyle(r.color).fillRect(-54, -74, 108, 148);
-      g.fillStyle(owned ? 0x2f5a3a : 0x2a2a44).fillRect(-51, -71, 102, 142);
-      g.fillStyle(0x14141f, 0.6).fillRect(-46, -40, 92, 62);
-      const preview = it.world
-        ? this.add.container(0, 0, [this.add.image(-24, -9, 'map_' + it.world).setScale(58 / 640), this.fit(this.add.image(16, -6, it.sprite!), 52, 52)])
-        : it.sprite ? this.fit(this.add.image(0, -8, it.sprite)) : this.slash(it.color ?? 0xffffff, !!it.rainbow);
-      let status: string;
-      let detail = '';
-      let color = '#ffd23e';
-      let detailColor = '#bfc8e0';
-      if (equipped) [status, color] = ['EQUIPE', '#ffc533'];
-      else if (owned) [status, color] = ['OBTENU', '#7dff7d'];
-      else if (it.euro && it.coins) {
-        // payant en euros, ou gratuit avec beaucoup de pièces : les deux bien visibles
-        [status, color] = [it.euro ?? '', '#ff9ad0'];
-        if (it.coins) [detail, detailColor] = [`GRATUIT ${Math.round(it.coins / 1000)}K`, '#7dff7d'];
-      }
-      else if (it.coins !== undefined) status = `${it.coins} PIECES`;
-      else if (it.palier !== undefined) [status, detail, color] = ['CADEAU', `A ${it.palier}`, '#7dff7d'];
-      else [status, detail, color] = ['PREMIUM', it.euro ?? '', '#ff9ad0'];
-      const parts: Phaser.GameObjects.GameObject[] = [
-        g,
-        txt(this, 0, -57, it.name).setOrigin(0.5),
-        preview,
-        txt(this, 0, 30, r.label, 8, r.text).setOrigin(0.5),
-        txt(this, 0, 46, status, 8, color).setOrigin(0.5),
-        txt(this, 0, 60, detail, 8, detailColor).setOrigin(0.5),
-      ];
-      if (!owned && it.coins === undefined) parts.push(this.add.image(36, -30, 'cadenas'));
-      const c = add(this.add.container(x, y, parts).setSize(108, 148).setInteractive({ useHandCursor: true }));
-      c.on('pointerup', () => this.open(it));
+      add(this.card(it, p, 64 + (i % 3) * 116, 222 + Math.floor(i / 3) * 158));
     });
   }
 

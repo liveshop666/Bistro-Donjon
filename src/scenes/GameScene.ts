@@ -134,6 +134,11 @@ export class GameScene extends Phaser.Scene {
     this.world = WORLDS[this.worldId];
     const { pot, counter, standLine } = this.world;
     this.add.image(0, 0, 'map_' + this.worldId).setOrigin(0).setDepth(-100);
+    // Paysage : en attendant les maps dessinées en largeur, le décor est prolongé de chaque côté (copies en miroir,
+    // un peu assombries) pour que la map remplisse tout l'écran. On ne peut pas y marcher (hors du terrain).
+    for (const k of [-2, -1, 1, 2]) {
+      this.add.image(k * W, 0, 'map_' + this.worldId).setOrigin(0).setDepth(-101).setFlipX(k % 2 !== 0).setTint(0xb8b8c8);
+    }
     if (this.world.mechanic === 'tapis') {
       for (const c of CONVEYORS) {
         this.add.rectangle(0, c.y, W, c.h, 0x4ff3ff, 0.12).setOrigin(0).setDepth(-50);
@@ -834,22 +839,24 @@ export class GameScene extends Phaser.Scene {
     this.land = land;
     const main = this.cameras.main;
     if (!land) {
-      main.setViewport(0, 0, W, H).setScroll(0, 0);
+      main.setViewport(0, 0, W, H).removeBounds().setScroll(0, 0);
       for (const o of this.children.list) o.cameraFilter = 0;
       return;
     }
-    const side = (gw - W) / 2;
-    main.setViewport(side, 0, W, gh);
+    // la map remplit tout l'écran et la caméra suit le chef ; interface et fenêtres par-dessus
+    main.setViewport(0, 0, gw, gh).setBounds(-2 * W, 0, 5 * W, H);
     this.hudCam = this.cameras.add(0, 0, gw, gh);
-    this.ovlCam = this.cameras.add(side, 0, W, gh).setScroll(0, (H - gh) / 2);
+    this.ovlCam = this.cameras.add(0, 0, gw, gh).setScroll(-(gw - W) / 2, (H - gh) / 2);
     this.followChef(1);
   }
 
-  /** En paysage, la carte défile verticalement pour garder le chef au milieu. */
+  /** En paysage, la map défile pour garder le chef au milieu de l'écran. */
   private followChef(k: number): void {
     const main = this.cameras.main;
-    const target = Phaser.Math.Clamp(this.chef.y - main.height / 2, 0, H - main.height);
-    main.scrollY += (target - main.scrollY) * k;
+    const ty = Phaser.Math.Clamp(this.chef.y - main.height / 2, 0, H - main.height);
+    const tx = this.chef.x - main.width / 2;
+    main.scrollY += (ty - main.scrollY) * k;
+    main.scrollX += (tx - main.scrollX) * k;
   }
 
   /** Chaque objet n'est dessiné que par sa caméra (en paysage seulement). */

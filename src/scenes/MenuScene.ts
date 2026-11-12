@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
-import { setupLandscapeMenu, pageToWorld } from '../ui/landscapeMenu';
+import { landscapeMenu, pageToWorld, portraitMenu } from '../ui/landscapeMenu';
+import { landscapeWanted } from '../core/layout';
 import { audio } from '../audio/AudioManager';
 import { CHEF_ORDER, CHEFS, ChefId, DAILY_GIFT, FREE_WORLDS, H, itemLabel, playerLevel, W, worldUnlocked, WORLD_ORDER, WorldId, WORLDS } from '../core/constants';
 import { claimDailyGift, loadProfile, loadRun, saveProfile } from '../core/Storage';
@@ -41,6 +42,10 @@ export class MenuScene extends Phaser.Scene {
     this.unlocked = profile.unlocked;
     this.owned = profile.owned;
     this.world = worldUnlocked(profile.world, this.unlocked, this.owned) ? profile.world : 'clairiere';
+    if (landscapeWanted()) {
+      this.createLandscape(profile, gift);
+      return;
+    }
 
     this.bg = this.add.image(0, 0, 'map_' + this.world).setOrigin(0);
     this.add.rectangle(0, 0, W, H, 0x0c0c18, 0.72).setOrigin(0);
@@ -121,6 +126,12 @@ export class MenuScene extends Phaser.Scene {
     this.refresh();
     this.missionsButton();
     txt(this, 6, 6, `V ${BUILD_LABEL}`, 8, '#6b7391'); // date de la version chargée : pour vérifier d'un coup d'œil qu'on est à jour
+    this.welcome(gift);
+    portraitMenu(this, () => saveProfile({ chef: this.chef, world: this.world }));
+  }
+
+  /** Message « menu ouvert » (mise à jour), proposition d'installation et cadeau du jour. */
+  private welcome(gift: ReturnType<typeof claimDailyGift>): void {
     this.game.events.emit('menu');
     // Proposer d'installer le jeu sur l'écran d'accueil (seulement dans Chrome, pas dans l'appli déjà installée)
     // (après le cadeau du jour s'il y en a un, pour ne pas empiler deux fenêtres)
@@ -142,8 +153,140 @@ export class MenuScene extends Phaser.Scene {
         },
       }], lines.join('\n'));
     }
-    setupLandscapeMenu(this); // paysage : la page en deux colonnes qui remplissent l'écran
   }
+
+  // ------------------------------------------------------------------ paysage (maquette validée par Rudy le 12/11)
+  private mode: 'solo' | 'duel' = 'solo';
+
+  /** Écran titre en paysage, façon jeu mobile : menu à gauche, chef en grand au centre, monde et JOUER à droite. */
+  private createLandscape(profile: ReturnType<typeof loadProfile>, gift: ReturnType<typeof claimDailyGift>): void {
+    const { w, h } = landscapeMenu(this, () => saveProfile({ chef: this.chef, world: this.world }));
+    this.bg = this.add.image(w / 2, h / 2, 'map_' + this.world).setScale(w / W);
+    this.add.rectangle(0, 0, w, h, 0x0c0c18, 0.62).setOrigin(0);
+
+    // barre du haut : niveau, titre, pièces, son
+    this.add.rectangle(0, 0, w, 30, 0x0c0c18, 0.88).setOrigin(0);
+    this.add.rectangle(0, 30, w, 2, 0x3a3f55).setOrigin(0);
+    const lvl = playerLevel(profile.earned);
+    this.add.rectangle(8, 6, 24, 18, 0x4fb8ff).setOrigin(0).setStrokeStyle(2, 0x1b1b2b);
+    txt(this, 20, 15, String(lvl.level), 8, '#0c0c18').setOrigin(0.5);
+    txt(this, 38, 7, `NIVEAU ${lvl.level}`, 8, '#bfc8e0');
+    const xp = this.add.graphics();
+    xp.fillStyle(0x1b1b2b).fillRect(38, 18, 110, 5);
+    xp.fillStyle(0x4fb8ff).fillRect(38, 18, Math.round((110 * lvl.into) / lvl.span), 5);
+    txt(this, w / 2, 16, 'BISTRO DONJON', 16, '#ffc533').setOrigin(0.5).setStroke('#7a2a12', 4);
+    this.add.image(w - 150, 15, 'piece');
+    txt(this, w - 138, 15, String(profile.coins), 8, '#ffd23e').setOrigin(0, 0.5);
+    const son = () => (audio.muted ? 'SON : NON' : 'SON : OUI');
+    const sb = button(this, w - 40, 15, 70, 20, son(), 0x3a3f55, () => {
+      audio.toggleMute();
+      (sb.getAt(1) as Phaser.GameObjects.Text).setText(son());
+      audio.sfx('clic');
+    });
+
+    // menu de gauche
+    const st = missionsStatus();
+    const mb = button(this, 67, 61, 118, 30, `MISSIONS ${st.done}/3`, st.claimable ? 0x3d7a4a : 0x3d5c8f, () => this.openMissions());
+    if (st.claimable) this.tweens.add({ targets: mb, scale: 1.06, duration: 450, yoyo: true, repeat: -1 });
+    button(this, 67, 97, 118, 30, 'BOUTIQUE', 0xc98a1e, () => this.scene.start('Shop'));
+    button(this, 67, 133, 118, 30, 'MON COMPTE', 0x4a4f66, () => this.scene.start('Account'));
+    button(this, 67, 169, 118, 30, 'REGLES', 0x4a4f66, () => this.scene.start('Rules'));
+    txt(this, 6, h - 12, `V ${BUILD_LABEL}`, 8, '#6b7391');
+    txt(this, 6, h - 30, `RECORD : ${profile.best}`, 8, '#bfc8e0');
+
+    // à droite : le monde, le mode et JOUER
+    const px = w - 246;
+    this.add.rectangle(px, 44, 238, 150, 0x14141f, 0.8).setOrigin(0).setStrokeStyle(2, 0x3a3f55);
+    button(this, px + 116, 168, 28, 24, '<', 0x3a3f55, () => this.stepWorld(-1));
+    button(this, px + 222, 168, 28, 24, '>', 0x3a3f55, () => this.stepWorld(1));
+    const play = button(this, px + 119, 264, 238, 44, 'JOUER', 0xe8642a, () => this.playLandscape());
+    (play.getAt(1) as Phaser.GameObjects.Text).setFontSize(16);
+    const run = loadRun();
+    const cont = button(this, px + 119, 308, 238, 26, run ? `CONTINUER (V.${Math.min(run.wave + 1, 4)})` : 'CONTINUER', 0x3d7a4a, () => {
+      if (run) this.scene.start('Game', { chef: run.chef, world: run.world, mode: 'solo', resume: run });
+    });
+    if (!run) cont.setAlpha(0.4);
+    audio.music('menu');
+    this.drawLandscape();
+    this.welcome(gift);
+  }
+
+  /** Partie qui change sur l'écran paysage : chef choisi, monde choisi, mode. */
+  private drawLandscape(): void {
+    this.worldObjs.forEach((o) => o.destroy());
+    this.worldObjs = [];
+    const add = <T extends Phaser.GameObjects.GameObject>(o: T): T => (this.worldObjs.push(o), o);
+    const w = this.scale.width;
+    const p = loadProfile();
+    const c = CHEFS[this.chef];
+    const wd = WORLDS[this.world];
+    this.bg.setTexture('map_' + this.world);
+
+    // chef en grand au centre
+    const cx = Math.round((132 + (w - 252)) / 2);
+    const glow = add(this.add.graphics());
+    glow.fillStyle(0xffc533, 0.18).fillEllipse(cx, 236, 190, 26);
+    const skin = p.skins[this.chef];
+    const img = add(this.add.image(cx, 240, skin && p.owned.includes(skin) ? skin : this.chef).setOrigin(0.5, 1));
+    img.setScale(Math.min(3, 170 / img.width, 150 / img.height));
+    add(txt(this, cx, 250, c.name, 8, '#ffc533').setOrigin(0.5, 0));
+    add(txt(this, cx, 264, `${c.weapon}\n${c.ultimateName}`, 8, '#bfc8e0').setOrigin(0.5, 0).setAlign('center'));
+    CHEF_ORDER.forEach((id, i) => {
+      const x = cx + (i - 1) * 58;
+      const pt = add(this.add.image(x, 322, 'portrait_' + id).setScale(0.75).setInteractive({ useHandCursor: true }));
+      pt.on('pointerdown', () => {
+        this.chef = id;
+        audio.sfx('clic');
+        this.drawLandscape();
+      });
+      if (id === this.chef) add(this.add.graphics()).lineStyle(2, 0xffc533).strokeRect(x - 18, 322 - 20, 36, 40);
+    });
+
+    // monde
+    const px = w - 246;
+    const i = WORLD_ORDER.indexOf(this.world);
+    const locked = !worldUnlocked(this.world, this.unlocked, this.owned);
+    add(txt(this, px + 10, 52, `MONDE ${i + 1} / ${WORLD_ORDER.length}`, 8, '#8fe0ff'));
+    const th = add(this.add.image(px + 10, 66, 'map_' + this.world).setOrigin(0).setScale(68 / W));
+    if (locked) {
+      th.setTint(0x333344);
+      add(this.add.image(px + 44, 126, 'cadenas'));
+    }
+    add(this.add.graphics()).lineStyle(2, locked ? 0x6b7391 : 0xffc533).strokeRect(px + 9, 65, 70, 123);
+    add(txt(this, px + 88, 70, wd.name, 8, '#ffc533').setWordWrapWidth(144));
+    const why = i < FREE_WORLDS ? `Termine d'abord le monde ${i}` : 'A débloquer : BOUTIQUE > PACKS';
+    add(txt(this, px + 88, 96, locked ? why : wd.hint, 8, locked ? '#ff9d8a' : '#bfc8e0').setWordWrapWidth(144).setLineSpacing(3));
+
+    // mode
+    const modeBtn = (x: number, m: 'solo' | 'duel', label: string, color: number) => {
+      add(button(this, x, 218, 116, 26, label, color, () => {
+        this.mode = m;
+        audio.sfx('clic');
+        this.drawLandscape();
+      }));
+      if (this.mode === m) add(this.add.graphics()).lineStyle(2, 0xffc533).strokeRect(x - 60, 218 - 15, 120, 30);
+    };
+    modeBtn(px + 59, 'solo', 'SOLO', 0xe8642a);
+    modeBtn(px + 179, 'duel', 'DUEL', 0xb03a5a);
+  }
+
+  private stepWorld(d: number): void {
+    const n = WORLD_ORDER.length;
+    this.world = WORLD_ORDER[(WORLD_ORDER.indexOf(this.world) + d + n) % n];
+    audio.sfx('clic');
+    this.drawLandscape();
+  }
+
+  private playLandscape(): void {
+    if (!worldUnlocked(this.world, this.unlocked, this.owned)) {
+      audio.sfx('parti');
+      return;
+    }
+    saveProfile({ chef: this.chef, world: this.world });
+    if (this.mode === 'duel') this.scene.start('Duel', { chef: this.chef, world: this.world });
+    else this.scene.start('Game', { chef: this.chef, world: this.world, mode: 'solo' });
+  }
+
 
   /** Bouton des missions du jour, en haut à gauche (clignote quand une récompense attend). */
   private missionsButton(): void {

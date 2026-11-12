@@ -16,9 +16,9 @@ export class Hud {
   private ATK = { x: 316, y: 512, r: 34 };
   /** Bouton PAUSE en bas de l'écran, facile à atteindre. */
   private PAUSE = { x: 233, y: 622, w: 70, h: 26 };
-  /** Largeur de l'écran (canvas) et largeur d'un bandeau latéral (0 en portrait). */
+  /** Largeur de l'écran (canvas) et mode paysage. */
   private sw = W;
-  private side = 0;
+  private land = false;
   /** Tous les objets de l'interface fixe (pour les caméras en paysage et pour tout détruire). */
   private own = new Set<Phaser.GameObjects.GameObject>();
   private releaseFn: (p: Phaser.Input.Pointer) => void;
@@ -47,36 +47,36 @@ export class Hud {
     const sw = scene.scale.width;
     const sh = scene.scale.height;
     const land = sw > sh;
-    const S = land ? (sw - W) / 2 : 0;
     this.sw = sw;
-    this.side = S;
+    this.land = land;
     if (land) {
-      this.ATK = { x: sw - 74, y: sh - 152, r: 34 };
-      this.ULT = { x: sw - 62, y: sh - 64, r: 32 };
-      this.PAUSE = { x: sw - 168, y: sh - 22, w: 70, h: 26 };
-      // fond des deux bandeaux
-      const bg = scene.add.graphics().setDepth(D - 5);
-      bg.fillStyle(0x14141f, 1).fillRect(0, 0, S, sh).fillRect(sw - S, 0, S, sh);
-      bg.fillStyle(0x3a3f55, 1).fillRect(S - 2, 0, 2, sh).fillRect(sw - S, 0, 2, sh);
+      // paysage (façon jeu de tir mobile, maquette validée par Rudy le 12/11) : tout flotte par-dessus la map
+      this.ATK = { x: sw - 64, y: sh - 66, r: 42 };
+      this.ULT = { x: sw - 150, y: sh - 50, r: 32 };
+      this.PAUSE = { x: -100, y: -100, w: 0, h: 0 }; // pas de bouton PAUSE en bas : celui du haut à droite suffit
     }
-    const { ATK, ULT, PAUSE } = this;
+    const { ATK, ULT } = this;
 
-    scene.add.rectangle(0, 0, land ? S : W, 26, 0x14141f, 0.88).setOrigin(0).setDepth(D);
-    if (land) scene.add.rectangle(sw - S, 0, S, 26, 0x1b1b2b, 0.95).setOrigin(0).setDepth(D);
+    if (land) {
+      scene.add.rectangle(0, 0, 100, 26, 0x14141f, 0.8).setOrigin(0).setDepth(D);
+      scene.add.rectangle(sw / 2 - 70, 0, 140, 26, 0x14141f, 0.8).setOrigin(0).setDepth(D);
+      scene.add.rectangle(sw - 104, 0, 104, 26, 0x14141f, 0.8).setOrigin(0).setDepth(D);
+    } else scene.add.rectangle(0, 0, W, 26, 0x14141f, 0.88).setOrigin(0).setDepth(D);
     scene.add.image(9, 8, 'coeur').setDepth(D + 1);
     scene.add.image(9, 19, 'ico_stand').setDepth(D + 1);
     this.bars = scene.add.graphics().setDepth(D + 1);
-    this.timer = land ? txt(scene, sw - S + 8, 13, '').setOrigin(0, 0.5).setDepth(D + 1) : txt(scene, W / 2, 13, '').setOrigin(0.5).setDepth(D + 1);
+    this.timer = txt(scene, sw / 2, 13, '').setOrigin(0.5).setDepth(D + 1);
     scene.add.image(sw - 12, 13, 'ico_pause').setDepth(D + 1).setInteractive({ useHandCursor: true }).on('pointerdown', onPause);
+    if (land) scene.add.zone(sw - 16, 14, 36, 30).setDepth(D + 3).setInteractive({ useHandCursor: true }).on('pointerdown', onPause);
     scene.add.image(sw - 32, 13, 'piece').setDepth(D + 1);
     this.patience = scene.add.graphics().setDepth(D + 2);
-    this.combo = txt(scene, 6, land ? 122 : 70, '', 8, '#ffc533').setDepth(D + 1);
-    this.rival = txt(scene, sw - 6, land ? 32 : 70, '', 8, '#ff9d8a').setOrigin(1, 0).setDepth(D + 1);
+    this.combo = txt(scene, 6, land ? 32 : 70, '', 8, '#ffc533').setDepth(D + 1).setStroke('#14141f', 3);
+    this.rival = txt(scene, sw - 6, land ? 32 : 70, '', 8, '#ff9d8a').setOrigin(1, 0).setDepth(D + 1).setStroke('#14141f', 3);
     this.gold = txt(scene, sw - 42, 13, '0', 8, '#ffd23e').setOrigin(1, 0.5).setDepth(D + 1);
-    this.powers = txt(scene, land ? S / 2 : W / 2, land ? 140 : 84, '', 8, '#8fe0ff').setOrigin(0.5, 0).setDepth(D + 1);
+    this.powers = txt(scene, sw / 2, land ? 72 : 84, '', 8, '#8fe0ff').setOrigin(0.5, 0).setDepth(D + 1).setStroke('#14141f', 3);
 
     // inventaire
-    const invX = land ? Math.max(2, Math.round((S - 186) / 2)) : 2;
+    const invX = land ? Math.round(sw / 2 - 93) : 2;
     scene.add.rectangle(invX, sh - 34, 186, 32, 0x14141f, 0.8).setOrigin(0).setDepth(D);
     INGREDIENTS.forEach((ing, i) => {
       const x = invX + 12 + i * 46;
@@ -104,16 +104,21 @@ export class Hud {
     scene.input.on('pointerup', this.releaseFn);
     scene.input.on('pointerupoutside', this.releaseFn);
 
-    // bouton PAUSE en bas (celui du haut reste aussi)
+    // bouton PAUSE en bas (celui du haut reste aussi) ; pas en paysage
+    if (!land) this.bottomPause(onPause);
+
+    for (const o of scene.children.list) if (!before.has(o)) this.own.add(o);
+    recipes.onChange = () => this.buildOrders();
+    this.buildOrders();
+  }
+
+  private bottomPause(onPause: () => void): void {
+    const { scene, PAUSE } = this;
     const pg = scene.add.graphics().setDepth(D);
     pg.fillStyle(0x1b1b2b, 0.9).fillRect(PAUSE.x - PAUSE.w / 2, PAUSE.y - PAUSE.h / 2, PAUSE.w, PAUSE.h);
     pg.fillStyle(0x3a3f55, 0.9).fillRect(PAUSE.x - PAUSE.w / 2 + 2, PAUSE.y - PAUSE.h / 2 + 2, PAUSE.w - 4, PAUSE.h - 4);
     txt(scene, PAUSE.x, PAUSE.y, 'PAUSE').setOrigin(0.5).setDepth(D + 1);
     scene.add.zone(PAUSE.x, PAUSE.y, PAUSE.w, PAUSE.h).setDepth(D + 3).setInteractive({ useHandCursor: true }).on('pointerdown', onPause);
-
-    for (const o of scene.children.list) if (!before.has(o)) this.own.add(o);
-    recipes.onChange = () => this.buildOrders();
-    this.buildOrders();
   }
 
   /** Vrai si l'objet fait partie de l'interface fixe (bandeaux, boutons, commandes). */
@@ -121,9 +126,9 @@ export class Hud {
     return this.own.has(o) || this.orderUi.includes(o);
   }
 
-  /** Coin haut-gauche de la commande n° i : côte à côte en portrait, l'une sous l'autre à gauche en paysage. */
+  /** Coin haut-gauche de la commande n° i : côte à côte, centrées sous le chrono. */
   private orderPos(i: number): { x: number; y: number } {
-    return this.side ? { x: Math.max(2, Math.round((this.side - 174) / 2)), y: 30 + i * 44 } : { x: 4 + i * 178, y: 29 };
+    return { x: (this.land ? Math.round(this.sw / 2 - 178) : 4) + i * 178, y: 29 };
   }
 
   /** Détruit toute l'interface (quand on tourne le téléphone, elle est reconstruite). */

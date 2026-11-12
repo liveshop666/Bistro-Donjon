@@ -1,6 +1,6 @@
 # Bistro Donjon — mémoire du projet
 
-Jeu mobile (Android d'abord) de SolveLab : action-survie roguelike + cuisine, pixel art, portrait 360 × 640, une main.
+Jeu mobile (Android d'abord) de SolveLab : action-survie roguelike + cuisine, pixel art, portrait 360 × 640, une main. Paysage géré depuis le 12/11/2026 (partie en plein écran, menu et boutique dessinés pour le paysage).
 Stack : Phaser 3 + TypeScript + Vite, Capacitor pour Android. Tout le texte du jeu est en français.
 
 **Avant de travailler, lire `docs/memoire/JOURNAL.md`** (où on en est, erreurs à ne pas refaire) et le mettre à jour en fin de session.

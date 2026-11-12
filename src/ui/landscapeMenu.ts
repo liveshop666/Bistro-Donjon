@@ -143,3 +143,78 @@ export function pageToWorld(scene: Phaser.Scene, x: number, y: number): { x: num
   const p = cam.getWorldPoint(x, y);
   return { x: p.x, y: p.y };
 }
+
+/** Hauteur du canvas des écrans de menu dessinés exprès pour le paysage (titre, boutique). */
+export const MENU_LH = 360;
+
+/** Redémarre l'écran quand on tourne le téléphone (portrait <-> paysage ou autre largeur), pour qu'il se redessine. */
+function restartOnRotate(scene: Phaser.Scene, land: boolean, width: number, beforeRestart?: () => void): void {
+  let alive = true;
+  const check = () => {
+    if (!alive) return;
+    const nowLand = landscapeWanted();
+    if (nowLand === land && (!land || landscapeMenuWidth() === width)) return;
+    alive = false;
+    beforeRestart?.();
+    scene.scene.restart();
+  };
+  const relayout = () => [0, 300, 1000].forEach((ms) => window.setTimeout(check, ms));
+  window.addEventListener('resize', relayout);
+  scene.events.once('shutdown', () => {
+    alive = false;
+    window.removeEventListener('resize', relayout);
+  });
+}
+
+export function landscapeMenuWidth(): number {
+  const ratio = window.innerWidth / Math.max(1, window.innerHeight);
+  return Math.round(MENU_LH * Math.min(2.4, Math.max(1.6, ratio)));
+}
+
+/** Écran de menu en portrait (360 x 640) qui se redessine en paysage quand on tourne le téléphone. */
+export function portraitMenu(scene: Phaser.Scene, beforeRestart?: () => void): void {
+  if (scene.scale.width !== W || scene.scale.height !== H) {
+    scene.scale.setGameSize(W, H);
+    scene.game.events.emit('refit');
+  }
+  scene.cameras.main.setViewport(0, 0, W, H);
+  restartOnRotate(scene, false, W, beforeRestart);
+}
+
+/**
+ * Écran de menu dessiné exprès pour le paysage : canvas large (MENU_LH de haut). Les fenêtres (openModal, clavier),
+ * construites en coordonnées portrait, s'affichent en entier au centre ; le reste s'assombrit et ne réagit plus.
+ * Renvoie la taille de l'écran.
+ */
+export function landscapeMenu(scene: Phaser.Scene, beforeRestart?: () => void): { w: number; h: number } {
+  const w = landscapeMenuWidth();
+  const h = MENU_LH;
+  if (scene.scale.width !== w || scene.scale.height !== h) {
+    scene.scale.setGameSize(w, h);
+    scene.game.events.emit('refit');
+  }
+  const main = scene.cameras.main.setViewport(0, 0, w, h).setScroll(0, 0);
+  const modal = scene.cameras.add(0, 0, w, h);
+  const filter = () => {
+    let box: Phaser.Geom.Rectangle | null = null;
+    for (const o of scene.children.list as Obj[]) {
+      const m = isModal(o);
+      o.cameraFilter = m ? main.id : modal.id;
+      if (m && o.visible !== false) {
+        const b = boundsOf(o);
+        if (b.width >= W && b.height >= H) continue;
+        if (b.width > 0) box = box ? Phaser.Geom.Rectangle.Union(box, b, box) : Phaser.Geom.Rectangle.Clone(b);
+      }
+    }
+    main.setAlpha(box ? 0.3 : 1).inputEnabled = !box;
+    modal.inputEnabled = !!box;
+    if (box) {
+      modal.setZoom(Math.min(1, (h - 4) / (box.height + 12)));
+      modal.centerOn(W / 2, box.centerY);
+    }
+  };
+  scene.events.on('prerender', filter);
+  scene.events.once('shutdown', () => scene.events.off('prerender', filter));
+  restartOnRotate(scene, true, w, beforeRestart);
+  return { w, h };
+}
