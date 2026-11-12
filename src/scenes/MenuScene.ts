@@ -74,11 +74,13 @@ export class MenuScene extends Phaser.Scene {
     this.worldPage = Math.floor(WORLD_ORDER.indexOf(this.world) / 4);
     this.worldObjs = [];
     this.pageBtn = txt(this, W - 6, 304, '', 8, '#ffc533').setOrigin(1, 0.5).setInteractive({ useHandCursor: true });
-    this.pageBtn.on('pointerdown', () => {
-      audio.sfx('clic');
-      this.worldPage = (this.worldPage + 1) % Math.ceil(WORLD_ORDER.length / 4);
-      this.drawWorlds();
-      this.refresh();
+    this.pageBtn.on('pointerdown', () => this.setWorldPage(this.worldPage === 0 ? 1 : 0));
+    // Glisser le doigt vers la gauche ou la droite sur les cartes change de page (comme un carrousel)
+    this.input.on('pointerup', (p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
+      if (over.some((o) => (o as Phaser.GameObjects.Image).depth >= 3000)) return; // une fenêtre est ouverte par-dessus
+      const dx = p.x - p.downX;
+      if (p.downY < 312 || p.downY > 462 || Math.abs(dx) < 30 || Math.abs(dx) < Math.abs(p.y - p.downY)) return;
+      this.setWorldPage(this.worldPage + (dx < 0 ? 1 : -1));
     });
     this.drawWorlds();
     this.worldInfo = txt(this, W / 2, 464, '').setOrigin(0.5, 0);
@@ -136,6 +138,23 @@ export class MenuScene extends Phaser.Scene {
     }
   }
 
+  /** Change de page de mondes (bouton ou glissement du doigt), avec un petit glissement des cartes. */
+  private setWorldPage(page: number): void {
+    const last = Math.ceil(WORLD_ORDER.length / 4) - 1;
+    const next = Phaser.Math.Clamp(page, 0, last);
+    if (next === this.worldPage) return;
+    const dir = next > this.worldPage ? 1 : -1;
+    this.worldPage = next;
+    audio.sfx('clic');
+    this.drawWorlds();
+    this.refresh();
+    for (const o of this.worldObjs as unknown as Phaser.GameObjects.Image[]) {
+      const x = o.x;
+      o.setX(x + dir * 70).setAlpha(0);
+      this.tweens.add({ targets: o, x, alpha: 1, duration: 170, ease: 'Cubic.out' });
+    }
+  }
+
   /** Dessine les 4 mondes de la page courante (vignette, cadenas, numéro). */
   private drawWorlds(): void {
     this.worldObjs.forEach((o) => o.destroy());
@@ -152,7 +171,8 @@ export class MenuScene extends Phaser.Scene {
         img.setTint(0x333344);
         add(this.add.image(x, 378, 'cadenas'));
       }
-      img.setInteractive({ useHandCursor: true }).on('pointerdown', () => {
+      img.setInteractive({ useHandCursor: true }).on('pointerup', (p: Phaser.Input.Pointer) => {
+        if (Math.abs(p.x - p.downX) > 12) return; // c'était un glissement, pas un appui
         audio.sfx(locked ? 'parti' : 'clic');
         if (locked) this.worldInfo.setText(`${WORLDS[id].name}\nTermine d'abord le monde ${i}`);
         else {

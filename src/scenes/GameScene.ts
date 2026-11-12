@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { audio, Sfx, Tune } from '../audio/AudioManager';
 import {
-  BOSS_REWARD, ChefId, ENEMIES, ShopItem, CHEFS, CHOP_TIME, COMBO_GOLD, COMBO_SIZE, CONVEYORS, EnemyId, GameMode, H, IngredientId, INGREDIENTS, itemLabel, playerLevel, ORDER_PATIENCE,
+  BOSS_REWARD, ChefId, ENEMIES, ShopItem, WORLD_HP_STEP, worldRank, CHEFS, CHOP_TIME, COMBO_GOLD, COMBO_SIZE, CONVEYORS, EnemyId, GameMode, H, IngredientId, INGREDIENTS, itemLabel, playerLevel, ORDER_PATIENCE,
   POWER_LABEL, POWER_TIME, SHOP, Sabotage, SABOTAGE_LABEL, SABOTAGES, TIP_BONUS, UpgradeDef, W, WAVES, WORLD_ORDER, WorldDef, WorldId, WORLDS,
 } from '../core/constants';
 import { GameManager, Phase } from '../core/GameManager';
@@ -387,7 +387,8 @@ export class GameScene extends Phaser.Scene {
 
   // ------------------------------------------------------------------ ennemis
   private spawnEnemy(type: EnemyId, x: number, y: number, mini = false): void {
-    const hpMul = ENEMIES[type].ai === 'boss' ? 1 : 1 + 0.25 * Math.min(this.gm.wave, WAVES.length);
+    // vie : +25 % par vague (sauf boss), et +8 % par monde pour tout le monde, boss compris
+    const hpMul = (ENEMIES[type].ai === 'boss' ? 1 : 1 + 0.25 * Math.min(this.gm.wave, WAVES.length)) * (1 + WORLD_HP_STEP * worldRank(this.worldId));
     this.enemies.push(new Enemy(this, type, x, y, hpMul, mini));
   }
 

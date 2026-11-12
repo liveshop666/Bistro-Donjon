@@ -1,4 +1,4 @@
-import { ENEMIES, EnemyId, H, W, WAVES, WorldDef } from './constants';
+import { ENEMIES, EnemyId, H, W, WAVES, WORLD_PACE_STEP, WorldDef, worldRank } from './constants';
 import { GameManager } from './GameManager';
 
 export type SpawnFn = (type: EnemyId, x: number, y: number) => void;
@@ -21,7 +21,7 @@ export class WaveManager {
     if (this.gm.phase !== 'harvest') return;
     const wave = WAVES[this.gm.wave];
     this.acc += dt;
-    if (this.acc < wave.interval) return;
+    if (this.acc < wave.interval * (1 - WORLD_PACE_STEP * worldRank(this.world.id))) return; // mondes avancés : monstres plus rapprochés
     this.acc = 0;
 
     const base = this.pick(wave.pool);

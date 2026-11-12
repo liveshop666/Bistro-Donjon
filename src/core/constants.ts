@@ -233,6 +233,15 @@ export const WORLDS: Record<WorldId, WorldDef> = {
     boss: 'roi_fromage', bossName: 'ROI FROMAGE', minion: 'cube_fromage',
   },
 };
+/**
+ * Difficulté par monde : chaque monde est un peu plus dur que le précédent, pour que la progression prenne du temps
+ * sans devenir impossible (les cartes d'amélioration compensent). Monde 1 : inchangé. Monde 8 : monstres +56 % de vie,
+ * apparitions 21 % plus rapprochées. À régler ici après essais sur téléphone.
+ */
+export const WORLD_HP_STEP = 0.08;
+export const WORLD_PACE_STEP = 0.03;
+export const worldRank = (id: WorldId): number => Math.max(0, WORLD_ORDER.indexOf(id));
+
 export const WORLD_ORDER: WorldId[] = ['clairiere', 'marche', 'taverne', 'cantine', 'glaciere', 'volcan', 'bateau', 'bonbons'];
 export const CHEF_ORDER: ChefId[] = ['moustachu', 'shiba', 'noisette'];
 /** Bandes horizontales des tapis roulants (monde 4). */
@@ -309,19 +318,19 @@ export interface ShopItem {
 
 export const SHOP: ShopItem[] = [
   // --- costumes
-  { id: 'skin_patissier', kind: 'skin', rarity: 'rare', chef: 'moustachu', name: 'CHAT\nPATISSIER', desc: 'Veste de chef et grand\nfouet de pâtissier.', palier: 10000, sprite: 'skin_patissier' },
-  { id: 'skin_chevalier', kind: 'skin', rarity: 'rare', chef: 'moustachu', name: 'CHAT\nCHEVALIER', desc: 'Heaume, bouclier et\nfourchette géante.', coins: 3000, sprite: 'skin_chevalier' },
-  { id: 'skin_samourai', kind: 'skin', rarity: 'epique', chef: 'moustachu', name: 'CHAT\nSAMOURAI', desc: 'Armure rouge et casque\ndoré pour Chef Moustachu.', coins: 6000, sprite: 'skin_samourai' },
-  { id: 'skin_shiba_samourai', kind: 'skin', rarity: 'epique', chef: 'shiba', name: 'SHIBA\nSAMOURAI', desc: 'Armure et sabre de feu\npour Maître Shiba.', palier: 50000, sprite: 'skin_shiba_samourai' },
+  { id: 'skin_patissier', kind: 'skin', rarity: 'rare', chef: 'moustachu', name: 'CHAT\nPATISSIER', desc: 'Veste de chef et grand\nfouet de pâtissier.', palier: 40000, sprite: 'skin_patissier' },
+  { id: 'skin_chevalier', kind: 'skin', rarity: 'rare', chef: 'moustachu', name: 'CHAT\nCHEVALIER', desc: 'Heaume, bouclier et\nfourchette géante.', coins: 12000, sprite: 'skin_chevalier' },
+  { id: 'skin_samourai', kind: 'skin', rarity: 'epique', chef: 'moustachu', name: 'CHAT\nSAMOURAI', desc: 'Armure rouge et casque\ndoré pour Chef Moustachu.', coins: 25000, sprite: 'skin_samourai' },
+  { id: 'skin_shiba_samourai', kind: 'skin', rarity: 'epique', chef: 'shiba', name: 'SHIBA\nSAMOURAI', desc: 'Armure et sabre de feu\npour Maître Shiba.', palier: 120000, sprite: 'skin_shiba_samourai' },
   { id: 'skin_cyber', kind: 'skin', rarity: 'legendaire', chef: 'moustachu', name: 'CHAT\nCYBER', desc: 'Visière néon et poêle\nélectrique.', euro: '1,99 EUR', sprite: 'skin_cyber' },
   { id: 'skin_astronaute', kind: 'skin', rarity: 'legendaire', chef: 'moustachu', name: 'CHAT\nASTRONAUTE', desc: 'Scaphandre et fouet\nlaser.', euro: '1,99 EUR', sprite: 'skin_astronaute' },
   // --- effets d'arme
-  { id: 'fx_vert', kind: 'effet', rarity: 'commun', name: 'FLAMMES\nVERTES', desc: 'Tes coups laissent une\ntraînée verte.', palier: 2500, color: 0x6dff6d },
-  { id: 'fx_bleu', kind: 'effet', rarity: 'commun', name: 'FLAMMES\nBLEUES', desc: 'Tes coups laissent une\ntraînée bleue.', coins: 800, color: 0x4fb8ff },
-  { id: 'fx_rose', kind: 'effet', rarity: 'commun', name: 'LAMES\nROSES', desc: 'Tes coups laissent une\ntraînée rose.', coins: 800, color: 0xff7ad0 },
-  { id: 'fx_or', kind: 'effet', rarity: 'rare', name: 'ETOILES\nDOREES', desc: 'Tes coups laissent une\ntraînée dorée.', palier: 5000, color: 0xffe27a },
+  { id: 'fx_vert', kind: 'effet', rarity: 'commun', name: 'FLAMMES\nVERTES', desc: 'Tes coups laissent une\ntraînée verte.', palier: 5000, color: 0x6dff6d },
+  { id: 'fx_bleu', kind: 'effet', rarity: 'commun', name: 'FLAMMES\nBLEUES', desc: 'Tes coups laissent une\ntraînée bleue.', coins: 2500, color: 0x4fb8ff },
+  { id: 'fx_rose', kind: 'effet', rarity: 'commun', name: 'LAMES\nROSES', desc: 'Tes coups laissent une\ntraînée rose.', coins: 2500, color: 0xff7ad0 },
+  { id: 'fx_or', kind: 'effet', rarity: 'rare', name: 'ETOILES\nDOREES', desc: 'Tes coups laissent une\ntraînée dorée.', palier: 15000, color: 0xffe27a },
   { id: 'fx_violet', kind: 'effet', rarity: 'epique', name: 'ECLAIRS\nVIOLETS', desc: 'Tes coups laissent une\ntraînée violette.', euro: '0,99 EUR', color: 0xb46bff },
-  { id: 'fx_arcenciel', kind: 'effet', rarity: 'legendaire', name: 'ARC-EN-\nCIEL', desc: 'Tes coups changent de\ncouleur en continu.', palier: 100000, color: 0xff7ad0, rainbow: true },
+  { id: 'fx_arcenciel', kind: 'effet', rarity: 'legendaire', name: 'ARC-EN-\nCIEL', desc: 'Tes coups changent de\ncouleur en continu.', palier: 300000, color: 0xff7ad0, rainbow: true },
   // --- chefs combattants (premium) : chacun a son arme, son bruit et sa couleur de coup
   { id: 'skin_taureau', kind: 'skin', fighter: true, rarity: 'legendaire', chef: 'shiba', name: 'TAUREAU\nBOUCHER', desc: 'Colosse au hachoir géant\nenflammé.', euro: '1,99 EUR', sprite: 'skin_taureau', hit: 'coup_hache', slash: 0xff5a1e },
   { id: 'skin_gorille', kind: 'skin', fighter: true, rarity: 'legendaire', chef: 'moustachu', name: 'GORILLE\nTONNERRE', desc: 'Deux poêles-gants de boxe\nchargées d\'éclairs.', euro: '1,99 EUR', sprite: 'skin_gorille', hit: 'coup_elec', slash: 0xffe84a },

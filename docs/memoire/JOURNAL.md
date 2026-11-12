@@ -9,7 +9,7 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
 - Cuisine : marmite, comptoir, planche à découper, patience des clients, pourboire, combo de 3.
 - Pause, sauvegarde automatique à chaque vague, « Sauvegarder et quitter », « Continuer ».
 - Duel 2 minutes avec sabotages : contre l'ordinateur, ou en ligne (partie rapide, salon à code) via `server/`.
-- Boutique (refaite le 11/11) : 6 costumes + 6 effets en deux onglets, avec 4 raretés (commun, rare, épique, légendaire). Chaque article s'obtient d'une seule façon : en pièces, en cadeau de palier gratuit (2 500, 5 000, 10 000, 50 000, 100 000 pièces gagnées au total) ou en premium (argent réel, pas encore branché). Écran Mon compte : pseudo, assistance, suppression des données.
+- Boutique (refaite le 11/11) : 6 costumes + 6 effets en deux onglets, avec 4 raretés (commun, rare, épique, légendaire). Chaque article s'obtient d'une seule façon : en pièces, en cadeau de palier gratuit (5 000, 15 000, 40 000, 120 000, 300 000 pièces gagnées au total depuis le 12/11) ou en premium (argent réel, pas encore branché). Écran Mon compte : pseudo, assistance, suppression des données.
 - Attaque manuelle (11/11, demande de Rudy) : le chef ne frappe plus tout seul. Bouton rouge en bas à droite à garder appuyé (touche K ou E au clavier). Le bouton d'ultime est remonté juste au-dessus.
 - Bouton PAUSE en bas de l'écran (l'icône du haut reste).
 - Une musique de chasse par monde : Clairière (l'ancienne), Marché de nuit (gamme japonaise), Taverne (gigue médiévale), Cantine (arpèges de synthé). Cuisine et boss gardent la même musique partout.
@@ -36,6 +36,9 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
 - 7 monstres de plus dans ces mondes : chevalier ail, ogre aubergine, épi de maïs archer, oignon fantôme, citrouille blindée, serpent hot-dog, cubes de fromage. Chacun remplace un monstre de base (même comportement, même ingrédient lâché, force très proche), donc les recettes ne changent pas. Boss des mondes 5 à 8 : le Roi Fromage, qui appelle des cubes de fromage.
 - 4 chefs combattants premium à 1,99 € (onglet COMBAT de la boutique) : Taureau Boucher et Ours Glacier (costumes de Maître Shiba), Gorille Tonnerre (Chef Moustachu), Tigre des Woks (Mlle Noisette). Chacun a le bruit et la couleur de coup de son arme.
 - 2 packs premium (onglet PACKS) : Pack Brigade à 5,99 € (les 4 combattants), Pack Légende à 8,99 € (tout le premium). Contenu connu d'avance, pas de tirage au hasard.
+- Menu : on glisse le doigt vers la gauche ou la droite sur les cartes pour passer des mondes 1-4 aux mondes 5-8 (le bouton reste).
+- Difficulté qui monte (demande de Rudy : dur mais faisable avec le temps) : chaque monde donne +8 % de vie aux monstres et au boss, et rapproche les apparitions de 3 %. Monde 1 inchangé, monde 8 à +56 % de vie.
+- Boutique plus longue à débloquer (demande de Rudy : pas de personnage débloqué en une heure) : effets à 2 500 pièces (au lieu de 800), Chat Chevalier 12 000 (3 000), Chat Samouraï 25 000 (6 000). Les joueurs qui possédaient déjà un article le gardent.
 - Testé dans le navigateur : 21 vérifications. Un robot a joué 18 parties entières sans plantage. Il perd partout, y compris dans le monde 1 : il montre seulement que les nouveaux mondes ne sont pas plus durs que les anciens (53 monstres vaincus en moyenne contre 58), pas qu'un humain les termine. Pour changer la clé : nouveau secret `BD_APP_KEY` dans GitHub + nouvelle empreinte `APP_KEY_HASH` dans Vercel, puis renvoyer du code et réinstaller l'APK.
 
 **Pas fait**
@@ -45,6 +48,7 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
 - Mode Duo coopératif, publicités récompensées, iOS.
 - Classement mondial : pas fait, il faut un serveur en ligne (voir décisions). Idées proposées à Rudy pour faire revenir les joueurs, pas encore faites : missions du jour, classement mondial hebdomadaire, saisons avec récompenses.
 - Articles premium : aucun article premium (costumes, combattants, effet, packs) ne peut encore être obtenu, le paiement n'étant pas branché.
+- Difficulté par monde et nouveaux prix : choisis sans mesure réelle du nombre de pièces gagnées par heure. À régler après les essais de Rudy (`WORLD_HP_STEP`, `WORLD_PACE_STEP` et les prix dans `SHOP`, tous dans `constants.ts`).
 - Nouveaux mondes et monstres jamais essayés par un humain : à jouer sur le téléphone pour régler la difficulté. Les nouveaux monstres n'ont qu'une image (pas d'animation de marche). Pack d'armes : demandé par Rudy, remis à plus tard. De nouveaux costumes « les plus beaux » demandent de nouveaux dessins dans `reference/`.
 - Jeu en ligne contre de vrais joueurs (partie rapide, créer un salon, rejoindre) et classement mondial : les boutons existent, mais il n'y a pas de serveur en ligne. Plan retenu : un projet Supabase gratuit (mise en relation + relais des scores + table du classement). La création du projet a été refusée par la sécurité de l'application : il faut l'accord direct de Rudy.
 - Rotation en paysage : pas faite. Le jeu et ses 4 cartes sont dessinés en hauteur (360 x 640) ; débloquer la rotation afficherait juste le jeu en tout petit. Un vrai mode paysage demande de redessiner les cartes et de refaire chaque écran.
