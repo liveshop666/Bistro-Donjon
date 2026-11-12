@@ -54,7 +54,7 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
 
 **Décisions à obtenir du propriétaire**
 - Adresse e-mail d'assistance à publier (sans elle, « Nous contacter » affiche « adresse bientôt disponible »). À régler dans Vercel : `VITE_SUPPORT_EMAIL`.
-- Jeu en ligne et classement mondial : le compte Supabase gratuit de Rudy est plein (2 projets actifs : crm-prospection et duo), donc le projet « bistro-donjon » n'a pas pu être créé. Rudy a dit « pas maintenant » le 11/11. À reprendre quand il aura choisi : mettre un projet en pause, passer en payant, ou faire le duel sans compte, directement entre téléphones (sans classement).
+- Jeu en ligne et classement mondial : le compte Supabase gratuit de Rudy est plein (2 projets actifs : crm-prospection et duo), donc le projet « bistro-donjon » n'a pas pu être créé. Rudy a dit « pas maintenant » le 11/11, et a confirmé le 12/11 : ne pas toucher aux projets Supabase crm-prospection et duo, le classement mondial se fera plus tard. À reprendre quand il aura choisi : mettre un projet en pause, passer en payant, ou faire le duel sans compte, directement entre téléphones (sans classement).
 - Hébergeur du serveur de duel (servirait aussi au classement mondial).
 - Prix des articles premium (1,99 € les costumes légendaires, 0,99 € l'effet épique : proposés par Claude, à valider).
 - Connexion par compte : avec quel service (Google Play Jeux, e-mail via Supabase…).
