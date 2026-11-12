@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { setupLandscapeMenu } from '../ui/landscapeMenu';
 import { audio } from '../audio/AudioManager';
 import { ChefId, CHEFS, H, W, WorldId } from '../core/constants';
 import { loadProfile } from '../core/Storage';
@@ -54,6 +55,7 @@ export class DuelScene extends Phaser.Scene {
       if (this.client && !this.handedOver) this.client.close();
     });
     this.handedOver = false;
+    setupLandscapeMenu(this); // paysage : la page en deux colonnes qui remplissent l'écran
   }
   private handedOver = false;
 

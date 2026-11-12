@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { setupLandscapeMenu } from '../ui/landscapeMenu';
 import { H, W, playerLevel, WORLD_ORDER, worldUnlocked } from '../core/constants';
 import { deleteAllData, loadProfile, saveProfile } from '../core/Storage';
 import { openKeyboard } from '../ui/Keyboard';
@@ -39,6 +40,7 @@ export class AccountScene extends Phaser.Scene {
     txt(this, W / 2, 540, `BISTRO DONJON v${APP_VERSION}\nVersion du ${BUILD_LABEL}\nUn jeu SolveLab`, 8, '#6b7391').setOrigin(0.5, 0);
     button(this, W / 2, 606, 160, 32, 'RETOUR', 0x4a4f66, () => this.scene.start('Menu'));
     void H;
+    setupLandscapeMenu(this); // paysage : la page en deux colonnes qui remplissent l'écran
   }
 
   private rename(): void {

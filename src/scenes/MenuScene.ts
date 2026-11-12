@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { setupLandscapeMenu, pageToWorld } from '../ui/landscapeMenu';
 import { audio } from '../audio/AudioManager';
 import { CHEF_ORDER, CHEFS, ChefId, DAILY_GIFT, FREE_WORLDS, H, itemLabel, playerLevel, W, worldUnlocked, WORLD_ORDER, WorldId, WORLDS } from '../core/constants';
 import { claimDailyGift, loadProfile, loadRun, saveProfile } from '../core/Storage';
@@ -82,7 +83,8 @@ export class MenuScene extends Phaser.Scene {
     this.input.on('pointerup', (p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
       if (over.some((o) => (o as Phaser.GameObjects.Image).depth >= 3000)) return; // une fenêtre est ouverte par-dessus
       const dx = p.x - p.downX;
-      if (p.downY < 312 || p.downY > 462 || Math.abs(dx) < 30 || Math.abs(dx) < Math.abs(p.y - p.downY)) return;
+      const downY = pageToWorld(this, p.downX, p.downY).y; // en paysage, les mondes sont dans la colonne de droite
+      if (downY < 312 || downY > 462 || Math.abs(dx) < 30 || Math.abs(dx) < Math.abs(p.y - p.downY)) return;
       this.setWorldPage(this.worldPage + (dx < 0 ? 1 : -1));
     });
     this.drawWorlds();
@@ -140,6 +142,7 @@ export class MenuScene extends Phaser.Scene {
         },
       }], lines.join('\n'));
     }
+    setupLandscapeMenu(this); // paysage : la page en deux colonnes qui remplissent l'écran
   }
 
   /** Bouton des missions du jour, en haut à gauche (clignote quand une récompense attend). */

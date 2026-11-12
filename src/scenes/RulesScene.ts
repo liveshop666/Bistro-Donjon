@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { setupLandscapeMenu } from '../ui/landscapeMenu';
 import { H, W } from '../core/constants';
 import { button, txt } from '../ui/text';
 
@@ -118,6 +119,7 @@ export class RulesScene extends Phaser.Scene {
     button(this, 70, 602, 120, 34, 'RETOUR', 0x4a4f66, () => this.go(-1));
     this.next = button(this, 250, 602, 200, 34, 'SUIVANT', 0xe8642a, () => this.go(1));
     this.show();
+    setupLandscapeMenu(this); // paysage : la page en deux colonnes qui remplissent l'écran
   }
 
   private go(d: number): void {

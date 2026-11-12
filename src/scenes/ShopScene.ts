@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { setupLandscapeMenu } from '../ui/landscapeMenu';
 import { audio } from '../audio/AudioManager';
 import { billing } from '../core/Billing';
 import { CHEFS, H, itemLabel, RARITY, SHOP, ShopItem, W } from '../core/constants';
@@ -36,6 +37,7 @@ export class ShopScene extends Phaser.Scene {
     button(this, W / 2, 610, 160, 32, 'RETOUR', 0x4a4f66, () => this.scene.start('Menu'));
     audio.music('boutique');
     this.draw();
+    setupLandscapeMenu(this, 301); // entre les deux rangées d'articles ; paysage : la page en deux colonnes qui remplissent l'écran
   }
 
   private draw(): void {
