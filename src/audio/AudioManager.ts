@@ -8,9 +8,12 @@
 export type Sfx =
   | 'clic' | 'coup_poele' | 'coup_rouleau' | 'coup_hachoir' | 'touche' | 'pop' | 'ramasse' | 'tranche'
   | 'marmite' | 'pret' | 'plat' | 'piece' | 'pouvoir' | 'aie' | 'stand' | 'ultime' | 'feu' | 'explosion'
+  | 'coup_hache' | 'coup_elec' | 'coup_wok' | 'coup_glace' | 'splat' | 'fantome'
   | 'hache' | 'parti' | 'laser' | 'rugissement' | 'choc' | 'vague' | 'cloche' | 'cartes' | 'carte' | 'soin' | 'victoire' | 'defaite';
 
-export type Tune = 'menu' | 'chasse' | 'chasse_marche' | 'chasse_taverne' | 'chasse_cantine' | 'cuisine' | 'boss';
+export type Tune =
+  | 'menu' | 'chasse' | 'chasse_marche' | 'chasse_taverne' | 'chasse_cantine'
+  | 'chasse_glaciere' | 'chasse_volcan' | 'chasse_bateau' | 'chasse_bonbons' | 'cuisine' | 'boss';
 
 interface TuneDef {
   bpm: number;
@@ -56,6 +59,30 @@ const TUNES: Record<Tune, TuneDef> = {
     bpm: 162, leadWave: 'sawtooth', drums: true,
     lead: [76, 83, 88, 83, 76, 83, 88, 91, 74, 81, 86, 81, 74, 81, 86, 90, 72, 79, 84, 79, 72, 79, 84, 88, 71, 78, 83, 78, 87, 83, 78, 75],
     bass: pedal([40, 38, 36, 35]),
+  },
+  // Glacière : notes cristallines et espacées, froid et calme
+  chasse_glaciere: {
+    bpm: 118, leadWave: 'triangle', drums: true,
+    lead: [80, 0, 85, 88, 0, 85, 80, 0, 78, 0, 83, 87, 0, 83, 78, 0, 76, 0, 80, 85, 0, 80, 76, 0, 75, 78, 82, 87, 85, 82, 78, 0],
+    bass: pedal([49, 47, 45, 44]),
+  },
+  // Volcan barbecue : ré mineur martelé, nerveux
+  chasse_volcan: {
+    bpm: 168, leadWave: 'sawtooth', drums: true,
+    lead: [74, 74, 77, 74, 81, 74, 77, 74, 72, 72, 76, 72, 79, 72, 76, 72, 70, 70, 74, 70, 77, 70, 74, 77, 69, 73, 76, 81, 79, 76, 73, 69],
+    bass: pedal([38, 36, 34, 33]),
+  },
+  // Galion pirate : chant de marin en sol majeur, qui tangue
+  chasse_bateau: {
+    bpm: 144, leadWave: 'square', drums: true,
+    lead: [67, 71, 74, 71, 79, 74, 71, 74, 72, 76, 79, 76, 84, 79, 76, 0, 74, 78, 81, 78, 86, 81, 78, 74, 79, 78, 76, 74, 72, 71, 69, 67],
+    bass: bounce([43, 48, 50, 43]),
+  },
+  // Usine hantée : intervalles inquiétants, comme une boîte à musique détraquée
+  chasse_bonbons: {
+    bpm: 132, leadWave: 'square', drums: true,
+    lead: [72, 0, 78, 0, 75, 0, 81, 0, 72, 75, 78, 81, 84, 81, 78, 75, 71, 0, 77, 0, 74, 0, 80, 0, 71, 74, 77, 80, 83, 80, 77, 0],
+    bass: pedal([36, 39, 35, 38]),
   },
   // Sol majeur, pressé : le coup de feu en cuisine
   cuisine: {
@@ -299,6 +326,34 @@ class AudioManager {
       case 'victoire':
         this.arp([72, 76, 79, 84, 0, 79, 84, 88, 91, 96], 0.11, 'square', 0.15, 2.2);
         this.arp([48, 0, 0, 0, 0, 55, 0, 0, 60, 60], 0.11, 'triangle', 0.22, 3);
+        break;
+      case 'coup_hache': // hachoir géant enflammé : souffle de feu + choc lourd
+        this.noise(b, 0.16, 0.45, 'bandpass', 700, 0, 2200);
+        this.tone(b, 110, 0.14, 'triangle', 0.4, 0.02, 50);
+        break;
+      case 'coup_elec': // poêles électriques : claquement + grésillement
+        this.tone(b, 1600, 0.09, 'sawtooth', 0.12, 0, 220);
+        this.noise(b, 0.08, 0.25, 'highpass', 5000);
+        this.tone(b, 2400, 0.05, 'square', 0.06, 0.05, 900);
+        break;
+      case 'coup_wok': // wok : « clang » métallique + souffle
+        this.tone(b, 880, 0.12, 'triangle', 0.2);
+        this.tone(b, 1318, 0.1, 'triangle', 0.14, 0.01);
+        this.noise(b, 0.1, 0.3, 'bandpass', 1200, 0, 3000);
+        break;
+      case 'coup_glace': // marteau de glace : choc sourd + éclats cristallins
+        this.tone(b, 140, 0.12, 'triangle', 0.3, 0, 60);
+        this.tone(b, 2093, 0.08, 'triangle', 0.16, 0.02);
+        this.tone(b, 2637, 0.1, 'triangle', 0.12, 0.05);
+        this.noise(b, 0.07, 0.22, 'highpass', 6000, 0.02);
+        break;
+      case 'splat': // monstre mou écrasé (aubergine, citrouille, hot-dog, fromage)
+        this.tone(b, 260, 0.12, 'sine', 0.25, 0, 80);
+        this.noise(b, 0.1, 0.2, 'lowpass', 900);
+        break;
+      case 'fantome': // oignon fantôme qui s'évapore
+        this.tone(b, 700, 0.3, 'sine', 0.14, 0, 300);
+        this.tone(b, 1050, 0.3, 'sine', 0.07, 0, 450);
         break;
       case 'defaite':
         this.arp([72, 71, 69, 67, 65, 64, 60], 0.16, 'triangle', 0.18, 1.8);

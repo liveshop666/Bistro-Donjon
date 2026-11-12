@@ -11,6 +11,10 @@ export class MenuScene extends Phaser.Scene {
   private chef: ChefId = 'moustachu';
   private world: WorldId = 'clairiere';
   private unlocked = 1;
+  /** Les mondes s'affichent 4 par 4. */
+  private worldPage = 0;
+  private worldObjs: Phaser.GameObjects.GameObject[] = [];
+  private pageBtn!: Phaser.GameObjects.Text;
   private bg!: Phaser.GameObjects.Image;
   private frame!: Phaser.GameObjects.Graphics;
   private info!: Phaser.GameObjects.Text;
@@ -67,24 +71,16 @@ export class MenuScene extends Phaser.Scene {
 
     // --- Mondes
     txt(this, W / 2, 304, 'CHOISIS TON MONDE', 8, '#8fe0ff').setOrigin(0.5);
-    WORLD_ORDER.forEach((id, i) => {
-      const x = 51 + i * 86;
-      const locked = i >= this.unlocked;
-      const img = this.add.image(x, 378, 'map_' + id).setScale(0.2);
-      if (locked) {
-        img.setTint(0x333344);
-        this.add.image(x, 378, 'cadenas');
-      }
-      img.setInteractive({ useHandCursor: true }).on('pointerdown', () => {
-        audio.sfx(locked ? 'parti' : 'clic');
-        if (locked) this.worldInfo.setText(`${WORLDS[id].name}\nBats le Roi Tomate du monde ${i}`);
-        else {
-          this.world = id;
-          this.refresh();
-        }
-      });
-      txt(this, x, 450, String(i + 1)).setOrigin(0.5);
+    this.worldPage = Math.floor(WORLD_ORDER.indexOf(this.world) / 4);
+    this.worldObjs = [];
+    this.pageBtn = txt(this, W - 6, 304, '', 8, '#ffc533').setOrigin(1, 0.5).setInteractive({ useHandCursor: true });
+    this.pageBtn.on('pointerdown', () => {
+      audio.sfx('clic');
+      this.worldPage = (this.worldPage + 1) % Math.ceil(WORLD_ORDER.length / 4);
+      this.drawWorlds();
+      this.refresh();
     });
+    this.drawWorlds();
     this.worldInfo = txt(this, W / 2, 464, '').setOrigin(0.5, 0);
     this.frame = this.add.graphics();
 
@@ -140,6 +136,34 @@ export class MenuScene extends Phaser.Scene {
     }
   }
 
+  /** Dessine les 4 mondes de la page courante (vignette, cadenas, numéro). */
+  private drawWorlds(): void {
+    this.worldObjs.forEach((o) => o.destroy());
+    this.worldObjs = [];
+    const add = <T extends Phaser.GameObjects.GameObject>(o: T): T => (this.worldObjs.push(o), o);
+    const first = this.worldPage * 4;
+    this.pageBtn.setText(this.worldPage === 0 ? `MONDES ${first + 5}-${first + 8} >` : '< MONDES 1-4');
+    WORLD_ORDER.slice(first, first + 4).forEach((id, k) => {
+      const i = first + k;
+      const x = 51 + k * 86;
+      const locked = i >= this.unlocked;
+      const img = add(this.add.image(x, 378, 'map_' + id).setScale(0.2));
+      if (locked) {
+        img.setTint(0x333344);
+        add(this.add.image(x, 378, 'cadenas'));
+      }
+      img.setInteractive({ useHandCursor: true }).on('pointerdown', () => {
+        audio.sfx(locked ? 'parti' : 'clic');
+        if (locked) this.worldInfo.setText(`${WORLDS[id].name}\nTermine d'abord le monde ${i}`);
+        else {
+          this.world = id;
+          this.refresh();
+        }
+      });
+      add(txt(this, x, 450, String(i + 1)).setOrigin(0.5));
+    });
+  }
+
   /** Propose une fois par ouverture d'installer le jeu comme une appli (icône, plein écran, mises à jour toutes seules). */
   private offerInstall(): void {
     const prompt = this.registry.get('installPrompt') as { prompt: () => Promise<unknown> } | undefined;
@@ -169,6 +193,6 @@ export class MenuScene extends Phaser.Scene {
     const wi = WORLD_ORDER.indexOf(this.world);
     this.frame.clear().lineStyle(2, 0xffc533);
     this.frame.strokeRect(70 + ci * 110 - 27, 166 - 29, 54, 58);
-    this.frame.strokeRect(51 + wi * 86 - 37, 378 - 65, 74, 130);
+    if (Math.floor(wi / 4) === this.worldPage) this.frame.strokeRect(51 + (wi % 4) * 86 - 37, 378 - 65, 74, 130);
   }
 }

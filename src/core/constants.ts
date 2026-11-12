@@ -55,7 +55,9 @@ export const CHEFS: Record<ChefId, ChefDef> = {
 };
 
 // ---------------------------------------------------------------- Ennemis
-export type EnemyId = 'champi' | 'tomate' | 'gelee' | 'piment' | 'roi_tomate';
+export type EnemyId =
+  | 'champi' | 'tomate' | 'gelee' | 'piment' | 'roi_tomate'
+  | 'ail' | 'aubergine' | 'mais' | 'oignon' | 'citrouille' | 'hotdog' | 'cube_fromage' | 'roi_fromage';
 export type EnemyAi = 'stand' | 'chase' | 'hop' | 'ranged' | 'boss';
 
 export interface EnemyDef {
@@ -67,6 +69,8 @@ export interface EnemyDef {
   damage: number;
   drop: IngredientId | null;
   group: number; // nombre d'ennemis par apparition
+  /** Bruitage joué quand il est vaincu (par défaut : « pop »). */
+  die?: string;
 }
 
 export const ENEMIES: Record<EnemyId, EnemyDef> = {
@@ -75,6 +79,16 @@ export const ENEMIES: Record<EnemyId, EnemyDef> = {
   gelee: { id: 'gelee', ai: 'hop', hp: 26, speed: 40, radius: 11, damage: 1, drop: 'sucre', group: 1 },
   piment: { id: 'piment', ai: 'ranged', hp: 18, speed: 42, radius: 9, damage: 1, drop: 'piment', group: 1 },
   roi_tomate: { id: 'roi_tomate', ai: 'boss', hp: 650, speed: 30, radius: 36, damage: 2, drop: null, group: 1 },
+  // Monstres des mondes 5 à 8. Chacun remplace un monstre de base (même comportement, même ingrédient lâché,
+  // force très proche) : l'équilibrage testé sur les 4 premiers mondes reste valable.
+  ail: { id: 'ail', ai: 'chase', hp: 14, speed: 50, radius: 10, damage: 1, drop: 'tomate', group: 3 },
+  oignon: { id: 'oignon', ai: 'hop', hp: 24, speed: 42, radius: 10, damage: 1, drop: 'sucre', group: 1, die: 'fantome' },
+  aubergine: { id: 'aubergine', ai: 'stand', hp: 36, speed: 20, radius: 13, damage: 1, drop: 'champignon', group: 1, die: 'splat' },
+  citrouille: { id: 'citrouille', ai: 'stand', hp: 40, speed: 18, radius: 12, damage: 1, drop: 'champignon', group: 1, die: 'splat' },
+  mais: { id: 'mais', ai: 'ranged', hp: 18, speed: 40, radius: 10, damage: 1, drop: 'piment', group: 1 },
+  hotdog: { id: 'hotdog', ai: 'ranged', hp: 16, speed: 46, radius: 10, damage: 1, drop: 'piment', group: 1, die: 'splat' },
+  cube_fromage: { id: 'cube_fromage', ai: 'chase', hp: 14, speed: 50, radius: 8, damage: 1, drop: 'tomate', group: 3, die: 'splat' },
+  roi_fromage: { id: 'roi_fromage', ai: 'boss', hp: 700, speed: 28, radius: 38, damage: 2, drop: null, group: 1 },
 };
 
 // ---------------------------------------------------------------- Vagues
@@ -137,7 +151,7 @@ export const UPGRADES: UpgradeDef[] = [
 ];
 
 // ---------------------------------------------------------------- Mondes
-export type WorldId = 'clairiere' | 'marche' | 'taverne' | 'cantine';
+export type WorldId = 'clairiere' | 'marche' | 'taverne' | 'cantine' | 'glaciere' | 'volcan' | 'bateau' | 'bonbons';
 export type WorldMechanic = 'none' | 'file' | 'tonneaux' | 'tapis';
 
 export interface WorldDef {
@@ -153,6 +167,12 @@ export interface WorldDef {
   standLine: number;
   /** Décors peints sur la carte que le chef ne traverse pas (arbres, troncs, étals, tonneaux). Rectangles en pixels. */
   obstacles?: Obstacle[];
+  /** Monstres de ce monde : chaque monstre de base tiré par la vague est remplacé par l'un de ceux-ci. */
+  swap?: Partial<Record<EnemyId, EnemyId[]>>;
+  /** Boss du monde (par défaut le Roi Tomate), son nom affiché, et les sbires qu'il appelle. */
+  boss?: EnemyId;
+  bossName?: string;
+  minion?: EnemyId;
 }
 
 export interface Obstacle { x: number; y: number; w: number; h: number }
@@ -184,8 +204,36 @@ export const WORLDS: Record<WorldId, WorldDef> = {
     id: 'cantine', name: 'CANTINE CYBER', hint: 'Tapis roulants rapides', mechanic: 'tapis',
     pot: { x: 90, y: 284 }, counter: { x: 266, y: 284 }, board: { x: 178, y: 292 }, standLine: 320,
   },
+  // ---- Mondes 5 à 8 (planche du 11/11/2026) : nouveaux monstres, boss Roi Fromage
+  glaciere: {
+    id: 'glaciere', name: 'LA GLACIERE', hint: 'Monstres givrés', mechanic: 'none',
+    pot: { x: 120, y: 280 }, counter: { x: 250, y: 280 }, board: { x: 185, y: 288 }, standLine: 316,
+    obstacles: [{ x: 0, y: 500, w: 56, h: 140 }, { x: 286, y: 596, w: 74, h: 44 }], // cristaux et sapin gelés du bas
+    swap: { tomate: ['ail'], champi: ['aubergine'], gelee: ['oignon'], piment: ['mais'] },
+    boss: 'roi_fromage', bossName: 'ROI FROMAGE', minion: 'cube_fromage',
+  },
+  volcan: {
+    id: 'volcan', name: 'VOLCAN BARBECUE', hint: 'Tonneaux explosifs', mechanic: 'tonneaux',
+    pot: { x: 110, y: 280 }, counter: { x: 250, y: 280 }, board: { x: 180, y: 288 }, standLine: 316,
+    obstacles: [{ x: 0, y: 330, w: 42, h: 180 }, { x: 318, y: 330, w: 42, h: 180 }], // rivières de lave
+    swap: { tomate: ['ail'], champi: ['citrouille'], gelee: ['oignon'], piment: ['hotdog'] },
+    boss: 'roi_fromage', bossName: 'ROI FROMAGE', minion: 'cube_fromage',
+  },
+  bateau: {
+    id: 'bateau', name: 'GALION PIRATE', hint: 'Monstres en file serrée', mechanic: 'file',
+    pot: { x: 130, y: 292 }, counter: { x: 245, y: 292 }, board: { x: 188, y: 300 }, standLine: 328,
+    obstacles: [{ x: 0, y: 330, w: 30, h: 310 }, { x: 330, y: 330, w: 30, h: 310 }], // bastingages : on ne marche pas sur la mer
+    swap: { tomate: ['ail', 'cube_fromage'], champi: ['aubergine', 'citrouille'], gelee: ['oignon'], piment: ['mais', 'hotdog'] },
+    boss: 'roi_fromage', bossName: 'ROI FROMAGE', minion: 'cube_fromage',
+  },
+  bonbons: {
+    id: 'bonbons', name: 'USINE HANTEE', hint: 'Tapis roulants rapides', mechanic: 'tapis',
+    pot: { x: 112, y: 280 }, counter: { x: 250, y: 280 }, board: { x: 181, y: 288 }, standLine: 316,
+    swap: { tomate: ['ail', 'cube_fromage'], champi: ['aubergine', 'citrouille'], gelee: ['oignon'], piment: ['mais', 'hotdog'] },
+    boss: 'roi_fromage', bossName: 'ROI FROMAGE', minion: 'cube_fromage',
+  },
 };
-export const WORLD_ORDER: WorldId[] = ['clairiere', 'marche', 'taverne', 'cantine'];
+export const WORLD_ORDER: WorldId[] = ['clairiere', 'marche', 'taverne', 'cantine', 'glaciere', 'volcan', 'bateau', 'bonbons'];
 export const CHEF_ORDER: ChefId[] = ['moustachu', 'shiba', 'noisette'];
 /** Bandes horizontales des tapis roulants (monde 4). */
 export const CONVEYORS = [{ y: 430, h: 36 }, { y: 540, h: 36 }];
@@ -217,7 +265,7 @@ export const CHEF_FRAMES: Record<ChefId, { idle: string[]; walk: string[]; attac
 };
 export const SPRITE_FILES = {
   chefs: Object.values(CHEF_FRAMES).flatMap((f) => [...f.idle, ...f.walk, ...f.attack]).filter((k, i, a) => a.indexOf(k) === i),
-  enemies: ['champi', 'champi_w0', 'champi_w1', 'champi_a0', 'tomate', 'tomate_ko', 'gelee_0', 'gelee_1', 'gelee_2', 'gelee_3', 'piment', 'roi_tomate'],
+  enemies: ['champi', 'champi_w0', 'champi_w1', 'champi_a0', 'tomate', 'tomate_ko', 'gelee_0', 'gelee_1', 'gelee_2', 'gelee_3', 'piment', 'roi_tomate', 'ail', 'aubergine', 'mais', 'oignon', 'citrouille', 'hotdog', 'cube_fromage', 'roi_fromage'],
 };
 
 // ---------------------------------------------------------------- Boutique (cosmétiques uniquement)
@@ -237,7 +285,7 @@ export const RARITY: Record<Rarity, { label: string; color: number; text: string
  */
 export interface ShopItem {
   id: string;
-  kind: 'skin' | 'effet';
+  kind: 'skin' | 'effet' | 'pack';
   rarity: Rarity;
   /** Chef concerné par le costume. */
   chef?: ChefId;
@@ -250,6 +298,13 @@ export interface ShopItem {
   color?: number;
   /** Effet qui change de couleur en continu. */
   rainbow?: boolean;
+  /** Chef combattant (onglet à part dans la boutique). */
+  fighter?: boolean;
+  /** Bruitage et couleur des coups propres à l'arme de ce costume. */
+  hit?: string;
+  slash?: number;
+  /** Pack : identifiants des articles qu'il contient. */
+  items?: string[];
 }
 
 export const SHOP: ShopItem[] = [
@@ -267,6 +322,14 @@ export const SHOP: ShopItem[] = [
   { id: 'fx_or', kind: 'effet', rarity: 'rare', name: 'ETOILES\nDOREES', desc: 'Tes coups laissent une\ntraînée dorée.', palier: 5000, color: 0xffe27a },
   { id: 'fx_violet', kind: 'effet', rarity: 'epique', name: 'ECLAIRS\nVIOLETS', desc: 'Tes coups laissent une\ntraînée violette.', euro: '0,99 EUR', color: 0xb46bff },
   { id: 'fx_arcenciel', kind: 'effet', rarity: 'legendaire', name: 'ARC-EN-\nCIEL', desc: 'Tes coups changent de\ncouleur en continu.', palier: 100000, color: 0xff7ad0, rainbow: true },
+  // --- chefs combattants (premium) : chacun a son arme, son bruit et sa couleur de coup
+  { id: 'skin_taureau', kind: 'skin', fighter: true, rarity: 'legendaire', chef: 'shiba', name: 'TAUREAU\nBOUCHER', desc: 'Colosse au hachoir géant\nenflammé.', euro: '1,99 EUR', sprite: 'skin_taureau', hit: 'coup_hache', slash: 0xff5a1e },
+  { id: 'skin_gorille', kind: 'skin', fighter: true, rarity: 'legendaire', chef: 'moustachu', name: 'GORILLE\nTONNERRE', desc: 'Deux poêles-gants de boxe\nchargées d\'éclairs.', euro: '1,99 EUR', sprite: 'skin_gorille', hit: 'coup_elec', slash: 0xffe84a },
+  { id: 'skin_tigre', kind: 'skin', fighter: true, rarity: 'legendaire', chef: 'noisette', name: 'TIGRE\nDES WOKS', desc: 'Nunchakus de woks aux\nflammes bleues.', euro: '1,99 EUR', sprite: 'skin_tigre', hit: 'coup_wok', slash: 0x4fb8ff },
+  { id: 'skin_ours', kind: 'skin', fighter: true, rarity: 'legendaire', chef: 'shiba', name: 'OURS\nGLACIER', desc: 'Marteau attendrisseur géant\ncouvert de glace.', euro: '1,99 EUR', sprite: 'skin_ours', hit: 'coup_glace', slash: 0x9fe0ff },
+  // --- packs (premium) : contenu connu d'avance, moins cher qu'à l'unité
+  { id: 'pack_brigade', kind: 'pack', rarity: 'legendaire', name: 'PACK\nBRIGADE', desc: 'Les 4 chefs combattants :\nTaureau, Gorille, Tigre, Ours.\n(7,96 EUR à l\'unité)', euro: '5,99 EUR', sprite: 'skin_taureau', items: ['skin_taureau', 'skin_gorille', 'skin_tigre', 'skin_ours'] },
+  { id: 'pack_legende', kind: 'pack', rarity: 'legendaire', name: 'PACK\nLEGENDE', desc: 'Tout le premium : les 4\ncombattants, Chat Cyber, Chat\nAstronaute, Eclairs Violets.\n(12,93 EUR à l\'unité)', euro: '8,99 EUR', sprite: 'skin_gorille', items: ['skin_taureau', 'skin_gorille', 'skin_tigre', 'skin_ours', 'skin_cyber', 'skin_astronaute', 'fx_violet'] },
 ];
 
 /** Nom d'un article sur une seule ligne. */

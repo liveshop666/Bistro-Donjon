@@ -14,7 +14,7 @@ export class WaveManager {
     if (this.gm.phase === 'boss') {
       if (!this.bossSpawned) {
         this.bossSpawned = true;
-        this.spawn('roi_tomate', W / 2, H + 50);
+        this.spawn(this.world.boss ?? 'roi_tomate', W / 2, H + 50);
       }
       return;
     }
@@ -24,7 +24,9 @@ export class WaveManager {
     if (this.acc < wave.interval) return;
     this.acc = 0;
 
-    const type = this.pick(wave.pool);
+    const base = this.pick(wave.pool);
+    const alt = this.world.swap?.[base]; // mondes 5 à 8 : le monstre de base est remplacé par celui du monde
+    const type = alt?.length ? alt[Math.floor(Math.random() * alt.length)] : base;
     const [x, y] = this.spawnPoint();
     for (let i = 0; i < ENEMIES[type].group; i++) {
       this.spawn(type, x + (i - (ENEMIES[type].group - 1) / 2) * 16, y + i * 10);

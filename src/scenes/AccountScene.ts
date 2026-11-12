@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { H, W, playerLevel } from '../core/constants';
+import { H, W, playerLevel, WORLD_ORDER } from '../core/constants';
 import { deleteAllData, loadProfile, saveProfile } from '../core/Storage';
 import { openKeyboard } from '../ui/Keyboard';
 import { openModal } from '../ui/Modal';
@@ -26,7 +26,7 @@ export class AccountScene extends Phaser.Scene {
     txt(this, 96, 76, 'PSEUDO', 8, '#8fe0ff');
     txt(this, 96, 92, p.pseudo || 'CHEF SANS NOM', 8);
     txt(this, 96, 108, 'Affiché en duel en ligne', 8, '#6b7391');
-    txt(this, W / 2, 134, `NIVEAU ${playerLevel(p.earned).level}\n\nRECORD : ${p.best} OR\n\nDUELS GAGNES : ${p.duelWins}\n\nPIECES : ${p.coins}\n\nMONDES DEBLOQUES : ${p.unlocked}/4`, 8, '#bfc8e0').setOrigin(0.5, 0);
+    txt(this, W / 2, 134, `NIVEAU ${playerLevel(p.earned).level}\n\nRECORD : ${p.best} OR\n\nDUELS GAGNES : ${p.duelWins}\n\nPIECES : ${p.coins}\n\nMONDES DEBLOQUES : ${p.unlocked}/${WORLD_ORDER.length}`, 8, '#bfc8e0').setOrigin(0.5, 0);
 
     const items: [string, number, () => void][] = [
       ['CHANGER DE PSEUDO', 0x3d5c8f, () => this.rename()],

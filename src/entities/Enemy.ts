@@ -175,7 +175,7 @@ export class Enemy {
 
   private render(): void {
     const s = this.mini ? 0.6 : 1;
-    const flying = this.def.ai === 'ranged' ? 10 + Math.sin(this.t * 5) * 2 : 0;
+    const flying = this.def.id === 'piment' ? 10 + Math.sin(this.t * 5) * 2 : 0; // seul le piment ailé vole
     const lift = this.hop * 12 + flying;
     const squash = 1;
     // images d'animation

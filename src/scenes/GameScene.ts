@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
-import { audio, Tune } from '../audio/AudioManager';
+import { audio, Sfx, Tune } from '../audio/AudioManager';
 import {
-  BOSS_REWARD, ChefId, CHEFS, CHOP_TIME, COMBO_GOLD, COMBO_SIZE, CONVEYORS, EnemyId, GameMode, H, IngredientId, INGREDIENTS, itemLabel, playerLevel, ORDER_PATIENCE,
+  BOSS_REWARD, ChefId, ENEMIES, ShopItem, CHEFS, CHOP_TIME, COMBO_GOLD, COMBO_SIZE, CONVEYORS, EnemyId, GameMode, H, IngredientId, INGREDIENTS, itemLabel, playerLevel, ORDER_PATIENCE,
   POWER_LABEL, POWER_TIME, SHOP, Sabotage, SABOTAGE_LABEL, SABOTAGES, TIP_BONUS, UpgradeDef, W, WAVES, WORLD_ORDER, WorldDef, WorldId, WORLDS,
 } from '../core/constants';
 import { GameManager, Phase } from '../core/GameManager';
@@ -43,7 +43,10 @@ export interface GameData {
 
 /** Boucle solo : récolte -> cuisine -> cartes, puis boss. */
 /** Une musique de chasse par monde. */
-const HUNT_TUNE: Record<WorldId, Tune> = { clairiere: 'chasse', marche: 'chasse_marche', taverne: 'chasse_taverne', cantine: 'chasse_cantine' };
+const HUNT_TUNE: Record<WorldId, Tune> = {
+  clairiere: 'chasse', marche: 'chasse_marche', taverne: 'chasse_taverne', cantine: 'chasse_cantine',
+  glaciere: 'chasse_glaciere', volcan: 'chasse_volcan', bateau: 'chasse_bateau', bonbons: 'chasse_bonbons',
+};
 
 export class GameScene extends Phaser.Scene {
   private gm!: GameManager;
@@ -85,6 +88,8 @@ export class GameScene extends Phaser.Scene {
   private unlockedWorld = false;
   private effectColor: number | null = null;
   private effectRainbow = false;
+  /** Costume équipé (pour le bruit et la couleur de son arme). */
+  private skinItem: ShopItem | null = null;
   private atkKeys: Phaser.Input.Keyboard.Key[] = [];
 
   constructor() {
@@ -143,6 +148,7 @@ export class GameScene extends Phaser.Scene {
 
     const profile = loadProfile();
     const skin = profile.skins[this.chefId] ?? null;
+    this.skinItem = skin && profile.owned.includes(skin) ? (SHOP.find((i) => i.id === skin) ?? null) : null;
     const effect = SHOP.find((i) => i.id === profile.effect && profile.owned.includes(i.id));
     this.effectColor = effect?.color ?? null;
     this.effectRainbow = !!effect?.rainbow;
@@ -183,7 +189,7 @@ export class GameScene extends Phaser.Scene {
       this.hud.banner('DUEL !\n2 MINUTES', '#ff6a5a');
       audio.music('cuisine');
     } else if (this.gm.phase === 'boss') {
-      this.hud.banner('LE ROI TOMATE\nARRIVE !', '#ff6a5a');
+      this.hud.banner(`LE ${this.world.bossName ?? 'ROI TOMATE'}\nARRIVE !`, '#ff6a5a');
       audio.music('boss');
     } else {
       this.hud.banner(`VAGUE ${this.gm.wave + 1}\nA LA CHASSE !`);
@@ -287,10 +293,11 @@ export class GameScene extends Phaser.Scene {
     const ty = target ? target.y : c.y + aim.y * c.def.range * 0.8;
     c.cooldown = c.def.cooldown;
     c.strike(tx, ty);
-    audio.sfx(c.def.id === 'moustachu' ? 'coup_poele' : c.def.id === 'shiba' ? 'coup_rouleau' : 'coup_hachoir');
+    // chaque arme a son bruit : celui du costume équipé s'il en a un, sinon celui du chef
+    audio.sfx((this.skinItem?.hit as Sfx | undefined) ?? (c.def.id === 'moustachu' ? 'coup_poele' : c.def.id === 'shiba' ? 'coup_rouleau' : 'coup_hachoir'));
     const dmg = this.attackDamage();
     const ang = Math.atan2(ty - c.y, tx - c.x);
-    const color = c.powers.feu > 0 ? 0xff3b1e : (this.fxColor() ?? c.def.slashColor);
+    const color = c.powers.feu > 0 ? 0xff3b1e : (this.fxColor() ?? this.skinItem?.slash ?? c.def.slashColor);
 
     if (c.def.id === 'moustachu') {
       // arc de feu devant le chef
@@ -380,7 +387,7 @@ export class GameScene extends Phaser.Scene {
 
   // ------------------------------------------------------------------ ennemis
   private spawnEnemy(type: EnemyId, x: number, y: number, mini = false): void {
-    const hpMul = type === 'roi_tomate' ? 1 : 1 + 0.25 * Math.min(this.gm.wave, WAVES.length);
+    const hpMul = ENEMIES[type].ai === 'boss' ? 1 : 1 + 0.25 * Math.min(this.gm.wave, WAVES.length);
     this.enemies.push(new Enemy(this, type, x, y, hpMul, mini));
   }
 
@@ -392,7 +399,7 @@ export class GameScene extends Phaser.Scene {
       standLine: this.world.standLine,
       shoot: (x, y, tx, ty) => this.shoot(x, y, tx, ty),
       summon: (x, y) => {
-        for (let i = 0; i < 3; i++) this.spawnEnemy('tomate', x - 50 + i * 50, y + 20);
+        for (let i = 0; i < 3; i++) this.spawnEnemy(this.world.minion ?? 'tomate', x - 50 + i * 50, y + 20);
         this.hud.float(x, y - 90, 'A MOI, MES SBIRES !', '#ff6a5a');
         audio.sfx('rugissement');
       },
@@ -441,7 +448,7 @@ export class GameScene extends Phaser.Scene {
   private kill(e: Enemy): void {
     e.dead = true;
     this.gm.kills++;
-    audio.sfx(e.def.ai === 'boss' ? 'explosion' : 'pop');
+    audio.sfx(e.def.ai === 'boss' ? 'explosion' : ((e.def.die as Sfx | undefined) ?? 'pop'));
     this.chef.addUlt(5);
     this.puff(e.x, e.y - e.radius, e.def.id === 'gelee' ? 0x6fe04a : e.def.id === 'champi' ? 0xc9a070 : 0xe8483a, e.def.ai === 'boss' ? 30 : 7);
     if (e.def.ai === 'boss' && (e.mini || this.mode === 'duel')) {
@@ -454,7 +461,7 @@ export class GameScene extends Phaser.Scene {
     if (e.def.ai === 'boss') {
       e.destroy();
       this.gm.gold += BOSS_REWARD;
-      this.hud.float(e.x, e.y - 60, `TOMATE ROYALE +${BOSS_REWARD}`);
+      this.hud.float(e.x, e.y - 60, `${this.world.bossName ?? 'TOMATE ROYALE'} +${BOSS_REWARD}`);
       this.cameras.main.shake(600, 0.015);
       this.time.delayedCall(900, () => this.gm.end(true));
       return;
@@ -675,7 +682,7 @@ export class GameScene extends Phaser.Scene {
     if (p === 'kitchen') this.hud.banner('COUP DE FEU !\nEN CUISINE !', '#ffe27a');
     else if (p === 'harvest') this.hud.banner(`VAGUE ${this.gm.wave + 1}\nA LA CHASSE !`);
     else if (p === 'boss') {
-      this.hud.banner('LE ROI TOMATE\nARRIVE !', '#ff6a5a');
+      this.hud.banner(`LE ${this.world.bossName ?? 'ROI TOMATE'}\nARRIVE !`, '#ff6a5a');
       this.cameras.main.shake(500, 0.008);
     } else if (p === 'cards') {
       this.touch.setEnabled(false);

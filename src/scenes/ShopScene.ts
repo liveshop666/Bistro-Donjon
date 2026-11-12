@@ -6,7 +6,10 @@ import { addCoins, loadProfile, nextMilestone, saveProfile } from '../core/Stora
 import { openModal } from '../ui/Modal';
 import { button, txt } from '../ui/text';
 
-type Tab = 'skin' | 'effet';
+type Tab = 'skin' | 'combattant' | 'effet' | 'pack';
+const tabOf = (it: ShopItem): Tab => (it.kind === 'skin' ? (it.fighter ? 'combattant' : 'skin') : it.kind);
+/** Un pack est possédé quand tout son contenu l'est. */
+const has = (owned: string[], it: ShopItem): boolean => (it.kind === 'pack' ? (it.items ?? []).every((id) => owned.includes(id)) : owned.includes(it.id));
 
 /**
  * Boutique de cosmétiques : costumes de chefs et effets d'arme, classés par rareté. Aucun avantage en jeu.
@@ -58,24 +61,26 @@ export class ShopScene extends Phaser.Scene {
 
     // onglets
     const tabBtn = (x: number, tab: Tab, label: string) =>
-      add(button(this, x, 124, 150, 26, label, this.tab === tab ? 0xe8642a : 0x3a3f55, () => {
+      add(button(this, x, 124, 82, 26, label, this.tab === tab ? 0xe8642a : 0x3a3f55, () => {
         this.tab = tab;
         this.draw();
       }));
-    tabBtn(98, 'skin', 'COSTUMES');
-    tabBtn(262, 'effet', 'EFFETS');
+    tabBtn(49, 'skin', 'COSTUMES');
+    tabBtn(136, 'combattant', 'COMBAT');
+    tabBtn(223, 'effet', 'EFFETS');
+    tabBtn(310, 'pack', 'PACKS');
 
-    SHOP.filter((it) => it.kind === this.tab).forEach((it, i) => {
+    SHOP.filter((it) => tabOf(it) === this.tab).forEach((it, i) => {
       const x = 64 + (i % 3) * 116;
       const y = 222 + Math.floor(i / 3) * 158;
-      const owned = p.owned.includes(it.id);
+      const owned = has(p.owned, it);
       const equipped = owned && (it.kind === 'skin' ? p.skins[it.chef!] === it.id : p.effect === it.id);
       const r = RARITY[it.rarity];
       const g = this.add.graphics();
       g.fillStyle(r.color).fillRect(-54, -74, 108, 148);
       g.fillStyle(owned ? 0x2f5a3a : 0x2a2a44).fillRect(-51, -71, 102, 142);
       g.fillStyle(0x14141f, 0.6).fillRect(-46, -40, 92, 62);
-      const preview = it.sprite ? this.add.image(0, -8, it.sprite) : this.slash(it.color ?? 0xffffff, !!it.rainbow);
+      const preview = it.sprite ? this.fit(this.add.image(0, -8, it.sprite)) : this.slash(it.color ?? 0xffffff, !!it.rainbow);
       let status: string;
       let detail = '';
       let color = '#ffd23e';
@@ -98,6 +103,11 @@ export class ShopScene extends Phaser.Scene {
     });
   }
 
+  /** Réduit une image trop grande (chefs combattants avec leur arme) pour qu'elle tienne dans sa carte. */
+  private fit(img: Phaser.GameObjects.Image): Phaser.GameObjects.Image {
+    return img.setScale(Math.min(1, 88 / img.width, 58 / img.height));
+  }
+
   /** Aperçu d'un effet d'arme : un arc de la couleur de l'effet (plusieurs couleurs pour l'arc-en-ciel). */
   private slash(color: number, rainbow = false): Phaser.GameObjects.Graphics {
     const g = this.add.graphics();
@@ -113,9 +123,9 @@ export class ShopScene extends Phaser.Scene {
   private open(it: ShopItem): void {
     audio.sfx('clic');
     const p = loadProfile();
-    const owned = p.owned.includes(it.id);
+    const owned = has(p.owned, it);
     const equipped = owned && (it.kind === 'skin' ? p.skins[it.chef!] === it.id : p.effect === it.id);
-    const who = it.kind === 'skin' ? `Costume pour ${CHEFS[it.chef!].name}` : 'Effet pour tous les chefs';
+    const who = it.kind === 'skin' ? `Costume pour ${CHEFS[it.chef!].name}` : it.kind === 'pack' ? 'Pack premium' : 'Effet pour tous les chefs';
     const title = itemLabel(it);
     const note = `${RARITY[it.rarity].label}\n${who}\n${it.desc}`;
     const equip = (on: boolean) => {
@@ -126,6 +136,10 @@ export class ShopScene extends Phaser.Scene {
     };
     const info = (heading: string, text: string) => this.time.delayedCall(50, () => openModal(this, heading, [{ label: 'OK', action: () => {} }], text));
     const close = { label: 'FERMER', action: () => {} };
+    if (owned && it.kind === 'pack') {
+      openModal(this, title, [close], `${note}\n\nTu possèdes tout ce pack.`);
+      return;
+    }
     if (owned) {
       openModal(this, title, [{ label: equipped ? 'RETIRER' : 'EQUIPER', color: 0xe8642a, action: () => equip(!equipped) }, close], note);
       return;
@@ -163,9 +177,10 @@ export class ShopScene extends Phaser.Scene {
           void billing.buy(it.id).then((ok) => {
             if (ok) {
               const q = loadProfile();
-              saveProfile({ owned: [...q.owned, it.id] });
+              saveProfile({ owned: [...new Set([...q.owned, it.id, ...(it.items ?? [])])] });
               audio.sfx('piece');
-              equip(true);
+              if (it.kind === 'pack') this.draw();
+              else equip(true);
             } else if (!billing.available) info('BIENTOT', 'Le paiement arrive bientôt.\nCet article sera en vente\nà la sortie du jeu.');
           });
         },

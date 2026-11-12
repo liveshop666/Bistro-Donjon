@@ -16,6 +16,9 @@ C'est le joueur qui frappe : tant que le bouton d'attaque est appuyé, le chef t
 
 Chaque monde a sa propre musique de chasse.
 
+## Les mondes
+Huit mondes, à débloquer dans l'ordre en battant le boss du précédent : la Clairière, le Marché de nuit, la Taverne, la Cantine cyber (boss : Roi Tomate), puis la Glacière, le Volcan barbecue, le Galion pirate et l'Usine hantée (boss : Roi Fromage, avec de nouveaux monstres qui se comportent comme ceux des premiers mondes).
+
 ## Déroulement d'une partie solo (environ 4 minutes)
 Trois vagues, chacune en 3 temps, puis le boss.
 

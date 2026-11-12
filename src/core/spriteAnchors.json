@@ -33,5 +33,17 @@
   "skin_shiba_samourai": 0.3,
   "champi": 0.591,
   "piment": 0.623,
-  "roi_tomate": 0.591
+  "roi_tomate": 0.591,
+  "skin_taureau": 0.237,
+  "skin_gorille": 0.432,
+  "skin_tigre": 0.335,
+  "skin_ours": 0.301,
+  "ail": 0.353,
+  "aubergine": 0.392,
+  "mais": 0.444,
+  "oignon": 0.46,
+  "citrouille": 0.441,
+  "hotdog": 0.412,
+  "roi_fromage": 0.505,
+  "cube_fromage": 0.525
 }
