@@ -157,7 +157,7 @@ export class ShopScene extends Phaser.Scene {
     const grant = () => {
       const q = loadProfile();
       saveProfile({ owned: [...new Set([...q.owned, it.id, ...(it.items ?? [])])] });
-      audio.sfx('piece');
+      audio.sfx(it.kind === 'pack' || it.rarity === 'legendaire' ? 'legendaire' : 'piece');
       if (it.kind === 'pack') this.draw();
       else equip(true);
     };

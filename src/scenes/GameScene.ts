@@ -737,7 +737,10 @@ export class GameScene extends Phaser.Scene {
     }
     lines.push(validated ? `+${gm.gold} PIECES POUR LA BOUTIQUE` : 'PIECES PERDUES : TERMINE\nLES 3 VAGUES POUR LES GARDER');
     const levelNow = playerLevel(loadProfile().earned);
-    if (levelNow.level > levelBefore) lines.push(`NIVEAU ${levelNow.level} ATTEINT !`);
+    if (levelNow.level > levelBefore) {
+      lines.push(`NIVEAU ${levelNow.level} ATTEINT !`);
+      this.time.delayedCall(1700, () => audio.sfx('niveau')); // après la musique de fin
+    }
     else lines.push(`NIVEAU ${levelNow.level} : ${levelNow.into}/${levelNow.span}`);
     for (const g of gifts) lines.push(`CADEAU DEBLOQUE : ${itemLabel(g)} !`);
     const milestone = nextMilestone();

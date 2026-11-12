@@ -129,7 +129,7 @@ export class MenuScene extends Phaser.Scene {
       const tomorrow = DAILY_GIFT[Math.min(gift.streak + 1, DAILY_GIFT.length) - 1];
       const lines = [`Jour ${gift.streak} d'affilée : +${gift.coins} pièces !`, `Reviens demain : +${tomorrow} pièces.`];
       for (const g of gift.gifts) lines.push(`Cadeau débloqué : ${itemLabel(g)} !`);
-      audio.sfx('piece');
+      audio.sfx('cadeau');
       openModal(this, 'CADEAU DU JOUR', [{
         label: 'MERCI !', color: 0xe8642a,
         action: () => {

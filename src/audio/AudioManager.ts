@@ -9,7 +9,8 @@ export type Sfx =
   | 'clic' | 'coup_poele' | 'coup_rouleau' | 'coup_hachoir' | 'touche' | 'pop' | 'ramasse' | 'tranche'
   | 'marmite' | 'pret' | 'plat' | 'piece' | 'pouvoir' | 'aie' | 'stand' | 'ultime' | 'feu' | 'explosion'
   | 'coup_hache' | 'coup_elec' | 'coup_wok' | 'coup_glace' | 'splat' | 'fantome'
-  | 'hache' | 'parti' | 'laser' | 'rugissement' | 'choc' | 'vague' | 'cloche' | 'cartes' | 'carte' | 'soin' | 'victoire' | 'defaite';
+  | 'hache' | 'parti' | 'laser' | 'rugissement' | 'choc' | 'vague' | 'cloche' | 'cartes' | 'carte' | 'soin' | 'victoire' | 'defaite'
+  | 'legendaire' | 'cadeau' | 'niveau';
 
 export type Tune =
   | 'menu' | 'chasse' | 'chasse_marche' | 'chasse_taverne' | 'chasse_cantine'
@@ -233,8 +234,9 @@ class AudioManager {
     const b = this.sfxBus;
 
     switch (name) {
-      case 'clic':
-        this.tone(b, 660, 0.06, 'square', 0.12);
+      case 'clic': // bouton appuyé : « Bouton rétro » (choix de Rudy, 12/11)
+        this.tone(b, 880, 0.04, 'square', 0.08);
+        this.tone(b, 1320, 0.05, 'square', 0.08, 0.035);
         break;
       case 'coup_poele': // poêle de Chef Moustachu : « Gong de poêle » (choix de Rudy, 12/11)
         this.tone(b, 180, 0.16, 'sine', 0.335, 0, 60);
@@ -280,9 +282,9 @@ class AudioManager {
         this.tone(b, 1319, 0.25, 'triangle', 0.22);
         this.tone(b, 1976, 0.4, 'triangle', 0.2, 0.09);
         break;
-      case 'plat':
-        this.tone(b, 587, 0.06, 'square', 0.1);
-        this.tone(b, 784, 0.09, 'square', 0.1, 0.05);
+      case 'plat': // plat servi : « Cloche du comptoir » (choix de Rudy, 12/11)
+        this.tone(b, 2093, 0.4, 'triangle', 0.16);
+        this.tone(b, 4186, 0.2, 'sine', 0.05);
         break;
       case 'piece': // encaissement
         this.arp([88, 91, 95, 100], 0.055, 'square', 0.17);
@@ -323,9 +325,9 @@ class AudioManager {
         this.noise(b, 0.04, 0.3, 'highpass', 3000);
         this.tone(b, 220, 0.05, 'triangle', 0.25, 0.01, 140);
         break;
-      case 'parti': // client mécontent
-        this.tone(b, 392, 0.14, 'square', 0.12);
-        this.tone(b, 294, 0.24, 'square', 0.12, 0.13);
+      case 'parti': // pas assez de pièces / client parti : « Buzzer » (choix de Rudy, 12/11)
+        this.tone(b, 140, 0.35, 'sawtooth', 0.12);
+        this.tone(b, 147, 0.35, 'square', 0.06);
         break;
       case 'laser':
         this.tone(b, 1500, 0.09, 'square', 0.07, 0, 500);
@@ -360,9 +362,17 @@ class AudioManager {
       case 'soin':
         this.tone(b, 880, 0.12, 'sine', 0.14, 0, 1320);
         break;
-      case 'victoire':
-        this.arp([72, 76, 79, 84, 0, 79, 84, 88, 91, 96], 0.11, 'square', 0.15, 2.2);
-        this.arp([48, 0, 0, 0, 0, 55, 0, 0, 60, 60], 0.11, 'triangle', 0.22, 3);
+      case 'victoire': // victoire : « Triomphe épique » (choix de Rudy, 12/11)
+        this.tone(b, 261.63, 0.16, 'sawtooth', 0.09);
+        this.tone(b, 329.63, 0.16, 'sawtooth', 0.09, 0.08);
+        this.tone(b, 392.0, 0.16, 'sawtooth', 0.09, 0.16);
+        this.tone(b, 523.25, 0.16, 'sawtooth', 0.09, 0.24);
+        this.tone(b, 659.26, 0.16, 'sawtooth', 0.09, 0.32);
+        this.tone(b, 783.99, 0.16, 'sawtooth', 0.09, 0.4);
+        this.tone(b, 1046.5, 0.16, 'sawtooth', 0.09, 0.48);
+        this.tone(b, 523, 0.8, 'sawtooth', 0.1, 0.56);
+        this.tone(b, 659, 0.8, 'square', 0.06, 0.56);
+        this.tone(b, 100, 0.16, 'sine', 0.6, 0.56, 35);
         break;
       case 'coup_hache': // hachoir géant du Taureau Boucher : « Séisme » (choix de Rudy, 12/11)
         this.tone(b, 80, 0.16, 'sine', 0.536, 0, 28);
@@ -397,9 +407,40 @@ class AudioManager {
         this.tone(b, 560, 0.15, 'sine', 0.14, 0.17, 420);
         this.tone(b, 520, 0.3, 'sine', 0.14, 0.34, 260);
         break;
-      case 'defaite':
-        this.arp([72, 71, 69, 67, 65, 64, 60], 0.16, 'triangle', 0.18, 1.8);
-        this.arp([0, 0, 0, 0, 0, 0, 36], 0.16, 'sawtooth', 0.14, 5);
+      case 'defaite': // défaite : « Game over » (choix de Rudy, 12/11)
+        this.tone(b, 493.88, 0.4, 'square', 0.12);
+        this.tone(b, 466.16, 0.4, 'square', 0.12, 0.25);
+        this.tone(b, 440.0, 0.4, 'square', 0.12, 0.5);
+        this.tone(b, 415.3, 0.4, 'square', 0.12, 0.75);
+        this.tone(b, 110, 0.8, 'sawtooth', 0.12, 1, 55);
+        break;
+      case 'legendaire': // article légendaire ou pack débloqué : « Légende » (choix de Rudy, 12/11)
+        this.tone(b, 261.63, 0.22, 'sawtooth', 0.08);
+        this.tone(b, 392.0, 0.22, 'sawtooth', 0.08, 0.1);
+        this.tone(b, 523.25, 0.22, 'sawtooth', 0.08, 0.2);
+        this.tone(b, 659.26, 0.22, 'sawtooth', 0.08, 0.3);
+        this.tone(b, 783.99, 0.22, 'sawtooth', 0.08, 0.4);
+        this.tone(b, 1046.5, 0.22, 'sawtooth', 0.08, 0.5);
+        this.tone(b, 130.81, 0.6, 'triangle', 0.25);
+        this.tone(b, 196.0, 0.6, 'triangle', 0.25, 0.3);
+        this.tone(b, 2093, 0.6, 'triangle', 0.1, 0.6);
+        break;
+      case 'cadeau': // cadeau du jour : « Bonjour chef » (choix de Rudy, 12/11)
+        this.tone(b, 523.25, 0.162, 'square', 0.09);
+        this.tone(b, 659.26, 0.162, 'square', 0.09, 0.09);
+        this.tone(b, 783.99, 0.162, 'square', 0.09, 0.18);
+        this.tone(b, 659.26, 0.162, 'square', 0.09, 0.27);
+        this.tone(b, 1046.5, 0.162, 'square', 0.09, 0.36);
+        this.tone(b, 130.81, 0.18, 'triangle', 0.2);
+        this.tone(b, 196.0, 0.18, 'triangle', 0.2, 0.18);
+        this.tone(b, 261.63, 0.18, 'triangle', 0.2, 0.36);
+        break;
+      case 'niveau': // niveau gagné : « Trompette » (choix de Rudy, 12/11)
+        this.tone(b, 392.0, 0.154, 'sawtooth', 0.1);
+        this.tone(b, 392.0, 0.154, 'sawtooth', 0.1, 0.11);
+        this.tone(b, 392.0, 0.154, 'sawtooth', 0.1, 0.22);
+        this.tone(b, 523.25, 0.154, 'sawtooth', 0.1, 0.33);
+        this.tone(b, 523, 0.4, 'sawtooth', 0.1, 0.44);
         break;
     }
   }
