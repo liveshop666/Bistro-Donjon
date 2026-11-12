@@ -18,12 +18,12 @@ const parent = document.getElementById('game') as HTMLDivElement;
  * Pixel Perfect : le canvas 360x640 est agrandi d'un facteur ENTIER en pixels physiques
  * (ex. x3 sur un écran 1080 px de large), avec bandes noires si besoin.
  */
-function fitParent(): void {
+function fitParent(w = W, h = H): void {
   const dpr = window.devicePixelRatio || 1;
-  const zoom = Math.floor(Math.min((window.innerWidth * dpr) / W, (window.innerHeight * dpr) / H));
-  const css = zoom >= 1 ? zoom / dpr : Math.min(window.innerWidth / W, window.innerHeight / H);
-  parent.style.width = `${W * css}px`;
-  parent.style.height = `${H * css}px`;
+  const zoom = Math.floor(Math.min((window.innerWidth * dpr) / w, (window.innerHeight * dpr) / h));
+  const css = zoom >= 1 ? zoom / dpr : Math.min(window.innerWidth / w, window.innerHeight / h);
+  parent.style.width = `${w * css}px`;
+  parent.style.height = `${h * css}px`;
 }
 fitParent();
 
@@ -44,7 +44,7 @@ document.fonts.load('8px "Press Start 2P"').finally(() => {
   // Recalage de l'écran : refait tout de suite puis encore deux fois, car sur Android la taille de la fenêtre
   // n'est pas toujours à jour au moment de l'événement (clavier qui se ferme, rotation, retour dans l'appli).
   const refit = () => {
-    fitParent();
+    fitParent(game.scale.gameSize.width, game.scale.gameSize.height);
     game.scale.getParentBounds();
     game.scale.refresh();
   };
@@ -54,6 +54,8 @@ document.fonts.load('8px "Press Start 2P"').finally(() => {
     window.setTimeout(refit, 1000);
   };
   window.addEventListener('resize', refitSoon);
+  // la partie passe en paysage ou revient en portrait (taille du canvas changée par GameScene)
+  game.events.on('refit', refitSoon);
   window.addEventListener('orientationchange', refitSoon);
   window.addEventListener('focus', refitSoon);
   window.visualViewport?.addEventListener('resize', refitSoon);

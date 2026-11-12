@@ -100,6 +100,11 @@ export class TouchController {
     this.thumb.setVisible(false);
   }
 
+  /** Vrai pour le joystick et la traînée de doigt (dessinés en coordonnées d'écran). */
+  owns(o: Phaser.GameObjects.GameObject): boolean {
+    return o === this.base || o === this.thumb || o === this.trail;
+  }
+
   setEnabled(on: boolean): void {
     this.enabled = on;
     if (!on) {

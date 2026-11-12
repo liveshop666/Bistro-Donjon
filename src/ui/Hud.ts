@@ -1,19 +1,27 @@
 import Phaser from 'phaser';
-import { COMBO_SIZE, H, IngredientId, INGREDIENTS, ORDER_PATIENCE, POWER_LABEL, PowerId, W, WAVES } from '../core/constants';
+import { COMBO_SIZE, IngredientId, INGREDIENTS, ORDER_PATIENCE, POWER_LABEL, PowerId, W, WAVES } from '../core/constants';
 import { GameManager } from '../core/GameManager';
 import { RecipeManager } from '../core/RecipeManager';
 import { Chef } from '../entities/Chef';
 import { txt } from './text';
 
 const D = 2000;
-const ULT = { x: 322, y: 594, r: 32 }; // en bas à droite, sous le bouton d'attaque (choix de Rudy, 12/11)
-/** Bouton d'attaque : sous le pouce droit, on le garde appuyé pour frapper en continu. */
-const ATK = { x: 316, y: 512, r: 34 };
-/** Bouton PAUSE en bas de l'écran, facile à atteindre. */
-const PAUSE = { x: 233, y: 622, w: 70, h: 26 };
 
 /** Interface en jeu : vie, stand, chrono, or, commandes, inventaire, bouton d'ultime. */
 export class Hud {
+  // Positions en portrait : ultime en bas à droite, sous le bouton d'attaque (choix de Rudy, 12/11).
+  // En paysage elles sont recalculées dans le constructeur (bandeau de droite).
+  private ULT = { x: 322, y: 594, r: 32 };
+  /** Bouton d'attaque : sous le pouce droit, on le garde appuyé pour frapper en continu. */
+  private ATK = { x: 316, y: 512, r: 34 };
+  /** Bouton PAUSE en bas de l'écran, facile à atteindre. */
+  private PAUSE = { x: 233, y: 622, w: 70, h: 26 };
+  /** Largeur de l'écran (canvas) et largeur d'un bandeau latéral (0 en portrait). */
+  private sw = W;
+  private side = 0;
+  /** Tous les objets de l'interface fixe (pour les caméras en paysage et pour tout détruire). */
+  private own = new Set<Phaser.GameObjects.GameObject>();
+  private releaseFn: (p: Phaser.Input.Pointer) => void;
   private bars: Phaser.GameObjects.Graphics;
   private timer: Phaser.GameObjects.Text;
   private gold: Phaser.GameObjects.Text;
@@ -35,26 +43,46 @@ export class Hud {
   rivalInfo: { name: string; gold: number } | null = null;
 
   constructor(private scene: Phaser.Scene, private gm: GameManager, private chef: Chef, private recipes: RecipeManager, onUlt: () => void, onPause: () => void) {
-    scene.add.rectangle(0, 0, W, 26, 0x14141f, 0.88).setOrigin(0).setDepth(D);
+    const before = new Set(scene.children.list);
+    const sw = scene.scale.width;
+    const sh = scene.scale.height;
+    const land = sw > sh;
+    const S = land ? (sw - W) / 2 : 0;
+    this.sw = sw;
+    this.side = S;
+    if (land) {
+      this.ATK = { x: sw - 74, y: sh - 152, r: 34 };
+      this.ULT = { x: sw - 62, y: sh - 64, r: 32 };
+      this.PAUSE = { x: sw - 168, y: sh - 22, w: 70, h: 26 };
+      // fond des deux bandeaux
+      const bg = scene.add.graphics().setDepth(D - 5);
+      bg.fillStyle(0x14141f, 1).fillRect(0, 0, S, sh).fillRect(sw - S, 0, S, sh);
+      bg.fillStyle(0x3a3f55, 1).fillRect(S - 2, 0, 2, sh).fillRect(sw - S, 0, 2, sh);
+    }
+    const { ATK, ULT, PAUSE } = this;
+
+    scene.add.rectangle(0, 0, land ? S : W, 26, 0x14141f, 0.88).setOrigin(0).setDepth(D);
+    if (land) scene.add.rectangle(sw - S, 0, S, 26, 0x1b1b2b, 0.95).setOrigin(0).setDepth(D);
     scene.add.image(9, 8, 'coeur').setDepth(D + 1);
     scene.add.image(9, 19, 'ico_stand').setDepth(D + 1);
     this.bars = scene.add.graphics().setDepth(D + 1);
-    this.timer = txt(scene, W / 2, 13, '').setOrigin(0.5).setDepth(D + 1);
-    scene.add.image(W - 12, 13, 'ico_pause').setDepth(D + 1).setInteractive({ useHandCursor: true }).on('pointerdown', onPause);
-    scene.add.image(W - 32, 13, 'piece').setDepth(D + 1);
+    this.timer = land ? txt(scene, sw - S + 8, 13, '').setOrigin(0, 0.5).setDepth(D + 1) : txt(scene, W / 2, 13, '').setOrigin(0.5).setDepth(D + 1);
+    scene.add.image(sw - 12, 13, 'ico_pause').setDepth(D + 1).setInteractive({ useHandCursor: true }).on('pointerdown', onPause);
+    scene.add.image(sw - 32, 13, 'piece').setDepth(D + 1);
     this.patience = scene.add.graphics().setDepth(D + 2);
-    this.combo = txt(scene, 6, 70, '', 8, '#ffc533').setDepth(D + 1);
-    this.rival = txt(scene, W - 6, 70, '', 8, '#ff9d8a').setOrigin(1, 0).setDepth(D + 1);
-    this.gold = txt(scene, W - 42, 13, '0', 8, '#ffd23e').setOrigin(1, 0.5).setDepth(D + 1);
-    this.powers = txt(scene, W / 2, 84, '', 8, '#8fe0ff').setOrigin(0.5, 0).setDepth(D + 1);
+    this.combo = txt(scene, 6, land ? 122 : 70, '', 8, '#ffc533').setDepth(D + 1);
+    this.rival = txt(scene, sw - 6, land ? 32 : 70, '', 8, '#ff9d8a').setOrigin(1, 0).setDepth(D + 1);
+    this.gold = txt(scene, sw - 42, 13, '0', 8, '#ffd23e').setOrigin(1, 0.5).setDepth(D + 1);
+    this.powers = txt(scene, land ? S / 2 : W / 2, land ? 140 : 84, '', 8, '#8fe0ff').setOrigin(0.5, 0).setDepth(D + 1);
 
     // inventaire
-    scene.add.rectangle(2, H - 34, 186, 32, 0x14141f, 0.8).setOrigin(0).setDepth(D);
+    const invX = land ? Math.max(2, Math.round((S - 186) / 2)) : 2;
+    scene.add.rectangle(invX, sh - 34, 186, 32, 0x14141f, 0.8).setOrigin(0).setDepth(D);
     INGREDIENTS.forEach((ing, i) => {
-      const x = 14 + i * 46;
-      scene.add.image(x, H - 18, 'ing_' + ing).setDepth(D + 1);
-      this.invTexts[ing] = txt(scene, x + 11, H - 29, '0').setDepth(D + 1);
-      this.slicedTexts[ing] = txt(scene, x + 11, H - 17, '', 8, '#8fe0ff').setDepth(D + 1);
+      const x = invX + 12 + i * 46;
+      scene.add.image(x, sh - 18, 'ing_' + ing).setDepth(D + 1);
+      this.invTexts[ing] = txt(scene, x + 11, sh - 29, '0').setDepth(D + 1);
+      this.slicedTexts[ing] = txt(scene, x + 11, sh - 17, '', 8, '#8fe0ff').setDepth(D + 1);
     });
 
     // bouton d'ultime
@@ -70,11 +98,11 @@ export class Hud {
       .setDepth(D + 3)
       .setInteractive({ useHandCursor: true })
       .on('pointerdown', (p: Phaser.Input.Pointer) => (this.atkPointer = p.id));
-    const release = (p: Phaser.Input.Pointer) => {
+    this.releaseFn = (p: Phaser.Input.Pointer) => {
       if (p.id === this.atkPointer) this.atkPointer = -1;
     };
-    scene.input.on('pointerup', release);
-    scene.input.on('pointerupoutside', release);
+    scene.input.on('pointerup', this.releaseFn);
+    scene.input.on('pointerupoutside', this.releaseFn);
 
     // bouton PAUSE en bas (celui du haut reste aussi)
     const pg = scene.add.graphics().setDepth(D);
@@ -83,8 +111,28 @@ export class Hud {
     txt(scene, PAUSE.x, PAUSE.y, 'PAUSE').setOrigin(0.5).setDepth(D + 1);
     scene.add.zone(PAUSE.x, PAUSE.y, PAUSE.w, PAUSE.h).setDepth(D + 3).setInteractive({ useHandCursor: true }).on('pointerdown', onPause);
 
+    for (const o of scene.children.list) if (!before.has(o)) this.own.add(o);
     recipes.onChange = () => this.buildOrders();
     this.buildOrders();
+  }
+
+  /** Vrai si l'objet fait partie de l'interface fixe (bandeaux, boutons, commandes). */
+  owns(o: Phaser.GameObjects.GameObject): boolean {
+    return this.own.has(o) || this.orderUi.includes(o);
+  }
+
+  /** Coin haut-gauche de la commande n° i : côte à côte en portrait, l'une sous l'autre à gauche en paysage. */
+  private orderPos(i: number): { x: number; y: number } {
+    return this.side ? { x: Math.max(2, Math.round((this.side - 174) / 2)), y: 30 + i * 44 } : { x: 4 + i * 178, y: 29 };
+  }
+
+  /** Détruit toute l'interface (quand on tourne le téléphone, elle est reconstruite). */
+  destroy(): void {
+    this.orderUi.forEach((o) => o.destroy());
+    this.own.forEach((o) => o.destroy());
+    this.own.clear();
+    this.scene.input.off('pointerup', this.releaseFn);
+    this.scene.input.off('pointerupoutside', this.releaseFn);
   }
 
   /** Vrai tant que le joueur garde le doigt sur le bouton d'attaque. */
@@ -98,6 +146,7 @@ export class Hud {
 
   /** Vrai si le point touche un élément d'interface (ne doit pas déclencher le joystick). */
   isUi(x: number, y: number): boolean {
+    const { ATK, ULT, PAUSE, sw: W } = this;
     return (
       Math.hypot(x - ULT.x, y - ULT.y) < ULT.r + 4 ||
       Math.hypot(x - ATK.x, y - ATK.y) < ATK.r + 6 ||
@@ -111,8 +160,7 @@ export class Hud {
     this.orderUi = [];
     this.orderCounts = [];
     this.recipes.orders.forEach((o, i) => {
-      const x = 4 + i * 178;
-      const y = 29;
+      const { x, y } = this.orderPos(i);
       const g = this.scene.add.graphics().setDepth(D);
       g.fillStyle(0x3b2414).fillRect(x, y, 174, 38);
       g.fillStyle(o.state === 'open' ? 0xf0dcae : 0xffe27a).fillRect(x + 1, y + 1, 172, 36);
@@ -167,8 +215,9 @@ export class Hud {
     this.recipes.orders.forEach((o, i) => {
       if (o.state !== 'open') return;
       const p = Math.max(0, o.patience / ORDER_PATIENCE);
-      this.patience.fillStyle(0x3b2414, 0.5).fillRect(6 + i * 178, 63, 170, 2);
-      this.patience.fillStyle(p > 0.5 ? 0x3fae3f : p > 0.25 ? 0xe08a2a : 0xd0342a).fillRect(6 + i * 178, 63, Math.round(170 * p), 2);
+      const { x, y } = this.orderPos(i);
+      this.patience.fillStyle(0x3b2414, 0.5).fillRect(x + 2, y + 34, 170, 2);
+      this.patience.fillStyle(p > 0.5 ? 0x3fae3f : p > 0.25 ? 0xe08a2a : 0xd0342a).fillRect(x + 2, y + 34, Math.round(170 * p), 2);
     });
     const c = gm.combo % COMBO_SIZE;
     this.combo.setText(gm.combo > 0 ? `COMBO ${gm.combo} ${'*'.repeat(c)}${'.'.repeat(COMBO_SIZE - c)}` : '');
@@ -178,6 +227,7 @@ export class Hud {
     this.powers.setText(active.map((p) => `${POWER_LABEL[p]} ${Math.ceil(chef.powers[p])}s`).join('\n'));
 
     // jauge d'ultime autour du bouton
+    const { ULT, ATK } = this;
     const ready = chef.ult >= 100;
     this.ultRing.clear();
     this.ultRing.lineStyle(4, 0x14141f, 0.9).strokeCircle(ULT.x, ULT.y, ULT.r);

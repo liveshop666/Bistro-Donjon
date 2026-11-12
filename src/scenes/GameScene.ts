@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { LH, landscapeWanted, landscapeWidth } from '../core/layout';
 import { audio, Sfx, Tune } from '../audio/AudioManager';
 import {
   BOSS_REWARD, ChefId, ENEMIES, FREE_WORLDS, ShopItem, WORLD_HP_STEP, worldRank, CHEFS, CHOP_TIME, COMBO_GOLD, COMBO_SIZE, CONVEYORS, EnemyId, GameMode, H, IngredientId, INGREDIENTS, itemLabel, playerLevel, ORDER_PATIENCE,
@@ -97,6 +98,10 @@ export class GameScene extends Phaser.Scene {
   /** Costume équipé (pour le bruit et la couleur de son arme). */
   private skinItem: ShopItem | null = null;
   private atkKeys: Phaser.Input.Keyboard.Key[] = [];
+  /** Écran en paysage (téléphone tourné) et ses caméras d'interface. */
+  private land = false;
+  private hudCam?: Phaser.Cameras.Scene2D.Camera;
+  private ovlCam?: Phaser.Cameras.Scene2D.Camera;
 
   constructor() {
     super('Game');
@@ -171,10 +176,40 @@ export class GameScene extends Phaser.Scene {
     this.bounds = new Phaser.Geom.Rectangle(16, pot.y - 4, W - 32, H - 12 - (pot.y - 4));
     this.fx = this.add.graphics().setDepth(1800);
 
-    this.hud = new Hud(this, this.gm, this.chef, this.recipes, () => this.ultimate(), () => this.pause());
+    this.setupLayout();
+    this.hud = this.makeHud();
     this.cards = new UpgradeCards(this);
     this.touch = new TouchController(this, (x, y) => this.hud.isUi(x, y));
-    this.touch.onSlice = (x1, y1, x2, y2) => this.slice(x1, y1, x2, y2);
+    // le doigt glisse en coordonnées d'écran : on les ramène sur la carte (utile en paysage, caméra qui suit le chef)
+    this.touch.onSlice = (x1, y1, x2, y2) => {
+      const a = this.cameras.main.getWorldPoint(x1, y1);
+      const b = this.cameras.main.getWorldPoint(x2, y2);
+      this.slice(a.x, a.y, b.x, b.y);
+    };
+    // téléphone tourné en pleine partie : on refait l'écran (Android met parfois un instant à donner la bonne taille)
+    const relayout = () => {
+      if (!this.sys.isActive() && !this.sys.isPaused()) return;
+      const land = landscapeWanted();
+      if (land === this.land && (!land || landscapeWidth() === this.scale.width)) return;
+      this.setupLayout();
+      const rival = this.hud.rivalInfo;
+      this.hud.destroy();
+      this.hud = this.makeHud();
+      this.hud.rivalInfo = rival;
+    };
+    const onResize = () => [0, 300, 1000].forEach((ms) => window.setTimeout(relayout, ms));
+    window.addEventListener('resize', onResize);
+    this.events.on('prerender', this.filterCameras, this);
+    this.events.once('shutdown', () => {
+      window.removeEventListener('resize', onResize);
+      this.events.off('prerender', this.filterCameras, this);
+      this.land = false;
+      this.hudCam = this.ovlCam = undefined;
+      if (this.scale.width !== W || this.scale.height !== H) {
+        this.scale.setGameSize(W, H);
+        this.game.events.emit('refit');
+      }
+    });
     this.input.keyboard?.on('keydown-SPACE', () => this.ultimate());
     this.atkKeys = this.input.keyboard ? Object.values(this.input.keyboard.addKeys('K,E') as Record<string, Phaser.Input.Keyboard.Key>) : [];
 
@@ -210,6 +245,7 @@ export class GameScene extends Phaser.Scene {
   update(time: number, delta: number): void {
     const dt = Math.min(delta, 50) / 1000;
     this.touch.update(dt);
+    if (this.land) this.followChef(Math.min(1, dt * 6));
     const { gm, chef } = this;
     // en duel en ligne le temps ne s'arrête pas : le menu pause s'affiche par-dessus
     if (gm.phase === 'cards' || gm.phase === 'over' || (this.paused && !this.link?.online)) {
@@ -339,7 +375,7 @@ export class GameScene extends Phaser.Scene {
   // ------------------------------------------------------------------ ultimes
   private ultimate(): void {
     const { chef, gm } = this;
-    if (chef.ult < 100 || gm.phase === 'cards' || gm.phase === 'over' || this.dashing) return;
+    if (chef.ult < 100 || gm.phase === 'cards' || gm.phase === 'over' || this.dashing || this.paused) return;
     chef.ult = 0;
     this.hud.banner(chef.def.ultimateName, '#ff8a1e', 420);
     this.cameras.main.flash(150, 255, 200, 120);
@@ -774,6 +810,59 @@ export class GameScene extends Phaser.Scene {
       ).setDepth(D + 1);
     }
     button(this, W / 2, again ? 446 : 400, 160, 30, 'MENU', 0x4a4f66, () => this.scene.start('Menu')).setDepth(D + 1);
+  }
+
+  // ------------------------------------------------------------------ écran portrait / paysage
+  private makeHud(): Hud {
+    return new Hud(this, this.gm, this.chef, this.recipes, () => this.ultimate(), () => this.pause());
+  }
+
+  /**
+   * Portrait : une seule caméra, comme avant. Paysage : canvas large et trois caméras —
+   * la carte au centre (suit le chef), l'interface fixe dans les bandeaux (coordonnées d'écran),
+   * et une caméra « fenêtres » au centre pour les bannières, la pause, les cartes et l'écran de fin.
+   */
+  private setupLayout(): void {
+    const land = landscapeWanted();
+    const gw = land ? landscapeWidth() : W;
+    const gh = land ? LH : H;
+    if (this.scale.width !== gw || this.scale.height !== gh) this.scale.setGameSize(gw, gh);
+    this.game.events.emit('refit');
+    if (this.hudCam) this.cameras.remove(this.hudCam);
+    if (this.ovlCam) this.cameras.remove(this.ovlCam);
+    this.hudCam = this.ovlCam = undefined;
+    this.land = land;
+    const main = this.cameras.main;
+    if (!land) {
+      main.setViewport(0, 0, W, H).setScroll(0, 0);
+      for (const o of this.children.list) o.cameraFilter = 0;
+      return;
+    }
+    const side = (gw - W) / 2;
+    main.setViewport(side, 0, W, gh);
+    this.hudCam = this.cameras.add(0, 0, gw, gh);
+    this.ovlCam = this.cameras.add(side, 0, W, gh).setScroll(0, (H - gh) / 2);
+    this.followChef(1);
+  }
+
+  /** En paysage, la carte défile verticalement pour garder le chef au milieu. */
+  private followChef(k: number): void {
+    const main = this.cameras.main;
+    const target = Phaser.Math.Clamp(this.chef.y - main.height / 2, 0, H - main.height);
+    main.scrollY += (target - main.scrollY) * k;
+  }
+
+  /** Chaque objet n'est dessiné que par sa caméra (en paysage seulement). */
+  private filterCameras(): void {
+    if (!this.land || !this.hudCam || !this.ovlCam) return;
+    const m = this.cameras.main.id;
+    const h = this.hudCam.id;
+    const o = this.ovlCam.id;
+    const all = m | h | o;
+    for (const obj of this.children.list) {
+      const cam = this.hud.owns(obj) || this.touch.owns(obj) ? h : (obj as Phaser.GameObjects.Components.Depth & Phaser.GameObjects.GameObject).depth >= 2040 ? o : m;
+      obj.cameraFilter = all & ~cam;
+    }
   }
 
   // ------------------------------------------------------------------ pause & sauvegarde
