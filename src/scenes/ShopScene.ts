@@ -86,9 +86,14 @@ export class ShopScene extends Phaser.Scene {
       let status: string;
       let detail = '';
       let color = '#ffd23e';
+      let detailColor = '#bfc8e0';
       if (equipped) [status, color] = ['EQUIPE', '#ffc533'];
       else if (owned) [status, color] = ['OBTENU', '#7dff7d'];
-      else if (it.kind === 'pack') [status, detail, color] = [it.euro ?? '', it.coins ? `ou ${it.coins} P.` : '', '#ff9ad0'];
+      else if (it.kind === 'pack') {
+        // pack de monde : le prix en euros, et bien en vert qu'il peut aussi être gratuit
+        [status, color] = [it.euro ?? '', '#ff9ad0'];
+        if (it.coins) [detail, detailColor] = [`GRATUIT ${Math.round(it.coins / 1000)}K`, '#7dff7d'];
+      }
       else if (it.coins !== undefined) status = `${it.coins} PIECES`;
       else if (it.palier !== undefined) [status, detail, color] = ['CADEAU', `A ${it.palier}`, '#7dff7d'];
       else [status, detail, color] = ['PREMIUM', it.euro ?? '', '#ff9ad0'];
@@ -98,7 +103,7 @@ export class ShopScene extends Phaser.Scene {
         preview,
         txt(this, 0, 30, r.label, 8, r.text).setOrigin(0.5),
         txt(this, 0, 46, status, 8, color).setOrigin(0.5),
-        txt(this, 0, 60, detail, 8, '#bfc8e0').setOrigin(0.5),
+        txt(this, 0, 60, detail, 8, detailColor).setOrigin(0.5),
       ];
       if (!owned && it.coins === undefined) parts.push(this.add.image(36, -30, 'cadenas'));
       const c = add(this.add.container(x, y, parts).setSize(108, 148).setInteractive({ useHandCursor: true }));
@@ -167,7 +172,7 @@ export class ShopScene extends Phaser.Scene {
     if (it.coins !== undefined) {
       const price = it.coins;
       const coinBtn = {
-        label: `ACHETER : ${price} PIECES`, color: p.coins >= price ? 0x3d7a4a : 0x4a4f66,
+        label: it.euro ? `GRATUIT : ${price} PIECES` : `ACHETER : ${price} PIECES`, color: p.coins >= price ? 0x3d7a4a : 0x4a4f66,
         action: () => {
           const q = loadProfile();
           if (q.coins < price) {
@@ -180,7 +185,11 @@ export class ShopScene extends Phaser.Scene {
         },
       };
       // un pack de monde s'obtient en payant, ou avec énormément de pièces
-      const extra = it.euro ? `\n\nGratuit avec ${price} pièces,\nou tout de suite en payant.` : '';
+      const missing = Math.max(0, price - p.coins);
+      const extra = it.euro
+        ? `\n\nGRATUIT avec ${price} pièces gagnées\nen jouant, ou tout de suite en payant.\n` +
+          (missing ? `Tu as ${p.coins} pièces : il t'en manque ${missing}.` : 'Tu as assez de pièces : appuie sur GRATUIT !')
+        : '';
       openModal(this, title, it.euro ? [euroBtn, coinBtn, close] : [coinBtn, close], note + extra);
       return;
     }
