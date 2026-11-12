@@ -144,8 +144,10 @@ export function pageToWorld(scene: Phaser.Scene, x: number, y: number): { x: num
   return { x: p.x, y: p.y };
 }
 
-/** Hauteur du canvas des écrans de menu dessinés exprès pour le paysage (titre, boutique). */
+/** Hauteur des écrans de menu dessinés exprès pour le paysage (titre, boutique), en coordonnées de page. */
 export const MENU_LH = 360;
+/** Le canvas de ces écrans est rendu 2 fois plus fin (caméras zoomées x2) : dessins HD nets, positions inchangées. */
+export const MENU_SCALE = 2;
 
 /** Redémarre l'écran quand on tourne le téléphone (portrait <-> paysage ou autre largeur), pour qu'il se redessine. */
 function restartOnRotate(scene: Phaser.Scene, land: boolean, width: number, beforeRestart?: () => void): void {
@@ -189,12 +191,13 @@ export function portraitMenu(scene: Phaser.Scene, beforeRestart?: () => void): v
 export function landscapeMenu(scene: Phaser.Scene, beforeRestart?: () => void): { w: number; h: number } {
   const w = landscapeMenuWidth();
   const h = MENU_LH;
-  if (scene.scale.width !== w || scene.scale.height !== h) {
-    scene.scale.setGameSize(w, h);
+  const S = MENU_SCALE;
+  if (scene.scale.width !== w * S || scene.scale.height !== h * S) {
+    scene.scale.setGameSize(w * S, h * S);
     scene.game.events.emit('refit');
   }
-  const main = scene.cameras.main.setViewport(0, 0, w, h).setScroll(0, 0);
-  const modal = scene.cameras.add(0, 0, w, h);
+  const main = scene.cameras.main.setViewport(0, 0, w * S, h * S).setZoom(S).centerOn(w / 2, h / 2);
+  const modal = scene.cameras.add(0, 0, w * S, h * S);
   const filter = () => {
     let box: Phaser.Geom.Rectangle | null = null;
     for (const o of scene.children.list as Obj[]) {
@@ -209,7 +212,7 @@ export function landscapeMenu(scene: Phaser.Scene, beforeRestart?: () => void): 
     main.setAlpha(box ? 0.3 : 1).inputEnabled = !box;
     modal.inputEnabled = !!box;
     if (box) {
-      modal.setZoom(Math.min(1, (h - 4) / (box.height + 12)));
+      modal.setZoom(S * Math.min(1, (h - 4) / (box.height + 12)));
       modal.centerOn(W / 2, box.centerY);
     }
   };

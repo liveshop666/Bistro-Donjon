@@ -12,6 +12,9 @@ export class BootScene extends Phaser.Scene {
     for (const c of CHEF_ORDER) {
       this.load.image(c, `sprites/chefs/${c}.png`);
       this.load.image('portrait_' + c, `sprites/chefs/portrait_${c}.png`);
+      // grands dessins haute définition (menu en paysage), découpés par tools/extract_hd_chefs.py
+      this.load.image('hd_' + c, `sprites/chefs/hd_${c}.png`);
+      this.load.image('hdp_' + c, `sprites/chefs/hdp_${c}.png`);
     }
     for (const f of SPRITE_FILES.chefs) this.load.image(f, `sprites/chefs/${f}.png`);
     for (const it of SHOP) if (it.sprite) this.load.image(it.sprite, `sprites/skins/${it.sprite}.png`);
@@ -23,6 +26,8 @@ export class BootScene extends Phaser.Scene {
   }
 
   create(): void {
+    // les dessins HD sont réduits à l'affichage : lissage pour garder tous les détails
+    for (const c of CHEF_ORDER) for (const k of ['hd_' + c, 'hdp_' + c]) this.textures.get(k).setFilter(Phaser.Textures.FilterMode.LINEAR);
     const g = this.make.graphics({ x: 0, y: 0 }, false);
     const tex = (key: string, w: number, h: number, draw: () => void) => {
       g.clear();

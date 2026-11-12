@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { landscapeMenu, portraitMenu } from '../ui/landscapeMenu';
+import { landscapeMenu, MENU_SCALE, portraitMenu } from '../ui/landscapeMenu';
 import { landscapeWanted } from '../core/layout';
 import { audio } from '../audio/AudioManager';
 import { billing } from '../core/Billing';
@@ -67,7 +67,8 @@ export class ShopScene extends Phaser.Scene {
   private drawLandscape(): void {
     const add = <T extends Phaser.GameObjects.GameObject>(o: T): T => (this.dyn.push(o), o);
     const p = loadProfile();
-    const { width: w, height: h } = this.scale;
+    const w = this.scale.width / MENU_SCALE;
+    const h = this.scale.height / MENU_SCALE;
     add(this.add.image(w - 150, 15, 'piece'));
     add(txt(this, w - 138, 15, String(p.coins), 8, '#ffd23e').setOrigin(0, 0.5));
     const next = nextMilestone();

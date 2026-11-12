@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { landscapeMenu, pageToWorld, portraitMenu } from '../ui/landscapeMenu';
+import { landscapeMenu, MENU_SCALE, pageToWorld, portraitMenu } from '../ui/landscapeMenu';
 import { landscapeWanted } from '../core/layout';
 import { audio } from '../audio/AudioManager';
 import { CHEF_ORDER, CHEFS, ChefId, DAILY_GIFT, FREE_WORLDS, H, itemLabel, playerLevel, W, worldUnlocked, WORLD_ORDER, WorldId, WORLDS } from '../core/constants';
@@ -216,7 +216,7 @@ export class MenuScene extends Phaser.Scene {
     this.worldObjs.forEach((o) => o.destroy());
     this.worldObjs = [];
     const add = <T extends Phaser.GameObjects.GameObject>(o: T): T => (this.worldObjs.push(o), o);
-    const w = this.scale.width;
+    const w = this.scale.width / MENU_SCALE;
     const p = loadProfile();
     const c = CHEFS[this.chef];
     const wd = WORLDS[this.world];
@@ -227,13 +227,15 @@ export class MenuScene extends Phaser.Scene {
     const glow = add(this.add.graphics());
     glow.fillStyle(0xffc533, 0.18).fillEllipse(cx, 236, 190, 26);
     const skin = p.skins[this.chef];
-    const img = add(this.add.image(cx, 240, skin && p.owned.includes(skin) ? skin : this.chef).setOrigin(0.5, 1));
-    img.setScale(Math.max(1, Math.floor(Math.min(3, 190 / img.width, 160 / img.height)))); // agrandissement entier : pixels nets
+    // le chef en grand : dessin haute définition (ou le costume équipé, agrandi en nombre entier)
+    const worn = skin && p.owned.includes(skin) ? skin : null;
+    const img = add(this.add.image(cx, 240, worn ?? 'hd_' + this.chef).setOrigin(0.5, 1));
+    img.setScale(worn ? Math.max(1, Math.floor(Math.min(3, 190 / img.width, 160 / img.height))) : Math.min(190 / img.width, 150 / img.height));
     add(txt(this, cx, 250, c.name, 8, '#ffc533').setOrigin(0.5, 0));
     add(txt(this, cx, 264, `${c.weapon}\n${c.ultimateName}`, 8, '#bfc8e0').setOrigin(0.5, 0).setAlign('center'));
     CHEF_ORDER.forEach((id, i) => {
       const x = cx + (i - 1) * 58;
-      const pt = add(this.add.image(x, 322, 'portrait_' + id).setScale(0.75).setInteractive({ useHandCursor: true }));
+      const pt = add(this.add.image(x, 322, 'hdp_' + id).setDisplaySize(34, 38).setInteractive({ useHandCursor: true }));
       pt.on('pointerdown', () => {
         this.chef = id;
         audio.sfx('clic');
