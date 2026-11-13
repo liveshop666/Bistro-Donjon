@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { CHEF_ORDER, INGREDIENTS, SHOP, SPRITE_FILES, UPGRADES, WORLD_ORDER } from '../core/constants';
+import { CHEF_ORDER, INGREDIENTS, SHOP, SPRITE_FILES, UPGRADES, WORLD_ORDER, WORLDS } from '../core/constants';
 
 /** Charge les sprites et génère les petites textures procédurales (joystick, plat, effets). */
 export class BootScene extends Phaser.Scene {
@@ -20,6 +20,8 @@ export class BootScene extends Phaser.Scene {
     for (const it of SHOP) if (it.sprite) this.load.image(it.sprite, `sprites/skins/${it.sprite}.png`);
     for (const e of SPRITE_FILES.enemies) this.load.image(e, `sprites/enemies/${e}.png`);
     for (const w of WORLD_ORDER) this.load.image('map_' + w, `maps/${w}.png`);
+    // grandes maps paysage (le terrain de la partie) ; les petites restent pour les menus
+    for (const w of WORLD_ORDER) if (WORLDS[w].wide) this.load.image('wide_' + w, `maps/wide_${w}.jpg`);
     for (const i of INGREDIENTS) this.load.image('ing_' + i, `ui/ing_${i}.png`);
     for (const u of UPGRADES) this.load.image(u.icon, `ui/${u.icon}.png`);
     for (const k of ['marmite', 'coeur', 'piece', 'bouton_ultime']) this.load.image(k, `ui/${k}.png`);

@@ -3,6 +3,12 @@
 Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en haut à chaque session.
 
 ## Où on en est (12/11/2026)
+
+**13/11/2026 : grandes maps dans le jeu (3 sur 8)**
+- Clairière, Marché de nuit et Taverne se jouent sur leur grande map Canva (1680 x 944, affichée à 70 % : terrain de 1176 x 661). Plus de copies en miroir ni de mur invisible : la caméra suit le chef partout, en portrait comme en paysage. Images : `public/assets/maps/wide_<monde>.jpg` (originaux dans `reference/maps-paysage/`). Pour chaque monde : marmite, planche, comptoir, zone où marcher et décors solides placés sur le dessin (`wide` dans `WORLDS`, `src/core/constants.ts`). Les petites maps restent pour les menus.
+- Cantine et Glacière générées dans Canva le 13/11 (images `MAHayMktSas` et `MAHayEhCHGY`, dans ses imports Canva). Canva ne donne à Claude que des aperçus de 200 px : Rudy doit les télécharger en taille réelle et les envoyer. Volcan, Galion et Usine hantée : quota Canva épuisé, à générer quand les crédits reviennent (environ 2 à 3 images par jour en gratuit).
+- Pour ajouter une grande map : déposer l'image dans `reference/maps-paysage/`, la copier en `public/assets/maps/wide_<monde>.jpg`, puis ajouter `wide: { w: 1176, h: 661, area }` au monde et replacer pot, counter, board, standLine et obstacles (coordonnées de l'image x 0,7).
+- Reste à voir sur le téléphone : la cuisine est sous les commandes en haut de l'écran quand le chef est loin en bas (en paysage) ; en portrait, les bandes noires des téléphones allongés restent.
 **La liste détaillée de ce qui reste jusqu'au Play Store (qui fait quoi, dans quel ordre) est dans `docs/PUBLICATION.md`.**
 
 **Fait et testé dans un navigateur**
@@ -99,6 +105,7 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
 - Connexion par compte : avec quel service (Google Play Jeux, e-mail via Supabase…).
 
 ## Erreurs commises et leçons
+- Tests qui comptent sur la mission du jour (`test_v8`) : la mission change chaque jour, un échec « 3 missions accomplies » peut venir du tirage (ex. « finis 3x les vagues ») -> vérifier le libellé des missions avant de chercher un bug.
 - Corriger les images des maps au chargement du jeu (canvas recréés avec `textures.addCanvas`) rendait le lancement d'une partie très lent (environ 10 s dans le navigateur de test) -> corriger les images une fois pour toutes dans les fichiers, jamais au chargement.
 - **Adresse e-mail en dur** : j'ai failli publier l'adresse du propriétaire dans le jeu et la page de confidentialité sans demander. Leçon : toute donnée personnelle passe par `.env` et se demande d'abord.
 - **Stand détruit dès la première vague** : tous les monstres attaquaient le stand. Leçon : seuls les Champi-Boucliers et le boss l'attaquent ; toujours faire tourner une partie complète après un changement d'équilibrage.

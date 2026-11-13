@@ -2,6 +2,10 @@
 
 export const W = 360;
 export const H = 640;
+/** Taille du terrain de la partie en cours (plus grand que l'écran pour les grandes maps). Réglé par GameScene. */
+export const ARENA = { w: W, h: H };
+/** Les grandes maps (1680 x 944) sont affichées à 70 % : terrain de 1176 x 661. */
+export const WIDE_SCALE = 0.7;
 
 export const HARVEST_TIME = 45; // Phase 1 : récolte sauvage (s)
 export const KITCHEN_TIME = 20; // Phase 2 : coup de feu en cuisine (s)
@@ -160,6 +164,8 @@ export interface WorldDef {
   hint: string;
   mechanic: WorldMechanic;
   pot: { x: number; y: number };
+  /** Grande map paysage (public/assets/maps/wide_<id>.jpg) : taille du terrain et zone où le chef peut marcher. */
+  wide?: { w: number; h: number; area: Obstacle };
   counter: { x: number; y: number };
   /** Planche à découper : tranche en sécurité les ingrédients portés. */
   board: { x: number; y: number };
@@ -180,24 +186,30 @@ export interface Obstacle { x: number; y: number; w: number; h: number }
 export const WORLDS: Record<WorldId, WorldDef> = {
   clairiere: {
     id: 'clairiere', name: 'LA CLAIRIERE', hint: 'Idéal pour apprendre', mechanic: 'none',
-    pot: { x: 140, y: 214 }, counter: { x: 264, y: 200 }, board: { x: 204, y: 232 }, standLine: 252,
+    wide: { w: 1176, h: 661, area: { x: 105, y: 0, w: 966, h: 623 } },
+    pot: { x: 396, y: 132 }, counter: { x: 605, y: 146 }, board: { x: 500, y: 152 }, standLine: 172,
     obstacles: [
-      { x: 0, y: 250, w: 145, h: 150 }, { x: 235, y: 250, w: 120, h: 95 }, { x: 268, y: 340, w: 50, h: 55 }, // sapins, chêne
-      { x: 30, y: 405, w: 90, h: 35 }, { x: 262, y: 408, w: 82, h: 50 }, // troncs couchés
-      { x: 15, y: 548, w: 32, h: 30 }, { x: 0, y: 575, w: 55, h: 65 }, { x: 250, y: 600, w: 95, h: 40 }, // rocher, arbres du bas
+      { x: 147, y: 126, w: 105, h: 70 }, { x: 962, y: 126, w: 95, h: 74 }, // troncs couchés du haut
+      { x: 984, y: 518, w: 35, h: 35 }, // rocher
     ],
   },
   marche: {
     id: 'marche', name: 'MARCHE DE NUIT', hint: 'Monstres en file serrée', mechanic: 'file',
-    pot: { x: 92, y: 276 }, counter: { x: 268, y: 276 }, board: { x: 180, y: 284 }, standLine: 312,
-    obstacles: [{ x: 0, y: 295, w: 62, h: 345 }, { x: 296, y: 300, w: 64, h: 340 }], // étals des deux côtés de la rue
+    wide: { w: 1176, h: 661, area: { x: 161, y: 0, w: 875, h: 649 } },
+    pot: { x: 487, y: 152 }, counter: { x: 655, y: 168 }, board: { x: 571, y: 170 }, standLine: 190,
+    obstacles: [
+      { x: 378, y: 577, w: 88, h: 84 }, { x: 717, y: 602, w: 91, h: 59 }, // caisses du bas
+      { x: 161, y: 455, w: 40, h: 120 }, { x: 1001, y: 245, w: 49, h: 98 }, // tonneaux et caisses des côtés
+    ],
   },
   taverne: {
     id: 'taverne', name: 'LA TAVERNE', hint: 'Tonneaux explosifs', mechanic: 'tonneaux',
-    pot: { x: 84, y: 296 }, counter: { x: 262, y: 296 }, board: { x: 173, y: 304 }, standLine: 330,
-    obstacles: [ // tonneaux et caisses du décor (le mur du fond reste libre : la cuisine est devant)
-      { x: 36, y: 405, w: 40, h: 42 }, { x: 284, y: 402, w: 30, h: 50 }, { x: 296, y: 440, w: 42, h: 50 },
-      { x: 20, y: 608, w: 92, h: 32 }, { x: 288, y: 595, w: 48, h: 45 },
+    wide: { w: 1176, h: 661, area: { x: 42, y: 0, w: 1092, h: 518 } },
+    pot: { x: 455, y: 172 }, counter: { x: 742, y: 196 }, board: { x: 350, y: 178 }, standLine: 214,
+    obstacles: [ // tables, bancs, tonneaux et caisses du décor
+      { x: 60, y: 248, w: 70, h: 60 }, { x: 46, y: 336, w: 87, h: 38 }, { x: 1036, y: 248, w: 70, h: 60 },
+      { x: 1081, y: 325, w: 42, h: 85 }, { x: 38, y: 448, w: 130, h: 70 }, { x: 1036, y: 413, w: 98, h: 105 },
+      { x: 70, y: 98, w: 46, h: 140 }, { x: 1064, y: 161, w: 49, h: 84 },
     ],
   },
   cantine: {

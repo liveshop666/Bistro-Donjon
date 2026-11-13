@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { ENEMIES, EnemyDef, EnemyId, H, W } from '../core/constants';
+import { ARENA, ENEMIES, EnemyDef, EnemyId } from '../core/constants';
 import anchors from '../core/spriteAnchors.json';
 
 export interface EnemyApi {
@@ -87,7 +87,7 @@ export class Enemy {
         vy = -this.def.speed;
         vx = Math.cos(this.t * this.weaveFreq) * this.weaveAmp; // monte vers le stand en zigzaguant
         if (this.x < 20) vx = this.def.speed;
-        else if (this.x > W - 20) vx = -this.def.speed;
+        else if (this.x > ARENA.w - 20) vx = -this.def.speed;
         break;
       case 'chase': {
         // fonce sur le chef, mais en le contournant d'un angle qui change : jamais deux fois le même trajet
@@ -123,7 +123,7 @@ export class Enemy {
         vx = (dx / dist) * this.def.speed * want + (-dy / dist) * this.def.speed * orbit;
         vy = (dy / dist) * this.def.speed * want + (dx / dist) * this.def.speed * orbit;
         this.timer -= dt;
-        if (this.timer <= 0 && this.y < H - 10 && this.x > 0 && this.x < W) {
+        if (this.timer <= 0 && this.y < ARENA.h - 10 && this.x > 0 && this.x < ARENA.w) {
           this.timer = 2.6;
           api.shoot(this.x, this.y - 12, api.chefX, api.chefY - 14);
         }
@@ -146,12 +146,12 @@ export class Enemy {
   private boss(dt: number, nx: number, ny: number, api: EnemyApi): [number, number] {
     this.stateT -= dt;
     this.summonT -= dt;
-    if (this.summonT <= 0 && this.y < H) {
+    if (this.summonT <= 0 && this.y < ARENA.h) {
       this.summonT = 7;
       api.summon(this.x, this.y);
     }
     if (this.state === 'chase') {
-      if (this.stateT <= 0 && this.y < H - 40) {
+      if (this.stateT <= 0 && this.y < ARENA.h - 40) {
         this.state = 'windup';
         this.stateT = 0.7;
       }

@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { landscapeHeight, landscapeWanted, landscapeWidth, pageCam, RES } from '../core/layout';
 import { audio, Sfx, Tune } from '../audio/AudioManager';
 import {
-  BOSS_REWARD, ChefId, ENEMIES, FREE_WORLDS, ShopItem, WORLD_HP_STEP, worldRank, CHEFS, CHOP_TIME, COMBO_GOLD, COMBO_SIZE, CONVEYORS, EnemyId, GameMode, H, IngredientId, INGREDIENTS, itemLabel, playerLevel, ORDER_PATIENCE,
+  ARENA, BOSS_REWARD, ChefId, ENEMIES, FREE_WORLDS, ShopItem, WORLD_HP_STEP, worldRank, CHEFS, CHOP_TIME, COMBO_GOLD, COMBO_SIZE, CONVEYORS, EnemyId, GameMode, H, IngredientId, INGREDIENTS, itemLabel, playerLevel, ORDER_PATIENCE,
   POWER_LABEL, POWER_TIME, SHOP, Sabotage, SABOTAGE_LABEL, SABOTAGES, TIP_BONUS, UpgradeDef, W, WAVES, WORLD_ORDER, WorldDef, WorldId, WORLDS,
 } from '../core/constants';
 import { GameManager, Phase } from '../core/GameManager';
@@ -132,13 +132,19 @@ export class GameScene extends Phaser.Scene {
     this.tick = { aura: 0, regen: 0, tornado: 0, turret: 0, barrel: 6 };
 
     this.world = WORLDS[this.worldId];
-    const { pot, counter, standLine } = this.world;
-    this.add.image(0, 0, 'map_' + this.worldId).setOrigin(0).setDepth(-100);
-    // Paysage : en attendant les maps dessinées en largeur, le décor est prolongé de chaque côté (copies en miroir,
-    // un peu assombries) pour que la map remplisse tout l'écran. On ne peut pas y marcher (hors du terrain).
-    for (const k of [-2, -1, 1, 2]) {
-      // copies posées 2 pixels à cheval sur leur voisine : pas de fine ligne noire entre deux morceaux
-      this.add.image(k * W - Math.sign(k) * 2 * Math.abs(k), 0, 'map_' + this.worldId).setOrigin(0).setDepth(-101 - Math.abs(k)).setFlipX(k % 2 !== 0);
+    const { pot, counter, standLine, wide } = this.world;
+    ARENA.w = wide?.w ?? W;
+    ARENA.h = wide?.h ?? H;
+    if (wide) {
+      // grande map paysage : tout le terrain est dessiné, la caméra suit le chef (portrait comme paysage)
+      this.add.image(0, 0, 'wide_' + this.worldId).setOrigin(0).setDisplaySize(wide.w, wide.h).setDepth(-100);
+    } else {
+      this.add.image(0, 0, 'map_' + this.worldId).setOrigin(0).setDepth(-100);
+      // Paysage : en attendant les maps dessinées en largeur, le décor est prolongé de chaque côté (copies en miroir).
+      for (const k of [-2, -1, 1, 2]) {
+        // copies posées 2 pixels à cheval sur leur voisine : pas de fine ligne noire entre deux morceaux
+        this.add.image(k * W - Math.sign(k) * 2 * Math.abs(k), 0, 'map_' + this.worldId).setOrigin(0).setDepth(-101 - Math.abs(k)).setFlipX(k % 2 !== 0);
+      }
     }
     if (this.world.mechanic === 'tapis') {
       for (const c of CONVEYORS) {
@@ -171,7 +177,7 @@ export class GameScene extends Phaser.Scene {
     this.effectRainbow = !!effect?.rainbow;
     this.effectHit = effect?.hit ?? null;
     this.sliced = this.maxCombo = 0;
-    this.chef = new Chef(this, CHEFS[this.chefId], W / 2, standLine + 100, skin && profile.owned.includes(skin) ? skin : null);
+    this.chef = new Chef(this, CHEFS[this.chefId], wide ? counter.x - 60 : W / 2, standLine + 100, skin && profile.owned.includes(skin) ? skin : null);
     if (this.resume) {
       const r = this.resume;
       this.chef.maxHp = r.maxHp;
@@ -179,7 +185,9 @@ export class GameScene extends Phaser.Scene {
       this.chef.ult = r.ult;
       for (const i of INGREDIENTS) this.chef.inv[i] = { ...r.inv[i] };
     }
-    this.bounds = new Phaser.Geom.Rectangle(16, pot.y - 4, W - 32, H - 12 - (pot.y - 4));
+    this.bounds = wide
+      ? new Phaser.Geom.Rectangle(wide.area.x, pot.y - 4, wide.area.w, wide.area.y + wide.area.h - (pot.y - 4))
+      : new Phaser.Geom.Rectangle(16, pot.y - 4, W - 32, H - 12 - (pot.y - 4));
     this.fx = this.add.graphics().setDepth(1800);
 
     this.setupLayout();
@@ -251,7 +259,7 @@ export class GameScene extends Phaser.Scene {
   update(time: number, delta: number): void {
     const dt = Math.min(delta, 50) / 1000;
     this.touch.update(dt);
-    if (this.land) this.followChef(Math.min(1, dt * 6));
+    if (this.hudCam) this.followChef(Math.min(1, dt * 6));
     const { gm, chef } = this;
     // en duel en ligne le temps ne s'arrête pas : le menu pause s'affiche par-dessus
     if (gm.phase === 'cards' || gm.phase === 'over' || (this.paused && !this.link?.online)) {
@@ -700,8 +708,8 @@ export class GameScene extends Phaser.Scene {
       this.tick.barrel -= dt;
       if (this.tick.barrel <= 0 && this.barrels.length < 3) {
         this.tick.barrel = 9;
-        const x = 40 + Math.random() * (W - 80);
-        const y = this.world.standLine + 60 + Math.random() * (H - this.world.standLine - 130);
+        const x = this.bounds.left + 24 + Math.random() * (this.bounds.width - 48);
+        const y = this.world.standLine + 60 + Math.random() * (this.bounds.bottom - this.world.standLine - 120);
         this.barrels.push({ x, y, img: this.add.image(x, y, 'tonneau').setOrigin(0.5, 1).setDepth(y) });
       }
       for (const b of this.barrels) {
@@ -839,13 +847,15 @@ export class GameScene extends Phaser.Scene {
     this.hudCam = this.ovlCam = undefined;
     this.land = land;
     const main = this.cameras.main;
-    if (!land) {
+    const wide = !!this.world.wide;
+    if (!land && !wide) {
       pageCam(main.removeBounds(), 0, 0, W, H);
       for (const o of this.children.list) o.cameraFilter = 0;
       return;
     }
     // la map remplit tout l'écran et la caméra suit le chef ; interface et fenêtres par-dessus
-    pageCam(main, 0, 0, gw, gh).setBounds(-2 * W, 0, 5 * W, H);
+    if (wide) pageCam(main, 0, 0, gw, gh).setBounds(0, 0, ARENA.w, ARENA.h);
+    else pageCam(main, 0, 0, gw, gh).setBounds(-2 * W, 0, 5 * W, H);
     this.hudCam = pageCam(this.cameras.add(), 0, 0, gw, gh);
     this.ovlCam = pageCam(this.cameras.add(), 0, 0, gw, gh);
     this.followChef(1);
@@ -856,15 +866,16 @@ export class GameScene extends Phaser.Scene {
     const main = this.cameras.main;
     const vw = main.width / main.zoom;
     const vh = main.height / main.zoom;
-    const tx = Phaser.Math.Clamp(this.chef.x, -2 * W + vw / 2, 3 * W - vw / 2);
-    const ty = Phaser.Math.Clamp(this.chef.y, vh / 2, H - vh / 2);
+    const [x0, x1] = this.world.wide ? [0, ARENA.w] : [-2 * W, 3 * W];
+    const tx = Phaser.Math.Clamp(this.chef.x, x0 + vw / 2, x1 - vw / 2);
+    const ty = Phaser.Math.Clamp(this.chef.y, vh / 2, Math.max(vh / 2, ARENA.h - vh / 2));
     const c = main.midPoint;
     main.centerOn(c.x + (tx - c.x) * k, c.y + (ty - c.y) * k);
   }
 
   /** Chaque objet n'est dessiné que par sa caméra (en paysage seulement). */
   private filterCameras(): void {
-    if (!this.land || !this.hudCam || !this.ovlCam) return;
+    if (!this.hudCam || !this.ovlCam) return;
     const m = this.cameras.main.id;
     const h = this.hudCam.id;
     const o = this.ovlCam.id;
@@ -1010,7 +1021,7 @@ export class GameScene extends Phaser.Scene {
     this.hud.banner(`SABOTAGE !\n${SABOTAGE_LABEL[kind]}`, '#ff6a5a', 250);
     audio.sfx('rugissement');
     this.cameras.main.shake(300, 0.01);
-    if (kind === 'roi_tomate') this.spawnEnemy('roi_tomate', W / 2, H + 30, true);
+    if (kind === 'roi_tomate') this.spawnEnemy('roi_tomate', ARENA.w / 2, ARENA.h + 30, true);
     else if (kind === 'fumee') this.smokeT = 7;
     else this.inverseT = 5;
   }

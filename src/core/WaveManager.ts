@@ -1,4 +1,4 @@
-import { ENEMIES, EnemyId, H, W, WAVES, WORLD_PACE_STEP, WorldDef, worldRank } from './constants';
+import { ARENA, ENEMIES, EnemyId, WAVES, WORLD_PACE_STEP, WorldDef, worldRank } from './constants';
 import { GameManager } from './GameManager';
 
 export type SpawnFn = (type: EnemyId, x: number, y: number) => void;
@@ -14,7 +14,7 @@ export class WaveManager {
     if (this.gm.phase === 'boss') {
       if (!this.bossSpawned) {
         this.bossSpawned = true;
-        this.spawn(this.world.boss ?? 'roi_tomate', W / 2, H + 50);
+        this.spawn(this.world.boss ?? 'roi_tomate', ARENA.w / 2, ARENA.h + 50);
       }
       return;
     }
@@ -45,7 +45,8 @@ export class WaveManager {
 
   private spawnPoint(): [number, number] {
     // Monde 2 : ruelle étroite, les monstres arrivent en file par le bas.
-    if (this.world.mechanic === 'file') return [130 + Math.random() * 100, H + 16];
+    const { w: W, h: H } = ARENA;
+    if (this.world.mechanic === 'file') return [W / 2 - 50 + Math.random() * 100, H + 16];
     const side = Math.random();
     if (side < 0.6) return [24 + Math.random() * (W - 48), H + 16];
     const y = this.world.standLine + 90 + Math.random() * (H - this.world.standLine - 110);
