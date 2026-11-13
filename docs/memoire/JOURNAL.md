@@ -4,6 +4,11 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
 
 ## Où on en est (12/11/2026)
 
+**13/11/2026 (soir) : « je ne peux plus entrer, c'est en mode privé »**
+- Vérifié : le site marche et la porte fait son travail (« Version de test privée » pour un appareil non reconnu). Aucun changement de la porte depuis le 12/11.
+- Cause la plus probable : le téléphone a oublié son autorisation (données de Chrome effacées, onglet de navigation privée, autre navigateur). Remède : rouvrir le lien d'entrée du QR code (`A-VALIDER/bistro-donjon-installer/` sur le PC) dans Chrome normal.
+- Si le lien répond « Ce lien n'est plus valable » : `ENTRY_HASH` a changé dans Vercel, il faut refaire un lien et un QR code. Claude n'a pas pu lire les réglages Vercel depuis le navigateur (accès refusé).
+
 **13/11/2026 : grandes maps dans le jeu (3 sur 8)**
 - Clairière, Marché de nuit et Taverne se jouent sur leur grande map Canva (1680 x 944, affichée à 70 % : terrain de 1176 x 661). Plus de copies en miroir ni de mur invisible : la caméra suit le chef partout, en portrait comme en paysage. Images : `public/assets/maps/wide_<monde>.jpg` (originaux dans `reference/maps-paysage/`). Pour chaque monde : marmite, planche, comptoir, zone où marcher et décors solides placés sur le dessin (`wide` dans `WORLDS`, `src/core/constants.ts`). Les petites maps restent pour les menus.
 - Cantine et Glacière générées dans Canva le 13/11 (images `MAHayMktSas` et `MAHayEhCHGY`, dans ses imports Canva). Canva ne donne à Claude que des aperçus de 200 px : Rudy doit les télécharger en taille réelle et les envoyer. Volcan, Galion et Usine hantée : quota Canva épuisé, à générer quand les crédits reviennent (environ 2 à 3 images par jour en gratuit).
