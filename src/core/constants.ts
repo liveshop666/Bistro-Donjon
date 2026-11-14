@@ -355,7 +355,8 @@ export const ART_3D: Record<string, string> = {
 /** Vrai si ce sprite est dessiné en 3D : l'image est 2 fois plus grande et le jeu l'affiche à moitié (nette). */
 export const is3d = (key: string): boolean => STYLE_3D && key in ART_3D;
 /** Taille d'affichage d'un sprite : 0,5 pour les images 3D (dessinées 2 fois plus grandes), 1 sinon. */
-export const artScale = (key: string): number => (is3d(key) ? 0.5 : 1);
+// style 3D : personnages affichés 20 % plus grands que les anciens dessins (demande de Rudy, 15/11 : « ça fait un peu petit »)
+export const artScale = (key: string): number => (is3d(key) ? 0.6 : 1);
 /** Mondes redessinés en 3D : leur grande map (public/assets/maps/wide3d_<id>.jpg) et la cuisine replacée dessus
  * (vide quand la map 3D garde la disposition de la grande map pixel). */
 export const WORLD_3D: Partial<Record<WorldId, Partial<WorldDef>>> = {

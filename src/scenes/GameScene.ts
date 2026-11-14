@@ -262,6 +262,8 @@ export class GameScene extends Phaser.Scene {
 
   // ------------------------------------------------------------------ boucle
   update(time: number, delta: number): void {
+    this.nowT = time;
+    if (this.stopUntil > time) return;
     const dt = Math.min(delta, 50) / 1000;
     this.touch.update(dt);
     this.watchFps(delta);
@@ -507,8 +509,9 @@ export class GameScene extends Phaser.Scene {
 
   private damage(e: Enemy, dmg: number): void {
     if (e.dead) return;
-    e.hit(dmg);
+    e.hit(dmg, this.chef.x, this.chef.y);
     audio.sfx('touche');
+    if (STYLE_3D) this.impactFx(e);
     if (e.hp <= 0) this.kill(e);
   }
 
@@ -745,6 +748,7 @@ export class GameScene extends Phaser.Scene {
     } else if (p === 'boss') {
       audio.music('boss');
       audio.sfx('rugissement');
+      if (STYLE_3D) this.time.delayedCall(1300, () => this.bossCloseUp());
     }
     if (p === 'harvest' || p === 'boss') this.autosave();
     if (p === 'kitchen') this.hud.banner('COUP DE FEU !\nEN CUISINE !', '#ffe27a');
@@ -862,7 +866,7 @@ export class GameScene extends Phaser.Scene {
     }
     // la map remplit tout l'écran et la caméra suit le chef ; interface et fenêtres par-dessus
     // style 3D : caméra un peu plus proche, personnages plus grands comme sur l'image de référence
-    if (wide) pageCam(main, 0, 0, gw, gh, 0, 0, STYLE_3D ? (land ? 1.3 : 1.15) : 1).setBounds(0, 0, ARENA.w, ARENA.h);
+    if (wide) pageCam(main, 0, 0, gw, gh, 0, 0, STYLE_3D ? (land ? 1.4 : 1.15) : 1).setBounds(0, 0, ARENA.w, ARENA.h);
     else pageCam(main, 0, 0, gw, gh).setBounds(-2 * W, 0, 5 * W, H);
     this.hudCam = pageCam(this.cameras.add(), 0, 0, gw, gh);
     this.ovlCam = pageCam(this.cameras.add(), 0, 0, gw, gh);
@@ -884,15 +888,30 @@ export class GameScene extends Phaser.Scene {
     this.fpsT = this.fpsN = 0;
   }
 
+  /** Style 3D (vidéo de Rudy) : le boss surgit, la caméra va le voir et zoome, rugissement et secousse, puis revient. */
+  private bossCloseUp(): void {
+    const boss = this.enemies.find((e) => e.def.ai === 'boss' && !e.dead);
+    if (!boss || this.gm.phase !== 'boss') return;
+    this.camFocus = { x: boss.x, y: Math.min(boss.y, ARENA.h - 40) - 30, until: this.time.now + 1500 };
+    const main = this.cameras.main;
+    const z = main.zoom;
+    this.tweens.add({ targets: main, zoom: z * 1.25, duration: 450, ease: 'Sine.out', yoyo: true, hold: 600 });
+    this.time.delayedCall(350, () => {
+      main.shake(500, 0.012);
+      audio.sfx('rugissement');
+    });
+  }
+
   /** En paysage, la map défile pour garder le chef au milieu de l'écran. */
   private followChef(k: number): void {
     const main = this.cameras.main;
     const vw = main.width / main.zoom;
     const vh = main.height / main.zoom;
     const [x0, x1] = this.world.wide ? [0, ARENA.w] : [-2 * W, 3 * W];
-    const tx = Phaser.Math.Clamp(this.chef.x, x0 + vw / 2, x1 - vw / 2);
+    const focus = this.camFocus && this.camFocus.until > this.time.now ? this.camFocus : null;
+    const tx = Phaser.Math.Clamp(focus ? focus.x : this.chef.x, x0 + vw / 2, x1 - vw / 2);
     // en paysage, les commandes couvrent le haut de l'écran : le chef est tenu un peu plus bas pour laisser voir la cuisine
-    const ty = Phaser.Math.Clamp(this.chef.y - (this.land ? (STYLE_3D ? 34 : 60) : 0), vh / 2, Math.max(vh / 2, ARENA.h - vh / 2));
+    const ty = Phaser.Math.Clamp(focus ? focus.y : this.chef.y - (this.land ? (STYLE_3D ? 34 : 60) : 0), vh / 2, Math.max(vh / 2, ARENA.h - vh / 2));
     const c = main.midPoint;
     main.centerOn(c.x + (tx - c.x) * k, c.y + (ty - c.y) * k);
   }
@@ -1075,6 +1094,41 @@ export class GameScene extends Phaser.Scene {
     this.tweens.add({ targets: g, alpha: 0, duration: 160, onComplete: () => g.destroy() });
   }
 
+  /** Couleur du jus d'un monstre (éclaboussures). */
+  private juice(e: Enemy): number {
+    const id = e.def.id as string;
+    return id === 'gelee' ? 0x6fe04a : id === 'champi' ? 0xc9a070 : id === 'mais' || id === 'cube_fromage' || id === 'roi_fromage' ? 0xffd23e
+      : id === 'aubergine' ? 0x9a4ad8 : id === 'oignon' || id === 'ail' ? 0xf0ece0 : id === 'citrouille' || id === 'hotdog' ? 0xff8a1e : 0xe8302a;
+  }
+
+  /** Impact (style 3D, vidéo de Rudy) : gouttes du jus du monstre, étoile blanche, petite secousse et arrêt sur image. */
+  private impactFx(e: Enemy): void {
+    const c = this.juice(e);
+    const y = e.y - e.radius;
+    const star = this.add.image(e.x, y, 'etincelle').setDepth(1702).setScale(0.6).setBlendMode(Phaser.BlendModes.ADD);
+    this.tweens.add({ targets: star, scale: 1.3, alpha: 0, angle: 45, duration: 160, onComplete: () => star.destroy() });
+    const a0 = Math.atan2(e.y - this.chef.y, e.x - this.chef.x);
+    for (let i = 0; i < 8; i++) {
+      const a = a0 + (Math.random() - 0.5) * 1.8;
+      const d = 14 + Math.random() * 22;
+      const p = this.add.circle(e.x, y, 1.5 + Math.random() * 2, c).setDepth(1701);
+      this.tweens.add({ targets: p, x: e.x + Math.cos(a) * d, y: y + Math.sin(a) * d * 0.6 - 8, duration: 180, ease: 'Quad.out' });
+      this.tweens.add({ targets: p, y: `+=${12 + Math.random() * 8}`, alpha: 0, delay: 180, duration: 220, ease: 'Quad.in', onComplete: () => p.destroy() });
+    }
+    this.cameras.main.shake(70, 0.0035);
+    this.hitStop(35);
+  }
+
+  private stopUntil = 0;
+  private nowT = 0;
+  /** Arrêt sur image très court à l'impact (sensation de coup qui « tape »). */
+  private hitStop(ms: number): void {
+    this.stopUntil = Math.max(this.stopUntil, this.nowT + ms);
+  }
+
+  /** Point que la caméra regarde à la place du chef (boss qui surgit), jusqu'à une date. */
+  private camFocus: { x: number; y: number; until: number } | null = null;
+
   /** Frappe lourde (style 3D, Maître Shiba et ses combattants) : onde de choc au sol, éclats et petite secousse. */
   private slamFx(x: number, y: number, r: number, color: number): void {
     const fire = Phaser.Display.Color.ValueToColor(color);
@@ -1109,7 +1163,7 @@ export class GameScene extends Phaser.Scene {
       Phaser.Display.Color.ValueToColor(color).lighten(25).color, 0xffffff,
     ];
     const layers: [number, number, number][] = [[pal[0], 1, 0.5], [pal[1], 0.82, 0.95], [pal[2], 0.62, 1], [pal[3], 0.4, 1], [pal[4], 0.18, 1]];
-    const thick = 20;
+    const thick = 27; // large comme sur la vidéo de Rudy
     const glow = this.add.graphics().setDepth(1699).setBlendMode(Phaser.BlendModes.ADD);
     const g = this.add.graphics().setDepth(1700);
     const a0 = ang - spread;

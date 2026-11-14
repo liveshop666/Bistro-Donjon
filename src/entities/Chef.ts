@@ -105,7 +105,27 @@ export class Chef {
     const key = this.frame(time);
     const anchor = is3d(key) ? 0.5 : (ANCHORS[key] ?? 0.5);
     // image 3D : une seule image, le coup de poêle est animé par le code (le chef pivote vers sa cible)
-    const swing = is3d(key) && this.attackT > 0 ? Math.sin((1 - this.attackT / ATTACK_ANIM) * Math.PI) * 22 * (this.facing < 0 ? -1 : 1) : 0;
+    // style 3D (vidéo de Rudy) : le chef arme son coup en levant la poêle (penché en arrière), puis frappe d'un grand
+    // mouvement vers l'avant et revient ; il s'étire en armant et s'écrase à l'impact
+    let swing = 0;
+    let sx = 1;
+    let sy = 1;
+    if (is3d(key) && this.attackT > 0) {
+      const p = 1 - this.attackT / ATTACK_ANIM;
+      const dir = this.facing < 0 ? -1 : 1;
+      if (p < 0.3) {
+        const u = p / 0.3;
+        swing = -28 * u * dir;
+        sy = 1 + 0.08 * u;
+        sx = 1 - 0.05 * u;
+      } else {
+        const u = (p - 0.3) / 0.7;
+        swing = (-28 + 62 * Math.sin(Math.min(1, u * 1.6) * Math.PI / 2)) * (1 - Math.max(0, u - 0.6) / 0.4) * dir;
+        const hitU = Math.max(0, 1 - Math.abs(u - 0.35) / 0.25);
+        sx = 1 + 0.12 * hitU;
+        sy = 1 - 0.1 * hitU;
+      }
+    }
     const bob = this.moving ? Math.abs(Math.sin(this.walkT * Math.PI)) * 2 : Math.sin(time / 300) * 0.8;
     const flip = this.ultActive > 0 ? Math.floor(time / 70) % 2 === 0 : this.facing < 0;
     this.sprite
@@ -113,7 +133,7 @@ export class Chef {
       .setFlipX(flip)
       .setOrigin(flip ? 1 - anchor : anchor, 1)
       .setPosition(Math.round(this.x + this.aim.x * this.lunge * 5), Math.round(this.y - bob + this.aim.y * this.lunge * 5))
-      .setScale(artScale(key))
+      .setScale(artScale(key) * sx, artScale(key) * sy)
       .setAngle(swing || ((this.skin || is3d(key)) && this.moving ? Math.sin(this.walkT * Math.PI) * 5 : 0))
       .setAlpha(this.invuln > 0 && Math.floor(time / 80) % 2 === 0 ? 0.35 : 1)
       .setDepth(this.y);
