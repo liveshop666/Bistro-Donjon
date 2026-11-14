@@ -13,10 +13,14 @@
       body { display: flex; align-items: center; justify-content: center; }
       #game { touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
       /* le canvas remplit toujours son cadre, même si le recalcul de taille de Phaser arrive en retard */
+      /* écran de chargement : le logo au centre sur fond noir, retiré dès que le jeu a fini de charger */
+      #splash { position: fixed; inset: 0; background: #04020f; display: flex; align-items: center; justify-content: center; z-index: 10; transition: opacity 0.3s; }
+      #splash img { width: min(56vw, 56vh, 320px); height: auto; image-rendering: pixelated; }
       canvas { image-rendering: pixelated; display: block; width: 100% !important; height: 100% !important; margin: 0 !important; }
     </style>
   </head>
   <body>
+    <div id="splash"><img src="logo.png" alt="Bistro Donjon" /></div>
     <div id="game"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
