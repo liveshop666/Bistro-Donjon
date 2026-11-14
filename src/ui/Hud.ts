@@ -88,12 +88,12 @@ export class Hud {
 
     // bouton d'ultime
     this.ultRing = scene.add.graphics().setDepth(D + 1);
-    this.ultBtn = scene.add.image(ULT.x, ULT.y, 'bouton_ultime').setDepth(D + 2).setInteractive({ useHandCursor: true });
+    this.ultBtn = scene.add.image(ULT.x, ULT.y, 'btn_feu').setDepth(D + 2).setInteractive({ useHandCursor: true });
     this.ultBtn.on('pointerdown', onUlt);
 
     // bouton d'attaque (maintenir pour frapper)
     this.atkBtn = scene.add.graphics().setDepth(D + 1);
-    this.atkIcon = scene.add.image(ATK.x, ATK.y, 'couteau').setDepth(D + 2).setScale(2.4).setAngle(45);
+    this.atkIcon = scene.add.image(ATK.x, ATK.y, 'ico_hachoir').setDepth(D + 2).setScale(0.62).setAngle(-30);
     scene.add
       .zone(ATK.x, ATK.y, ATK.r * 2 + 8, ATK.r * 2 + 8)
       .setDepth(D + 3)
@@ -237,18 +237,28 @@ export class Hud {
     const { ULT, ATK } = this;
     const ready = chef.ult >= 100;
     this.ultRing.clear();
-    this.ultRing.lineStyle(4, 0x14141f, 0.9).strokeCircle(ULT.x, ULT.y, ULT.r);
+    // prêt : halo doré qui respire ; en charge : bouton grisé et jauge orange qui se remplit
+    if (ready) this.ultRing.fillStyle(0xffc533, 0.25 + Math.sin(time / 150) * 0.12).fillCircle(ULT.x, ULT.y, ULT.r + 7);
+    this.ultRing.lineStyle(5, 0x14141f, 0.9).strokeCircle(ULT.x, ULT.y, ULT.r + 2);
     this.ultRing.lineStyle(4, ready ? 0xffe27a : 0xff8a1e, 1).beginPath();
-    this.ultRing.arc(ULT.x, ULT.y, ULT.r, -Math.PI / 2, -Math.PI / 2 + (Math.PI * 2 * chef.ult) / 100).strokePath();
-    this.ultBtn.setAlpha(ready ? 1 : 0.45).setScale(ready ? 1 + Math.sin(time / 120) * 0.05 : 0.9);
+    this.ultRing.arc(ULT.x, ULT.y, ULT.r + 2, -Math.PI / 2, -Math.PI / 2 + (Math.PI * 2 * chef.ult) / 100).strokePath();
+    const s = (ULT.r * 2) / 128;
+    this.ultBtn.setAlpha(ready ? 1 : 0.6).setTint(ready ? 0xffffff : 0x8a8a9a).setScale(ready ? s * (1 + Math.sin(time / 120) * 0.05) : s * 0.92);
 
     // bouton d'attaque : s'enfonce quand on appuie
     const held = this.attackHeld;
     this.atkBtn.clear();
-    this.atkBtn.fillStyle(0x14141f, 0.6).fillCircle(ATK.x, ATK.y, ATK.r);
-    this.atkBtn.fillStyle(held ? 0xff6a3a : 0xc8402e, held ? 0.95 : 0.75).fillCircle(ATK.x, ATK.y, ATK.r - (held ? 6 : 4));
-    this.atkBtn.lineStyle(3, 0xffe9b0, 0.9).strokeCircle(ATK.x, ATK.y, ATK.r);
-    this.atkIcon.setScale(held ? 2.1 : 2.4);
+    // bouton bombé : ombre, bord doré, corps rouge, reflet en haut ; il s'enfonce quand on appuie
+    const dy = held ? 2 : 0;
+    const b = this.atkBtn;
+    b.fillStyle(0x0c0c18, 0.55).fillCircle(ATK.x, ATK.y + 3, ATK.r + 1);
+    b.fillStyle(0x1b1b2b, 1).fillCircle(ATK.x, ATK.y + dy, ATK.r);
+    b.fillStyle(0xffc533, 1).fillCircle(ATK.x, ATK.y + dy, ATK.r - 2);
+    b.fillStyle(held ? 0x8a2416 : 0x9a2a1a, 1).fillCircle(ATK.x, ATK.y + dy, ATK.r - 5);
+    b.fillStyle(held ? 0xd84a2a : 0xd8402a, 1).fillCircle(ATK.x, ATK.y + dy - 2, ATK.r - 8);
+    b.fillStyle(held ? 0xff7a4a : 0xf0603a, 1).fillCircle(ATK.x, ATK.y + dy - 5, ATK.r - 15);
+    if (!held) b.fillStyle(0xffffff, 0.28).fillEllipse(ATK.x - 8, ATK.y - ATK.r * 0.5, ATK.r, ATK.r * 0.4);
+    this.atkIcon.setY(ATK.y + dy).setScale(held ? 0.56 : 0.62);
   }
 
   banner(text: string, color = '#ffc533', y = 330): void {

@@ -38,13 +38,49 @@ export class BootScene extends Phaser.Scene {
       g.generateTexture(key, w, h);
     };
 
-    tex('joy_base', 72, 72, () => {
-      g.fillStyle(0xffffff, 0.18).fillCircle(36, 36, 34);
-      g.lineStyle(2, 0xffffff, 0.7).strokeCircle(36, 36, 34);
+    // Commandes tactiles redessinées le 14/11 (demande de Rudy) : dessinées 2 fois plus grandes puis affichées
+    // à moitié, pour rester nettes avec le rendu fin. Joystick : socle sombre cerclé d'or, 4 flèches, pommeau orange.
+    tex('joy_base', 144, 144, () => {
+      g.fillStyle(0x0c0c18, 0.55).fillCircle(72, 72, 70);
+      g.lineStyle(6, 0x1b1b2b, 1).strokeCircle(72, 72, 67);
+      g.lineStyle(4, 0xffc533, 0.85).strokeCircle(72, 72, 64);
+      g.lineStyle(2, 0xffffff, 0.18).strokeCircle(72, 72, 44);
+      g.fillStyle(0xffe9b0, 0.85);
+      g.fillTriangle(72, 14, 62, 28, 82, 28).fillTriangle(72, 130, 62, 116, 82, 116);
+      g.fillTriangle(14, 72, 28, 62, 28, 82).fillTriangle(130, 72, 116, 62, 116, 82);
     });
-    tex('joy_thumb', 28, 28, () => {
-      g.fillStyle(0xffffff, 0.9).fillCircle(14, 14, 13);
-      g.fillStyle(0x9fb4d8).fillCircle(14, 14, 9);
+    tex('joy_thumb', 68, 68, () => {
+      g.fillStyle(0x1b1b2b, 1).fillCircle(34, 36, 32);
+      g.fillStyle(0xa83a14, 1).fillCircle(34, 34, 30);
+      g.fillStyle(0xe8642a, 1).fillCircle(34, 32, 26);
+      g.fillStyle(0xff9a4a, 1).fillCircle(32, 28, 18);
+      g.fillStyle(0xffffff, 0.55).fillEllipse(26, 20, 16, 9);
+    });
+    // icône du bouton d'attaque : un hachoir de cuisine
+    tex('ico_hachoir', 64, 64, () => {
+      g.fillStyle(0x1b1b2b, 1).fillRoundedRect(10, 6, 36, 30, 4).fillRect(22, 34, 12, 26);
+      g.fillStyle(0xdfe7f0, 1).fillRoundedRect(12, 8, 32, 26, 3);
+      g.fillStyle(0xffffff, 1).fillRect(12, 8, 32, 5);
+      g.fillStyle(0x9aa6b8, 1).fillRect(12, 28, 32, 6);
+      g.fillStyle(0x1b1b2b, 1).fillCircle(36, 15, 3);
+      g.fillStyle(0x8a5a33, 1).fillRect(24, 36, 8, 22);
+      g.fillStyle(0xb9814c, 1).fillRect(24, 36, 3, 22);
+    });
+    // bouton des flammes (attaque ultime) : disque de braise et grande flamme
+    tex('btn_feu', 128, 128, () => {
+      g.fillStyle(0x1b1b2b, 1).fillCircle(64, 66, 62);
+      g.fillStyle(0x7a1a10, 1).fillCircle(64, 64, 58);
+      g.fillStyle(0xc8321e, 1).fillCircle(64, 62, 54);
+      g.fillStyle(0xe8482a, 1).fillCircle(64, 58, 44);
+      const flame = (cx: number, base: number, w: number, h: number, color: number) => {
+        g.fillStyle(color, 1).fillCircle(cx, base - w / 2, w / 2).fillTriangle(cx - w / 2, base - w / 2, cx + w / 2, base - w / 2, cx + w * 0.12, base - h);
+      };
+      flame(64, 104, 56, 86, 0xff7a1e);
+      flame(50, 100, 22, 52, 0xff7a1e);
+      flame(80, 100, 22, 50, 0xff7a1e);
+      flame(64, 102, 38, 64, 0xffc533);
+      flame(64, 100, 20, 38, 0xfff3b0);
+      g.fillStyle(0xffffff, 0.3).fillEllipse(48, 30, 40, 16);
     });
     // plat prêt à servir
     tex('plat', 18, 14, () => {
