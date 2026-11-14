@@ -2,8 +2,8 @@ import Phaser from 'phaser';
 import { landscapeHeight, landscapeWanted, landscapeWidth, pageCam, RES, setQuality, storedQuality } from '../core/layout';
 import { audio, Sfx, Tune } from '../audio/AudioManager';
 import {
-  ARENA, BOSS_REWARD, ChefId, ENEMIES, FREE_WORLDS, ShopItem, WORLD_HP_STEP, worldRank, CHEFS, CHOP_TIME, COMBO_GOLD, COMBO_SIZE, conveyorsOf, EnemyId, GameMode, H, IngredientId, INGREDIENTS, itemLabel, playerLevel, ORDER_PATIENCE,
-  POWER_LABEL, POWER_TIME, SHOP, Sabotage, SABOTAGE_LABEL, SABOTAGES, TIP_BONUS, UpgradeDef, W, WAVES, WORLD_ORDER, WorldDef, WorldId, WORLDS,
+  ARENA, BOSS_REWARD, ChefId, ENEMIES, FREE_WORLDS, ShopItem, WORLD_HP_STEP, worldRank, CHEFS, CHOP_TIME, COMBO_GOLD, COMBO_SIZE, conveyorsOf, worldDef, STYLE_3D, EnemyId, GameMode, H, IngredientId, INGREDIENTS, itemLabel, playerLevel, ORDER_PATIENCE,
+  POWER_LABEL, POWER_TIME, SHOP, Sabotage, SABOTAGE_LABEL, SABOTAGES, TIP_BONUS, UpgradeDef, W, WAVES, WORLD_ORDER, WorldDef, WorldId,
 } from '../core/constants';
 import { GameManager, Phase } from '../core/GameManager';
 import { RecipeManager } from '../core/RecipeManager';
@@ -131,7 +131,7 @@ export class GameScene extends Phaser.Scene {
     this.dashing = false;
     this.tick = { aura: 0, regen: 0, tornado: 0, turret: 0, barrel: 6 };
 
-    this.world = WORLDS[this.worldId];
+    this.world = worldDef(this.worldId); // version 3D du monde si elle existe
     const { pot, counter, standLine, wide } = this.world;
     ARENA.w = wide?.w ?? W;
     ARENA.h = wide?.h ?? H;
@@ -139,18 +139,18 @@ export class GameScene extends Phaser.Scene {
       // grande map paysage : tout le terrain est dessiné, la caméra suit le chef (portrait comme paysage)
       this.add.image(0, 0, 'wide_' + this.worldId).setOrigin(0).setDisplaySize(wide.w, wide.h).setDepth(-100);
     } else {
+      // monde sans grande map (il n'y en a plus depuis le 14/11) : une seule map, jamais de copies en miroir
       this.add.image(0, 0, 'map_' + this.worldId).setOrigin(0).setDepth(-100);
-      // Paysage : en attendant les maps dessinées en largeur, le décor est prolongé de chaque côté (copies en miroir).
-      for (const k of [-2, -1, 1, 2]) {
-        // copies posées 2 pixels à cheval sur leur voisine : pas de fine ligne noire entre deux morceaux
-        this.add.image(k * W - Math.sign(k) * 2 * Math.abs(k), 0, 'map_' + this.worldId).setOrigin(0).setDepth(-101 - Math.abs(k)).setFlipX(k % 2 !== 0);
-      }
     }
     // tapis roulants : sur une grande map, ils ne couvrent que la zone où l'on marche
     const [bx, bw] = wide ? [wide.area.x, wide.area.w] : [0, W];
     for (const c of conveyorsOf(this.world)) {
-      this.add.rectangle(bx, c.y, bw, c.h, 0x4ff3ff, 0.12).setOrigin(0).setDepth(-50);
-      this.conveyors.push(this.add.tileSprite(bx, c.y + c.h / 2, bw, 12, 'fleche_tapis').setOrigin(0, 0.5).setAlpha(0.5).setDepth(-49));
+      const [x, w] = c.x !== undefined ? [c.x, c.w!] : [bx, bw];
+      this.add.rectangle(x, c.y, w, c.h, 0x4ff3ff, 0.12).setOrigin(0).setDepth(-50);
+      if (c.x !== undefined) {
+        // tapis vertical dessiné sur la map : flèches tournées vers le bas
+        this.conveyors.push(this.add.tileSprite(x + w / 2, c.y + c.h / 2, c.h, 12, 'fleche_tapis').setAngle(90).setAlpha(0.5).setDepth(-49));
+      } else this.conveyors.push(this.add.tileSprite(x, c.y + c.h / 2, w, 12, 'fleche_tapis').setOrigin(0, 0.5).setAlpha(0.5).setDepth(-49));
     }
 
     this.gm = new GameManager(this.mode);
@@ -312,7 +312,7 @@ export class GameScene extends Phaser.Scene {
 
   private updateChef(dt: number): void {
     const { chef, gm } = this;
-    const onBelt = conveyorsOf(this.world).some((c) => chef.y >= c.y && chef.y <= c.y + c.h);
+    const onBelt = conveyorsOf(this.world).some((c) => chef.y >= c.y && chef.y <= c.y + c.h && (c.x === undefined || (chef.x >= c.x && chef.x <= c.x + c.w!)));
     const speed = chef.def.speed * (1 + 0.15 * gm.level('bottes')) * (chef.powers.vitesse > 0 ? 1.35 : 1) * (onBelt ? 1.6 : 1);
     const dir = this.inverseT > 0 ? this.touch.dir.clone().negate() : this.touch.dir;
     if (!this.dashing) chef.move(dir, speed, dt, this.bounds, this.blocked);
@@ -378,7 +378,8 @@ export class GameScene extends Phaser.Scene {
       for (const e of [...this.enemies]) {
         if (!e.dead && Math.hypot(e.x - tx, e.y - ty) < zone + e.radius) this.damage(e, dmg);
       }
-      if (c.def.id === 'shiba') this.ringFx(tx, ty - 6, zone, color);
+      if (c.def.id === 'shiba' && STYLE_3D) this.slamFx(tx, ty, zone, color);
+      else if (c.def.id === 'shiba') this.ringFx(tx, ty - 6, zone, color);
       else this.arcFx(c.x, c.y - 16, ang + (Math.random() - 0.5), c.def.range, color, 0.7);
     }
   }
@@ -860,7 +861,8 @@ export class GameScene extends Phaser.Scene {
       return;
     }
     // la map remplit tout l'écran et la caméra suit le chef ; interface et fenêtres par-dessus
-    if (wide) pageCam(main, 0, 0, gw, gh).setBounds(0, 0, ARENA.w, ARENA.h);
+    // style 3D : caméra un peu plus proche, personnages plus grands comme sur l'image de référence
+    if (wide) pageCam(main, 0, 0, gw, gh, 0, 0, STYLE_3D ? (land ? 1.3 : 1.15) : 1).setBounds(0, 0, ARENA.w, ARENA.h);
     else pageCam(main, 0, 0, gw, gh).setBounds(-2 * W, 0, 5 * W, H);
     this.hudCam = pageCam(this.cameras.add(), 0, 0, gw, gh);
     this.ovlCam = pageCam(this.cameras.add(), 0, 0, gw, gh);
@@ -890,7 +892,7 @@ export class GameScene extends Phaser.Scene {
     const [x0, x1] = this.world.wide ? [0, ARENA.w] : [-2 * W, 3 * W];
     const tx = Phaser.Math.Clamp(this.chef.x, x0 + vw / 2, x1 - vw / 2);
     // en paysage, les commandes couvrent le haut de l'écran : le chef est tenu un peu plus bas pour laisser voir la cuisine
-    const ty = Phaser.Math.Clamp(this.chef.y - (this.land ? 60 : 0), vh / 2, Math.max(vh / 2, ARENA.h - vh / 2));
+    const ty = Phaser.Math.Clamp(this.chef.y - (this.land ? (STYLE_3D ? 34 : 60) : 0), vh / 2, Math.max(vh / 2, ARENA.h - vh / 2));
     const c = main.midPoint;
     main.centerOn(c.x + (tx - c.x) * k, c.y + (ty - c.y) * k);
   }
@@ -1061,9 +1063,104 @@ export class GameScene extends Phaser.Scene {
 
   private arcFx(x: number, y: number, ang: number, r: number, color: number, spread = 1.1): void {
     const g = this.add.graphics().setDepth(1700);
+    if (STYLE_3D) {
+      // style 3D (image de référence) : croissant de feu effilé aux deux bouts, coeur jaune-blanc, bords orange et rouge,
+      // qui se déploie dans le sens du coup puis s'efface
+      g.destroy();
+      this.flameCrescent(x, y, ang, r + 8, spread, color);
+      return;
+    }
     g.lineStyle(7, color, 0.9).beginPath().arc(x, y, r - 6, ang - spread, ang + spread).strokePath();
     g.lineStyle(3, 0xffffff, 0.9).beginPath().arc(x, y, r - 3, ang - spread * 0.8, ang + spread * 0.8).strokePath();
     this.tweens.add({ targets: g, alpha: 0, duration: 160, onComplete: () => g.destroy() });
+  }
+
+  /** Frappe lourde (style 3D, Maître Shiba et ses combattants) : onde de choc au sol, éclats et petite secousse. */
+  private slamFx(x: number, y: number, r: number, color: number): void {
+    const fire = Phaser.Display.Color.ValueToColor(color);
+    const ring = this.add.graphics({ x, y }).setDepth(1700).setBlendMode(Phaser.BlendModes.ADD);
+    const o = { t: 0 };
+    this.tweens.add({
+      targets: o, t: 1, duration: 320, ease: 'Cubic.out',
+      onUpdate: () => {
+        const rr = r * (0.3 + o.t * 1.1);
+        ring.clear();
+        ring.lineStyle(10 * (1 - o.t) + 2, color, 0.9 * (1 - o.t)).strokeEllipse(0, 0, rr * 2, rr * 1.1);
+        ring.lineStyle(4 * (1 - o.t) + 1, fire.clone().lighten(30).color, 1 - o.t).strokeEllipse(0, 0, rr * 1.6, rr * 0.85);
+        ring.fillStyle(color, 0.25 * (1 - o.t)).fillEllipse(0, 0, rr * 1.4, rr * 0.75);
+      },
+      onComplete: () => ring.destroy(),
+    });
+    for (let i = 0; i < 12; i++) {
+      const a = (Math.PI * 2 * i) / 12 + Math.random() * 0.3;
+      const p = this.add.image(x, y - 4, 'particule').setTint(i % 2 ? color : 0xfff4c0).setDepth(1701).setScale(1.5).setBlendMode(Phaser.BlendModes.ADD);
+      this.tweens.add({ targets: p, x: x + Math.cos(a) * r * 1.2, y: y - 4 + Math.sin(a) * r * 0.6 - 10, alpha: 0, scale: 0.2, duration: 300 + Math.random() * 150, onComplete: () => p.destroy() });
+    }
+    this.cameras.main.shake(90, 0.004);
+  }
+
+  /** Croissant de flammes (style 3D) : plusieurs couches du rouge au blanc, épaisses au milieu, pointues aux bouts. */
+  private flameCrescent(x: number, y: number, ang: number, R: number, spread: number, color: number): void {
+    const fire = [0xa8160a, 0xf0400f, 0xff8a1e, 0xffc23a, 0xfff4c0];
+    const c = Phaser.Display.Color.IntegerToColor(color);
+    const fireLike = c.red > 200 && c.green < 190 && c.blue < 120;
+    const pal = fireLike ? fire : [
+      Phaser.Display.Color.ValueToColor(color).darken(45).color, Phaser.Display.Color.ValueToColor(color).darken(15).color, color,
+      Phaser.Display.Color.ValueToColor(color).lighten(25).color, 0xffffff,
+    ];
+    const layers: [number, number, number][] = [[pal[0], 1, 0.5], [pal[1], 0.82, 0.95], [pal[2], 0.62, 1], [pal[3], 0.4, 1], [pal[4], 0.18, 1]];
+    const thick = 20;
+    const glow = this.add.graphics().setDepth(1699).setBlendMode(Phaser.BlendModes.ADD);
+    const g = this.add.graphics().setDepth(1700);
+    const a0 = ang - spread;
+    const a1 = ang + spread;
+    const N = 22;
+    const draw = (t: number) => {
+      g.clear();
+      glow.clear();
+      const end = a0 + (a1 - a0) * Math.min(1, t * 2.2); // déploiement
+      const start = a0 + (a1 - a0) * Math.max(0, t * 1.6 - 0.6); // la queue rattrape la tête
+      if (end - start < 0.02) return;
+      const crescent = (gr: Phaser.GameObjects.Graphics, col: number, k: number, alpha: number, extra = 0) => {
+        const pts: Phaser.Math.Vector2[] = [];
+        for (let i = 0; i <= N; i++) {
+          const a = start + ((end - start) * i) / N;
+          const u = (a - a0) / (a1 - a0);
+          const w = Math.sin(Math.PI * u) * thick;
+          pts.push(new Phaser.Math.Vector2(x + Math.cos(a) * (R + extra - (1 - k) * w * 0.25), y + Math.sin(a) * (R + extra - (1 - k) * w * 0.25)));
+        }
+        for (let i = N; i >= 0; i--) {
+          const a = start + ((end - start) * i) / N;
+          const u = (a - a0) / (a1 - a0);
+          const w = Math.sin(Math.PI * u) * thick * k + extra;
+          const rr = R - (1 - k) * Math.sin(Math.PI * u) * thick * 0.25 - w;
+          pts.push(new Phaser.Math.Vector2(x + Math.cos(a) * rr, y + Math.sin(a) * rr));
+        }
+        gr.fillStyle(col, alpha).fillPoints(pts, true);
+      };
+      crescent(glow, pal[1], 1, 0.35 * (1 - t), 6);
+      for (const [col, k, al] of layers) crescent(g, col, k, al);
+    };
+    const o = { t: 0 };
+    this.tweens.add({
+      targets: o, t: 1, duration: 300, ease: 'Sine.out',
+      onUpdate: () => {
+        draw(o.t);
+        g.setAlpha(o.t < 0.55 ? 1 : 1 - (o.t - 0.55) / 0.45);
+      },
+      onComplete: () => {
+        g.destroy();
+        glow.destroy();
+      },
+    });
+    // braises qui s'envolent du croissant
+    for (let i = 0; i < 9; i++) {
+      const a = a0 + Math.random() * (a1 - a0);
+      const px = x + Math.cos(a) * (R - 6);
+      const py = y + Math.sin(a) * (R - 6);
+      const p = this.add.image(px, py, 'particule').setTint(pal[1 + (i % 3)]).setDepth(1701).setScale(1.4).setBlendMode(Phaser.BlendModes.ADD);
+      this.tweens.add({ targets: p, x: px + Math.cos(a) * 18, y: py + Math.sin(a) * 18 - 12, alpha: 0, scale: 0.2, delay: 60 + Math.random() * 120, duration: 300 + Math.random() * 200, onComplete: () => p.destroy() });
+    }
   }
 
   private ringFx(x: number, y: number, r: number, color: number, duration = 200): void {

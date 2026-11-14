@@ -92,8 +92,8 @@ if os.path.isdir(RES):
         fh.write('<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="ic_launcher_background">%s</color>\n</resources>\n' % ("#%02X%02X%02X" % BG))
     for f in glob.glob(os.path.join(RES, "drawable*", "splash.png")):
         w, h = Image.open(f).size
-        im = Image.new("RGB", (w, h), NIGHT if LOGO is not None else DARK)
-        s = icon(max(48, min(w, h) * 11 // 20), "square") if LOGO is not None else icon(max(48, min(w, h) // 3), "round")
-        im.paste(s, ((w - s.width) // 2, (h - s.height) // 2), s)
+        # démarrage de l'appli Android : fond uni, sans image (demande de Rudy du 14/11) ; le jeu affiche
+        # ensuite « BISTRO DONJON » et sa barre de chargement
+        im = Image.new("RGB", (w, h), (0, 0, 0))
         im.save(f)
 print("icones generees")

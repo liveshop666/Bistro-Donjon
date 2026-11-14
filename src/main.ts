@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import '@fontsource/press-start-2p';
+import '@fontsource/lilita-one'; // chiffres de l'interface 3D (chrono, pièces), comme sur l'image de référence
 import { audio } from './audio/AudioManager';
 import { H, W } from './core/constants';
 import { BootScene } from './scenes/BootScene';
@@ -9,6 +10,8 @@ import { RulesScene } from './scenes/RulesScene';
 import { DuelScene } from './scenes/DuelScene';
 import { ShopScene } from './scenes/ShopScene';
 import { AccountScene } from './scenes/AccountScene';
+import { CollectionScene } from './scenes/CollectionScene';
+import { SignupScene } from './scenes/SignupScene';
 import { App } from '@capacitor/app';
 import { reloadIfUpdated } from './core/update';
 import { RES } from './core/layout';
@@ -30,7 +33,7 @@ function fitParent(w = W, h = H): void {
 }
 fitParent(W * RES, H * RES);
 
-document.fonts.load('8px "Press Start 2P"').finally(() => {
+Promise.all([document.fonts.load('8px "Press Start 2P"'), document.fonts.load('16px "Lilita One"')]).finally(() => {
   const game = new Phaser.Game({
     type: Phaser.AUTO,
     parent,
@@ -42,7 +45,7 @@ document.fonts.load('8px "Press Start 2P"').finally(() => {
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.NO_CENTER },
     input: { activePointers: 3 },
     audio: { noAudio: true }, // tout le son passe par src/audio/AudioManager (synthèse Web Audio)
-    scene: [BootScene, MenuScene, GameScene, RulesScene, DuelScene, ShopScene, AccountScene],
+    scene: [BootScene, MenuScene, GameScene, RulesScene, DuelScene, ShopScene, AccountScene, CollectionScene, SignupScene],
   });
   // Recalage de l'écran : refait tout de suite puis encore deux fois, car sur Android la taille de la fenêtre
   // n'est pas toujours à jour au moment de l'événement (clavier qui se ferme, rotation, retour dans l'appli).
@@ -83,7 +86,7 @@ document.fonts.load('8px "Press Start 2P"').finally(() => {
     if (game.scene.isActive('Game')) game.events.emit('app-pause');
     else if (game.scene.isActive('Menu')) void App.exitApp();
     else {
-      for (const k of ['Rules', 'Duel', 'Shop', 'Account']) if (game.scene.isActive(k)) game.scene.stop(k);
+      for (const k of ['Rules', 'Duel', 'Shop', 'Account', 'Collection', 'Signup']) if (game.scene.isActive(k)) game.scene.stop(k);
       game.scene.start('Menu');
     }
   });

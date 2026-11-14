@@ -232,26 +232,25 @@ export const WORLDS: Record<WorldId, WorldDef> = {
   },
   volcan: {
     id: 'volcan', name: 'VOLCAN BARBECUE', hint: 'Tonneaux explosifs', mechanic: 'tonneaux',
-    wide: { w: 1176, h: 661, area: { x: 160, y: 0, w: 860, h: 556 } },
-    pot: { x: 470, y: 186 }, counter: { x: 665, y: 204 }, board: { x: 340, y: 188 }, standLine: 222,
-    obstacles: [{ x: 745, y: 200, w: 170, h: 38 }, { x: 160, y: 470, w: 36, h: 90 }], // tabourets du comptoir, tonneaux
+    // grande map refaite le 14/11 depuis la petite map d'origine (grill de lave, rivières de lave sur les côtés)
+    wide: { w: 1176, h: 661, area: { x: 215, y: 0, w: 750, h: 650 } },
+    pot: { x: 505, y: 290 }, counter: { x: 660, y: 290 }, board: { x: 583, y: 294 }, standLine: 310,
     swap: { tomate: ['ail'], champi: ['citrouille'], gelee: ['oignon'], piment: ['hotdog'] },
     boss: 'roi_fromage', bossName: 'ROI FROMAGE', minion: 'cube_fromage',
   },
   bateau: {
     id: 'bateau', name: 'GALION PIRATE', hint: 'Monstres en file serrée', mechanic: 'file',
-    wide: { w: 1176, h: 661, area: { x: 210, y: 0, w: 785, h: 585 } },
-    pot: { x: 497, y: 196 }, counter: { x: 665, y: 206 }, board: { x: 382, y: 194 }, standLine: 226,
-    obstacles: [
-      { x: 722, y: 206, w: 192, h: 46 }, { x: 950, y: 192, w: 50, h: 30 }, // tabourets du comptoir, gros tonneau
-      { x: 215, y: 548, w: 65, h: 40 }, { x: 900, y: 548, w: 65, h: 40 }, // canons du bas
-    ],
+    // grande map refaite le 14/11 depuis la petite map d'origine (pont du galion, la mer de chaque côté)
+    wide: { w: 1176, h: 661, area: { x: 245, y: 0, w: 690, h: 645 } },
+    pot: { x: 510, y: 296 }, counter: { x: 660, y: 296 }, board: { x: 585, y: 300 }, standLine: 316,
     swap: { tomate: ['ail', 'cube_fromage'], champi: ['aubergine', 'citrouille'], gelee: ['oignon'], piment: ['mais', 'hotdog'] },
     boss: 'roi_fromage', bossName: 'ROI FROMAGE', minion: 'cube_fromage',
   },
   bonbons: {
     id: 'bonbons', name: 'USINE HANTEE', hint: 'Tapis roulants rapides', mechanic: 'tapis',
-    pot: { x: 112, y: 280 }, counter: { x: 250, y: 280 }, board: { x: 181, y: 288 }, standLine: 316,
+    // grande map du 14/11 (style de la petite map d'origine) : on marche entre les deux tapis roulants du milieu
+    wide: { w: 1176, h: 661, area: { x: 300, y: 0, w: 572, h: 655 } },
+    pot: { x: 515, y: 290 }, counter: { x: 665, y: 290 }, board: { x: 590, y: 294 }, standLine: 308,
     swap: { tomate: ['ail', 'cube_fromage'], champi: ['aubergine', 'citrouille'], gelee: ['oignon'], piment: ['mais', 'hotdog'] },
     boss: 'roi_fromage', bossName: 'ROI FROMAGE', minion: 'cube_fromage',
   },
@@ -276,6 +275,12 @@ export const FREE_WORLDS = 4;
  * remettre `false` suffit pour retrouver exactement ce qu'il possédait. À REMETTRE À `false` AVANT LE PLAY STORE.
  */
 export const TEST_UNLOCK_ALL = true;
+/**
+ * PAIEMENT DE TEST (14/11) : tant que Google Play Billing n'est pas branché, un achat en euros passe par un faux
+ * écran de paiement, gratuit, pour essayer tout le parcours (payer, reçu, Mes articles). À REMETTRE À `false`
+ * AVANT LE PLAY STORE (sinon tout le premium serait gratuit).
+ */
+export const TEST_PAYMENTS = true;
 export const worldKey = (id: WorldId): string => 'monde_' + id;
 export function worldUnlocked(id: WorldId, unlocked: number, owned: string[]): boolean {
   const i = WORLD_ORDER.indexOf(id);
@@ -289,7 +294,11 @@ export const CHEF_ORDER: ChefId[] = ['moustachu', 'shiba', 'noisette'];
 /** Bandes horizontales des tapis roulants (Cantine, Usine hantée) : petite map, puis grande map. */
 export const CONVEYORS = [{ y: 430, h: 36 }, { y: 540, h: 36 }];
 export const WIDE_CONVEYORS = [{ y: 340, h: 36 }, { y: 450, h: 36 }];
-export const conveyorsOf = (w: WorldDef): { y: number; h: number }[] => (w.mechanic !== 'tapis' ? [] : w.wide ? WIDE_CONVEYORS : CONVEYORS);
+/** Tapis roulants : bandes horizontales (largeur du terrain), ou rectangles posés sur les tapis dessinés de la map. */
+export interface Conveyor { y: number; h: number; x?: number; w?: number }
+/** Usine hantée, grande map : les deux tapis verticaux dessinés au milieu font courir le chef plus vite. */
+const BONBONS_CONVEYORS: Conveyor[] = [{ x: 302, w: 66, y: 300, h: 361 }, { x: 806, w: 64, y: 300, h: 361 }];
+export const conveyorsOf = (w: WorldDef): Conveyor[] => (w.mechanic !== 'tapis' ? [] : !w.wide ? CONVEYORS : w.id === 'bonbons' ? BONBONS_CONVEYORS : WIDE_CONVEYORS);
 
 // ---------------------------------------------------------------- Cuisine
 /** Patience d'un client (s). Servi avant la moitié : pourboire. Dépassée : le client part, le combo retombe. */
@@ -320,6 +329,61 @@ export const SPRITE_FILES = {
   chefs: Object.values(CHEF_FRAMES).flatMap((f) => [...f.idle, ...f.walk, ...f.attack]).filter((k, i, a) => a.indexOf(k) === i),
   enemies: ['champi', 'champi_w0', 'champi_w1', 'champi_a0', 'tomate', 'tomate_ko', 'gelee_0', 'gelee_1', 'gelee_2', 'gelee_3', 'piment', 'roi_tomate', 'ail', 'aubergine', 'mais', 'oignon', 'citrouille', 'hotdog', 'cube_fromage', 'roi_fromage'],
 };
+
+// ---------------------------------------------------------------- Style 3D (essai du 14/11, demande de Rudy)
+/**
+ * STYLE 3D : remplace des dessins pixel par des images au rendu 3D (planche reference/3d/personnages-3d.png, découpée
+ * par tools/extract_3d.py dans public/assets/sprites3d/). Les dessins pixel restent : `false` revient au jeu d'avant.
+ * Depuis le 15/11 : tout le jeu (maps, chefs, combattants, costumes, monstres, cuisine, ingrédients, menus, boutique).
+ */
+export const STYLE_3D = true;
+/** Clé d'un sprite du jeu -> fichier 3D qui le remplace (toutes les images d'animation d'un personnage prennent la même). */
+const chef3d = (id: ChefId) => [...CHEF_FRAMES[id].idle, ...CHEF_FRAMES[id].walk, ...CHEF_FRAMES[id].attack].map((k) => [k, id]);
+export const ART_3D: Record<string, string> = {
+  ...Object.fromEntries([...chef3d('moustachu'), ...chef3d('shiba'), ...chef3d('noisette')]),
+  // chefs combattants des packs
+  skin_taureau: 'skin_taureau', skin_ours: 'skin_ours', skin_gorille: 'skin_gorille', skin_tigre: 'skin_tigre',
+  // costumes de la boutique
+  ...Object.fromEntries(['skin_patissier', 'skin_chevalier', 'skin_samourai', 'skin_shiba_samourai', 'skin_cyber', 'skin_astronaute'].map((k) => [k, k])),
+  // monstres des mondes 5 à 8 et Roi Fromage
+  ail: 'ail', aubergine: 'aubergine', mais: 'mais', oignon: 'oignon', citrouille: 'citrouille', hotdog: 'hotdog', cube_fromage: 'cube_fromage', roi_fromage: 'roi_fromage',
+  tomate: 'tomate', tomate_ko: 'tomate',
+  champi: 'champi', champi_w0: 'champi', champi_w1: 'champi', champi_a0: 'champi',
+  gelee_0: 'gelee', gelee_1: 'gelee', gelee_2: 'gelee', gelee_3: 'gelee',
+  piment: 'piment', roi_tomate: 'roi_tomate',
+};
+/** Vrai si ce sprite est dessiné en 3D : l'image est 2 fois plus grande et le jeu l'affiche à moitié (nette). */
+export const is3d = (key: string): boolean => STYLE_3D && key in ART_3D;
+/** Taille d'affichage d'un sprite : 0,5 pour les images 3D (dessinées 2 fois plus grandes), 1 sinon. */
+export const artScale = (key: string): number => (is3d(key) ? 0.5 : 1);
+/** Mondes redessinés en 3D : leur grande map (public/assets/maps/wide3d_<id>.jpg) et la cuisine replacée dessus
+ * (vide quand la map 3D garde la disposition de la grande map pixel). */
+export const WORLD_3D: Partial<Record<WorldId, Partial<WorldDef>>> = {
+  cantine: {}, glaciere: {}, volcan: {}, bateau: {}, bonbons: {},
+  taverne: {
+    wide: { w: 1176, h: 661, area: { x: 100, y: 0, w: 985, h: 640 } },
+    pot: { x: 487, y: 222 }, counter: { x: 705, y: 238 }, board: { x: 336, y: 226 }, standLine: 258,
+    obstacles: [{ x: 100, y: 180, w: 32, h: 170 }, { x: 808, y: 228, w: 192, h: 32 }], // tonneaux de gauche, tabourets du comptoir
+  },
+  marche: {
+    wide: { w: 1176, h: 661, area: { x: 200, y: 0, w: 800, h: 645 } },
+    pot: { x: 490, y: 194 }, counter: { x: 690, y: 198 }, board: { x: 590, y: 200 }, standLine: 218,
+    obstacles: [
+      { x: 322, y: 560, w: 26, h: 100 }, { x: 812, y: 560, w: 26, h: 100 }, // poteaux des lanternes du bas
+      { x: 375, y: 580, w: 85, h: 81 }, { x: 720, y: 625, w: 90, h: 36 }, { x: 962, y: 540, w: 38, h: 60 }, // caisses et tonneau
+    ],
+  },
+  clairiere: {
+    wide: { w: 1176, h: 661, area: { x: 120, y: 0, w: 940, h: 640 } },
+    pot: { x: 425, y: 162 }, counter: { x: 655, y: 166 }, board: { x: 545, y: 170 }, standLine: 188,
+    obstacles: [
+      { x: 165, y: 150, w: 110, h: 28 }, { x: 978, y: 150, w: 92, h: 76 }, // troncs couchés du haut
+      { x: 163, y: 550, w: 88, h: 55 }, { x: 742, y: 610, w: 93, h: 45 }, { x: 985, y: 545, w: 32, h: 35 }, // troncs et rocher du bas
+    ],
+  },
+};
+/** Définition d'un monde, avec sa version 3D si elle existe. */
+export const worldDef = (id: WorldId): WorldDef => (STYLE_3D && WORLD_3D[id] ? { ...WORLDS[id], ...WORLD_3D[id] } : WORLDS[id]);
 
 // ---------------------------------------------------------------- Boutique (cosmétiques uniquement)
 export type Rarity = 'commun' | 'rare' | 'epique' | 'legendaire';

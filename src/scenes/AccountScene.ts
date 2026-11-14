@@ -27,7 +27,7 @@ export class AccountScene extends Phaser.Scene {
     this.add.image(60, 96, 'portrait_' + p.chef);
     txt(this, 96, 76, 'PSEUDO', 8, '#8fe0ff');
     txt(this, 96, 92, p.pseudo || 'CHEF SANS NOM', 8);
-    txt(this, 96, 108, 'Affiché en duel en ligne', 8, '#6b7391');
+    txt(this, 96, 108, p.registered ? `Compte créé le ${p.registered.split('-').reverse().join('/')}` : 'Affiché en duel en ligne', 8, '#6b7391');
     txt(this, W / 2, 134, `NIVEAU ${playerLevel(p.earned).level}\n\nRECORD : ${p.best} OR   MOYENNE : ${p.runs.length ? Math.round(p.runs.reduce((a, b) => a + b, 0) / p.runs.length) : 0}\n\nDUELS GAGNES : ${p.duelWins}\n\nPIECES : ${p.coins}\n\nMONDES DEBLOQUES : ${WORLD_ORDER.filter((w) => worldUnlocked(w, p.unlocked, p.owned)).length}/${WORLD_ORDER.length}`, 8, '#bfc8e0').setOrigin(0.5, 0);
 
     const items: [string, number, () => void][] = [
@@ -37,13 +37,14 @@ export class AccountScene extends Phaser.Scene {
       ['SUPPRIMER MES DONNEES', 0x9a3a2e, () => this.confirmDelete()],
     ];
     // qualité d'affichage : « fluide » pour les téléphones qui rament, « haute » pour une image plus fine
-    items.splice(1, 0, [RES > 1 ? 'IMAGE : HAUTE QUALITE' : 'IMAGE : FLUIDE', 0x6a4a8f, () => {
+    items.unshift(['MES ARTICLES', 0xe8642a, () => this.scene.start('Collection')]);
+    items.splice(2, 0, [RES > 1 ? 'IMAGE : HAUTE QUALITE' : 'IMAGE : FLUIDE', 0x6a4a8f, () => {
       setQuality(RES > 1 ? 'fluide' : 'haute');
       applyQuality();
     }]);
-    items.forEach(([label, color, cb], i) => button(this, W / 2, 258 + i * 38, 260, 32, label, color, cb));
-    txt(this, W / 2, 448, 'Tes données sont enregistrées\nsur cet appareil uniquement.\nLa sauvegarde en ligne (connexion\navec un compte) arrivera dans une\nprochaine version.', 8, '#6b7391').setOrigin(0.5, 0);
-    txt(this, W / 2, 540, `BISTRO DONJON v${APP_VERSION}\nVersion du ${BUILD_LABEL}\nUn jeu SolveLab`, 8, '#6b7391').setOrigin(0.5, 0);
+    items.forEach(([label, color, cb], i) => button(this, W / 2, 252 + i * 35, 260, 30, label, color, cb));
+    txt(this, W / 2, 484, 'Ton compte est enregistré sur cet\nappareil. La sauvegarde en ligne\narrivera dans une prochaine version.', 8, '#6b7391').setOrigin(0.5, 0);
+    txt(this, W / 2, 538, `BISTRO DONJON v${APP_VERSION}\nVersion du ${BUILD_LABEL}\nUn jeu SolveLab`, 8, '#6b7391').setOrigin(0.5, 0);
     button(this, W / 2, 606, 160, 32, 'RETOUR', 0x4a4f66, () => this.scene.start('Menu'));
     void H;
     setupLandscapeMenu(this); // paysage : la page en deux colonnes qui remplissent l'écran

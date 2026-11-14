@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { CHEF_ORDER, INGREDIENTS, SHOP, SPRITE_FILES, UPGRADES, WORLD_ORDER, WORLDS } from '../core/constants';
+import { ART_3D, CHEF_ORDER, INGREDIENTS, is3d, SHOP, SPRITE_FILES, STYLE_3D, UPGRADES, WORLD_3D, WORLD_ORDER, WORLDS } from '../core/constants';
 
 /** Charge les sprites et génère les petites textures procédurales (joystick, plat, effets). */
 export class BootScene extends Phaser.Scene {
@@ -8,42 +8,106 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload(): void {
+    // barre de chargement de l'écran d'accueil (index.html)
+    const fill = document.getElementById('splash-fill');
+    const label = document.getElementById('splash-txt');
+    this.load.on('progress', (v: number) => {
+      if (fill) fill.style.width = `${Math.max(4, Math.round(v * 100))}%`;
+      if (label) label.textContent = `Chargement... ${Math.round(v * 100)} %`;
+    });
     this.load.setPath('assets/');
     for (const c of CHEF_ORDER) {
       this.load.image(c, `sprites/chefs/${c}.png`);
       this.load.image('portrait_' + c, `sprites/chefs/portrait_${c}.png`);
       // grands dessins haute définition (menu en paysage), découpés par tools/extract_hd_chefs.py
-      this.load.image('hd_' + c, `sprites/chefs/hd_${c}.png`);
-      this.load.image('hdp_' + c, `sprites/chefs/hdp_${c}.png`);
+      this.load.image('hd_' + c, STYLE_3D ? `sprites3d/${c}.png` : `sprites/chefs/hd_${c}.png`);
+      this.load.image('hdp_' + c, STYLE_3D ? `sprites3d/${c}.png` : `sprites/chefs/hdp_${c}.png`);
     }
-    for (const f of SPRITE_FILES.chefs) this.load.image(f, `sprites/chefs/${f}.png`);
-    for (const it of SHOP) if (it.sprite) this.load.image(it.sprite, `sprites/skins/${it.sprite}.png`);
-    for (const e of SPRITE_FILES.enemies) this.load.image(e, `sprites/enemies/${e}.png`);
-    for (const w of WORLD_ORDER) this.load.image('map_' + w, `maps/${w}.png`);
+    // style 3D : la même clé charge l'image 3D à la place du dessin pixel
+    const art = (k: string, pixel: string) => (is3d(k) ? `sprites3d/${ART_3D[k]}.png` : pixel);
+    for (const f of SPRITE_FILES.chefs) this.load.image(f, art(f, `sprites/chefs/${f}.png`));
+    for (const it of SHOP) if (it.sprite) this.load.image(it.sprite, art(it.sprite, `sprites/skins/${it.sprite}.png`));
+    for (const e of SPRITE_FILES.enemies) this.load.image(e, art(e, `sprites/enemies/${e}.png`));
+    // style 3D : les fonds des menus (et les vignettes des mondes) sont tirés des maps 3D
+    for (const w of WORLD_ORDER) this.load.image('map_' + w, STYLE_3D ? `maps/port3d_${w}.jpg` : `maps/${w}.png`);
     // grandes maps paysage (le terrain de la partie) ; les petites restent pour les menus
-    for (const w of WORLD_ORDER) if (WORLDS[w].wide) this.load.image('wide_' + w, `maps/wide_${w}.jpg`);
-    for (const i of INGREDIENTS) this.load.image('ing_' + i, `ui/ing_${i}.png`);
+    for (const w of WORLD_ORDER) if (WORLDS[w].wide) this.load.image('wide_' + w, STYLE_3D && WORLD_3D[w] ? `maps/wide3d_${w}.jpg` : `maps/wide_${w}.jpg`);
+    if (!STYLE_3D) for (const i of INGREDIENTS) this.load.image('ing_' + i, `ui/ing_${i}.png`);
     for (const u of UPGRADES) this.load.image(u.icon, `ui/${u.icon}.png`);
-    for (const k of ['marmite', 'coeur', 'piece', 'bouton_ultime']) this.load.image(k, `ui/${k}.png`);
+    this.load.image('logo', '../logo.png');
+    // interface façon image de référence (découpée par tools/extract_ui3d.py)
+    if (STYLE_3D) for (const k of ['btn_attaque', 'btn_feu', 'joy_pommeau', 'chrono', 'piece', 'pause', 'coeur', 'coeur_vide']) this.load.image('ui3d_' + k, `ui3d/${k}.png`);
+    for (const k of ['marmite', 'coeur', 'piece', 'bouton_ultime']) this.load.image(k, STYLE_3D && k === 'marmite' ? 'ui3d/marmite.png' : `ui/${k}.png`);
+    // style 3D : planche, comptoir et ingrédients redessinés (même taille que les dessins pixel)
+    if (STYLE_3D) for (const k of ['planche', 'comptoir', 'ing_tomate', 'ing_champignon', 'ing_sucre', 'ing_piment']) this.load.image(k, `ui3d/${k}.png`);
   }
 
   create(): void {
     // les dessins HD sont réduits à l'affichage : lissage pour garder tous les détails
     for (const c of CHEF_ORDER) for (const k of ['hd_' + c, 'hdp_' + c]) this.textures.get(k).setFilter(Phaser.Textures.FilterMode.LINEAR);
+    for (const k of this.textures.getTextureKeys()) if (k.startsWith('ui3d_') || (STYLE_3D && (k.startsWith('ing_') || ['marmite', 'planche', 'comptoir'].includes(k)))) this.textures.get(k).setFilter(Phaser.Textures.FilterMode.LINEAR);
+    // images 3D : lissées (pas de gros pixels)
+    for (const k of Object.keys(ART_3D)) if (is3d(k) && this.textures.exists(k)) this.textures.get(k).setFilter(Phaser.Textures.FilterMode.LINEAR);
     const g = this.make.graphics({ x: 0, y: 0 }, false);
     const tex = (key: string, w: number, h: number, draw: () => void) => {
+      if (this.textures.exists(key)) return; // déjà chargé (image 3D)
       g.clear();
       draw();
       g.generateTexture(key, w, h);
     };
 
-    tex('joy_base', 72, 72, () => {
-      g.fillStyle(0xffffff, 0.18).fillCircle(36, 36, 34);
-      g.lineStyle(2, 0xffffff, 0.7).strokeCircle(36, 36, 34);
+    // Commandes tactiles redessinées le 14/11 (demande de Rudy) : dessinées 2 fois plus grandes puis affichées
+    // à moitié, pour rester nettes avec le rendu fin. Joystick : socle sombre cerclé d'or, 4 flèches, pommeau orange.
+    tex('joy_base', 144, 144, () => {
+      g.fillStyle(0x0c0c18, 0.55).fillCircle(72, 72, 70);
+      g.lineStyle(6, 0x1b1b2b, 1).strokeCircle(72, 72, 67);
+      g.lineStyle(4, 0xffc533, 0.85).strokeCircle(72, 72, 64);
+      g.lineStyle(2, 0xffffff, 0.18).strokeCircle(72, 72, 44);
+      g.fillStyle(0xffe9b0, 0.85);
+      g.fillTriangle(72, 14, 62, 28, 82, 28).fillTriangle(72, 130, 62, 116, 82, 116);
+      g.fillTriangle(14, 72, 28, 62, 28, 82).fillTriangle(130, 72, 116, 62, 116, 82);
     });
-    tex('joy_thumb', 28, 28, () => {
-      g.fillStyle(0xffffff, 0.9).fillCircle(14, 14, 13);
-      g.fillStyle(0x9fb4d8).fillCircle(14, 14, 9);
+    tex('joy_thumb', 68, 68, () => {
+      g.fillStyle(0x1b1b2b, 1).fillCircle(34, 36, 32);
+      g.fillStyle(0xa83a14, 1).fillCircle(34, 34, 30);
+      g.fillStyle(0xe8642a, 1).fillCircle(34, 32, 26);
+      g.fillStyle(0xff9a4a, 1).fillCircle(32, 28, 18);
+      g.fillStyle(0xffffff, 0.55).fillEllipse(26, 20, 16, 9);
+    });
+    // socle du joystick façon image de référence : disque sombre transparent, liseré clair, 4 flèches grises
+    tex('joy_base3d', 184, 184, () => {
+      g.fillStyle(0x000000, 0.38).fillCircle(92, 92, 90);
+      g.lineStyle(3, 0xffffff, 0.22).strokeCircle(92, 92, 88);
+      g.fillStyle(0x000000, 0.22).fillCircle(92, 92, 60);
+      g.fillStyle(0x9aa0aa, 0.75);
+      g.fillTriangle(92, 16, 80, 32, 104, 32).fillTriangle(92, 168, 80, 152, 104, 152);
+      g.fillTriangle(16, 92, 32, 80, 32, 104).fillTriangle(168, 92, 152, 80, 152, 104);
+    });
+    // icône du bouton d'attaque : un hachoir de cuisine
+    tex('ico_hachoir', 64, 64, () => {
+      g.fillStyle(0x1b1b2b, 1).fillRoundedRect(10, 6, 36, 30, 4).fillRect(22, 34, 12, 26);
+      g.fillStyle(0xdfe7f0, 1).fillRoundedRect(12, 8, 32, 26, 3);
+      g.fillStyle(0xffffff, 1).fillRect(12, 8, 32, 5);
+      g.fillStyle(0x9aa6b8, 1).fillRect(12, 28, 32, 6);
+      g.fillStyle(0x1b1b2b, 1).fillCircle(36, 15, 3);
+      g.fillStyle(0x8a5a33, 1).fillRect(24, 36, 8, 22);
+      g.fillStyle(0xb9814c, 1).fillRect(24, 36, 3, 22);
+    });
+    // bouton des flammes (attaque ultime) : disque de braise et grande flamme
+    tex('btn_feu', 128, 128, () => {
+      g.fillStyle(0x1b1b2b, 1).fillCircle(64, 66, 62);
+      g.fillStyle(0x7a1a10, 1).fillCircle(64, 64, 58);
+      g.fillStyle(0xc8321e, 1).fillCircle(64, 62, 54);
+      g.fillStyle(0xe8482a, 1).fillCircle(64, 58, 44);
+      const flame = (cx: number, base: number, w: number, h: number, color: number) => {
+        g.fillStyle(color, 1).fillCircle(cx, base - w / 2, w / 2).fillTriangle(cx - w / 2, base - w / 2, cx + w / 2, base - w / 2, cx + w * 0.12, base - h);
+      };
+      flame(64, 104, 56, 86, 0xff7a1e);
+      flame(50, 100, 22, 52, 0xff7a1e);
+      flame(80, 100, 22, 50, 0xff7a1e);
+      flame(64, 102, 38, 64, 0xffc533);
+      flame(64, 100, 20, 38, 0xfff3b0);
+      g.fillStyle(0xffffff, 0.3).fillEllipse(48, 30, 40, 16);
     });
     // plat prêt à servir
     tex('plat', 18, 14, () => {

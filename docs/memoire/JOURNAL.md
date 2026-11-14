@@ -4,18 +4,57 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
 
 ## Où on en est (14/11/2026)
 
+**15/11/2026 : toute l'application en 3D, nouvel écran de chargement (fusionné, demande de Rudy)**
+- Écran de chargement : plus d'image ; « BISTRO DONJON » en grand et une barre qui se remplit avec le vrai chargement (« Chargement... 63 % »), puis la page d'accueil. Le démarrage de l'appli Android n'affiche plus de logo (fond noir).
+- En 3D en plus : les 6 costumes de la boutique, la marmite, la planche, le comptoir et les 4 ingrédients (planches `reference/3d/costumes-3d.png` et `cuisine-3d.png`, `python3 tools/extract_3d.py`).
+- Menus, boutique, Mon compte, Mes articles, Règles, Duel, inscription : fonds tirés des maps 3D, police arrondie Lilita One avec contour, boutons bombés arrondis, fenêtres arrondies au liseré doré, cartes de boutique arrondies, grands chefs 3D au menu. Commandes en jeu en pastilles sombres.
+- Testé : tous les écrans en portrait et en paysage, une fenêtre de boutique, l'écran de chargement, parties en 3D, robot dans 4 mondes (il atteint la cuisine dans 2 mondes) ; aucune erreur.
+- Le logo (chat + Roi Tomate) reste l'icône de l'appli.
+
+**14/11/2026 (fin de nuit) : tout le jeu en 3D, façon image de référence de Rudy**
+- Rudy a envoyé l'image à reproduire (`reference/3d/reference-rudy.jpg`) : « exactement pareil » (flamme de la poêle, boutons, joystick, toutes les maps), et « que tout fonctionne, pas que du dessin ».
+- Fait : les 8 maps en 3D (`public/assets/maps/wide3d_<monde>.jpg`, originaux dans `reference/3d/`), les 3 chefs, les 4 chefs combattants des packs, les 12 monstres et les 2 boss en 3D (3 planches découpées par `python3 tools/extract_3d.py`).
+- Interface copiée de la référence (`python3 tools/extract_ui3d.py` découpe les vrais éléments de l'image dans `public/assets/ui3d/`) : coeurs en haut à gauche (1 coeur = 2 points de vie), chrono et pièces dans des pastilles sombres avec la police Lilita One, bouton pause carré, gros bouton rouge à l'épée et bouton orange des flammes collé en haut à droite, joystick visible en bas à gauche au repos (il suit le pouce quand on touche).
+- Effets : Chef Moustachu et Mlle Noisette lancent un croissant de feu (rouge, orange, jaune, coeur blanc) qui se déploie avec des braises ; la couleur suit l'arme ou l'effet équipé. Maître Shiba et ses combattants frappent le sol : onde de choc, éclats, petite secousse. Caméra un peu plus proche pour des personnages plus grands.
+- Tout marche comme avant (même moteur) : un robot a joué dans 4 mondes avec les 3 chefs sans aucune erreur ; captures vérifiées dans 6 mondes en portrait et en paysage.
+- Reste en pixel : les 6 costumes de la boutique, les ingrédients, la marmite, la planche, le comptoir, et les menus. `STYLE_3D = false` (`src/core/constants.ts`) revient au jeu pixel.
+- Le design Canva « export des maps » a disparu du compte de Rudy ; remplacé par « Bistro Donjon - export 3D » (`DAHa7uXcGeY`).
+
+**14/11/2026 (nuit) : essai du jeu en 3D, nouveaux boutons**
+- Demande de Rudy : « tout en 3D, comme l'image générée » (`reference/3d/concept-3d.jpg`). Décision de Claude, expliquée à Rudy : on garde le moteur du jeu (tout ce qui marche) et on remplace les dessins par des images au rendu 3D. Un vrai moteur 3D voudrait dire tout réécrire.
+- Essai fait sur la Clairière : map 3D (`public/assets/maps/wide3d_clairiere.jpg`), Chef Moustachu, tomate, champignon, gelée, piment et Roi Tomate en 3D (planche `reference/3d/personnages-3d.png` découpée par `python3 tools/extract_3d.py` dans `public/assets/sprites3d/`). Coup de poêle : grosse traînée de flammes avec étincelles, et le chef pivote en frappant.
+- Réglage `STYLE_3D` (`src/core/constants.ts`) : `false` revient exactement au jeu pixel. `ART_3D` liste les dessins remplacés, `WORLD_3D` la cuisine replacée sur les maps 3D.
+- Reste à faire en 3D (si Rudy valide l'essai) : les 7 autres maps, Maître Shiba et Mlle Noisette, les 7 monstres des mondes 5 à 8 et le Roi Fromage, les costumes, la marmite, la planche et le comptoir, les ingrédients, puis les menus. Environ 40 images : plusieurs jours de crédits Canva (une planche de 6 personnages = 1 image, c'est le plus économique).
+- Nouveaux boutons (demande de Rudy) : joystick (socle cerclé d'or, 4 flèches, pommeau orange), bouton d'attaque bombé avec un hachoir, bouton des flammes (grande flamme, halo doré quand il est prêt, grisé pendant la charge).
+- Testé dans le navigateur : partie dans la Clairière 3D en portrait et en paysage, monstres et boss 3D, coup de poêle, autres mondes inchangés ; aucune erreur.
+
+**14/11/2026 (soir) : les 8 grandes maps, Mes articles, paiement de test, inscription**
+
+*En bref :*
+- *Les 8 mondes ont leur grande map, plus aucune copie en miroir. Volcan et Galion refaits dans le style de leur petite map d'origine (demande de Rudy : « la première map »), Usine hantée ajoutée.*
+- *Mon compte > MES ARTICLES : tout ce que le joueur possède, pour l'équiper (costumes, effets et armes), ses mondes pour y jouer, et l'historique de ses achats avec numéro de commande.*
+- *Achat en euros : écran de paiement (paiement de test, gratuit), puis reçu « ACHAT CONFIRME » avec un bouton vers Mes articles.*
+- *Inscription au premier lancement : pseudo + accord sur les règles et la confidentialité. Pas de mot de passe (compte sur le téléphone ; la connexion en ligne viendra avec la base de données, à la fin, comme Rudy l'a décidé).*
+- *Tout reste débloqué (choix de Rudy du 14/11) : il ne peut donc pas tester l'achat lui-même tant que le mode test est actif.*
+
+Détails :
+- `TEST_PAYMENTS` (`src/core/constants.ts`) : faux paiement gratuit tant que Google Play n'est pas branché. **À remettre à `false` avant le Play Store**, comme `TEST_UNLOCK_ALL`.
+- Achats : `recordPurchase()` (`Storage.ts`) rend l'article possédé et l'ajoute à `purchases` (article, prix, date, commande). Les achats en pièces y sont aussi.
+- Écrans nouveaux : `CollectionScene` (Mes articles, 4 onglets), `SignupScene` (inscription, s'affiche tant que `registered` est vide).
+- Usine hantée : on marche entre les deux tapis du milieu ; ces deux tapis verticaux font courir le chef (`BONBONS_CONVEYORS`).
+- Testé dans le navigateur : inscription complète (refus sans pseudo, clavier, case à cocher, bienvenue), Mon compte, Mes articles (équiper, onglets, mondes), paiement de test et reçu, historique ; les 3 nouvelles maps en portrait, en paysage et en duel ; aucune erreur.
+
 **14/11/2026 : mode test « tout débloqué », 7 grandes maps sur 8**
 
 *En bref (14/11, tout est en ligne sur le jeu de test) :*
 - *Tout est débloqué pour que Rudy essaie tout : à remettre avant le Play Store.*
-- *7 grandes maps sur 8 : il manque l'Usine hantée (crédits Canva épuisés).*
 - *Nouveau réglage « IMAGE : FLUIDE » dans Mon compte, pour les téléphones qui rament (cas de l'ami de Rudy).*
 - *Tous les boutons du jeu testés : aucun plantage. Seul le duel en ligne ne marche pas (pas de serveur).*
 - *Le logo (chat + Roi Tomate) est l'icône et l'écran de chargement.*
 - *En attente de Rudy : son adresse e-mail d'assistance, et 2 choix (duel en ligne caché ou serveur ; compte joueur avec Google Play Jeux plus tard).*
 
 - **MODE TEST ACTIVÉ (demande de Rudy, pour tout essayer lui-même)** : tous les packs, costumes, chefs combattants, effets, armes et les 8 mondes sont ouverts pour tout le monde. Rien n'est écrit dans la sauvegarde : quand Rudy dira « on remet », passer `TEST_UNLOCK_ALL` à `false` dans `src/core/constants.ts` et chacun retrouve exactement ce qu'il avait. **À remettre à `false` avant le Play Store.**
-- Grandes maps ajoutées : Cantine, Glacière, Volcan (générée le 14/11), Galion (générée le 14/11). Il ne manque que l'**Usine hantée** : quota Canva épuisé après 2 images, à regénérer quand les crédits reviennent (la consigne est dans le compte-rendu du 14/11 ; image de style à donner en référence : la Taverne, `MAHauLIdJrg`).
+- Grandes maps ajoutées : Cantine, Glacière, Volcan (générée le 14/11), Galion (générée le 14/11). (Volcan et Galion refaits le soir même, Usine hantée ajoutée : voir plus haut.)
 - Les maps marchent aussi en duel (même terrain que le solo).
 - Tapis roulants de la Cantine : sur la grande map, deux bandes sur toute la largeur où l'on marche.
 - Cuisine plus visible (demande de Rudy « il faut qu'on voie tout ») : un halo clignote au sol sous la marmite (orange), la planche (vert) et le service (jaune) ; en paysage, la caméra tient le chef un peu plus bas pour que la cuisine ne soit plus cachée sous les commandes.
@@ -147,7 +186,7 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
 - **Scène relancée à moitié pendant le test** : arrêter toutes les scènes et démarrer « Game » dans la même image laisse une scène sans caméra. Leçon : arrêter, attendre un instant, puis démarrer.
 
 ## Notes techniques
-- Récupérer une image Canva en taille réelle (trouvé le 14/11) : Canva ne donne que des aperçus de 200 px, mais on peut poser l'image sur une page d'un design puis exporter la page. Le design « Bistro Donjon - export des maps » (`DAHa4Him79Y`) sert à ça : ouvrir une modification (`read-design` avec `open_transaction`), `add_page` 2720 x 1536, `insert_fill` avec l'identifiant de l'image, enregistrer, puis `export-design` en JPG largeur 1680 sur les pages voulues. Rudy n'a plus besoin de télécharger les maps à la main.
+- Récupérer une image Canva en taille réelle (trouvé le 14/11) : Canva ne donne que des aperçus de 200 px, mais on peut poser l'image sur une page d'un design puis exporter la page. Le design « Bistro Donjon - export 3D » (`DAHa7uXcGeY`, l'ancien `DAHa4Him79Y` a disparu) sert à ça : ouvrir une modification (`read-design` avec `open_transaction`), `add_page` 2720 x 1536, `insert_fill` avec l'identifiant de l'image, enregistrer, puis `export-design` en JPG largeur 1680 sur les pages voulues. Rudy n'a plus besoin de télécharger les maps à la main.
 - Qualité d'affichage : `RES` (`src/core/layout.ts`) vaut 2 (haute) ou 1 (fluide), décidé au chargement par `wantedRes()` ; choix gardé dans `bistro-donjon-qualite`. `GameScene.watchFps()` mesure les images par seconde, `applyQuality()` recharge la page au menu si la qualité voulue a changé.
 - Mode test : `loadProfile()` (Storage) renvoie tout possédé quand `TEST_UNLOCK_ALL` est vrai, et `saveProfile()` n'enregistre jamais `owned` ni `unlocked` dans ce mode.
 - Tapis roulants : `conveyorsOf(monde)` dans `constants.ts` (bandes différentes pour petite et grande map).
