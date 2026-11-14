@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { CHEF_FRAMES, ChefDef, PowerId } from '../core/constants';
+import { artScale, CHEF_FRAMES, ChefDef, is3d, PowerId } from '../core/constants';
 import { emptyInventory, Inventory, Order } from '../core/RecipeManager';
 import anchors from '../core/spriteAnchors.json';
 
@@ -103,7 +103,9 @@ export class Chef {
     this.lunge = Math.max(0, this.lunge - dt * 7);
     this.attackT = Math.max(0, this.attackT - dt);
     const key = this.frame(time);
-    const anchor = ANCHORS[key] ?? 0.5;
+    const anchor = is3d(key) ? 0.5 : (ANCHORS[key] ?? 0.5);
+    // image 3D : une seule image, le coup de poêle est animé par le code (le chef pivote vers sa cible)
+    const swing = is3d(key) && this.attackT > 0 ? Math.sin((1 - this.attackT / ATTACK_ANIM) * Math.PI) * 22 * (this.facing < 0 ? -1 : 1) : 0;
     const bob = this.moving ? Math.abs(Math.sin(this.walkT * Math.PI)) * 2 : Math.sin(time / 300) * 0.8;
     const flip = this.ultActive > 0 ? Math.floor(time / 70) % 2 === 0 : this.facing < 0;
     this.sprite
@@ -111,7 +113,8 @@ export class Chef {
       .setFlipX(flip)
       .setOrigin(flip ? 1 - anchor : anchor, 1)
       .setPosition(Math.round(this.x + this.aim.x * this.lunge * 5), Math.round(this.y - bob + this.aim.y * this.lunge * 5))
-      .setAngle(this.skin && this.moving ? Math.sin(this.walkT * Math.PI) * 5 : 0)
+      .setScale(artScale(key))
+      .setAngle(swing || ((this.skin || is3d(key)) && this.moving ? Math.sin(this.walkT * Math.PI) * 5 : 0))
       .setAlpha(this.invuln > 0 && Math.floor(time / 80) % 2 === 0 ? 0.35 : 1)
       .setDepth(this.y);
     this.shadow.setPosition(this.x, this.y - 1).setDepth(this.y - 1);

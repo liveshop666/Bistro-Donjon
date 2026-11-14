@@ -4,6 +4,14 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
 
 ## Où on en est (14/11/2026)
 
+**14/11/2026 (nuit) : essai du jeu en 3D, nouveaux boutons**
+- Demande de Rudy : « tout en 3D, comme l'image générée » (`reference/3d/concept-3d.jpg`). Décision de Claude, expliquée à Rudy : on garde le moteur du jeu (tout ce qui marche) et on remplace les dessins par des images au rendu 3D. Un vrai moteur 3D voudrait dire tout réécrire.
+- Essai fait sur la Clairière : map 3D (`public/assets/maps/wide3d_clairiere.jpg`), Chef Moustachu, tomate, champignon, gelée, piment et Roi Tomate en 3D (planche `reference/3d/personnages-3d.png` découpée par `python3 tools/extract_3d.py` dans `public/assets/sprites3d/`). Coup de poêle : grosse traînée de flammes avec étincelles, et le chef pivote en frappant.
+- Réglage `STYLE_3D` (`src/core/constants.ts`) : `false` revient exactement au jeu pixel. `ART_3D` liste les dessins remplacés, `WORLD_3D` la cuisine replacée sur les maps 3D.
+- Reste à faire en 3D (si Rudy valide l'essai) : les 7 autres maps, Maître Shiba et Mlle Noisette, les 7 monstres des mondes 5 à 8 et le Roi Fromage, les costumes, la marmite, la planche et le comptoir, les ingrédients, puis les menus. Environ 40 images : plusieurs jours de crédits Canva (une planche de 6 personnages = 1 image, c'est le plus économique).
+- Nouveaux boutons (demande de Rudy) : joystick (socle cerclé d'or, 4 flèches, pommeau orange), bouton d'attaque bombé avec un hachoir, bouton des flammes (grande flamme, halo doré quand il est prêt, grisé pendant la charge).
+- Testé dans le navigateur : partie dans la Clairière 3D en portrait et en paysage, monstres et boss 3D, coup de poêle, autres mondes inchangés ; aucune erreur.
+
 **14/11/2026 (soir) : les 8 grandes maps, Mes articles, paiement de test, inscription**
 
 *En bref :*

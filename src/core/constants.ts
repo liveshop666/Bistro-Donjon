@@ -330,6 +330,39 @@ export const SPRITE_FILES = {
   enemies: ['champi', 'champi_w0', 'champi_w1', 'champi_a0', 'tomate', 'tomate_ko', 'gelee_0', 'gelee_1', 'gelee_2', 'gelee_3', 'piment', 'roi_tomate', 'ail', 'aubergine', 'mais', 'oignon', 'citrouille', 'hotdog', 'cube_fromage', 'roi_fromage'],
 };
 
+// ---------------------------------------------------------------- Style 3D (essai du 14/11, demande de Rudy)
+/**
+ * STYLE 3D : remplace des dessins pixel par des images au rendu 3D (planche reference/3d/personnages-3d.png, découpée
+ * par tools/extract_3d.py dans public/assets/sprites3d/). Les dessins pixel restent : `false` revient au jeu d'avant.
+ * Essai sur la Clairière : Chef Moustachu, tomate, champignon, gelée, piment, Roi Tomate et la map.
+ */
+export const STYLE_3D = true;
+/** Clé d'un sprite du jeu -> fichier 3D qui le remplace (toutes les images d'animation d'un personnage prennent la même). */
+export const ART_3D: Record<string, string> = {
+  ...Object.fromEntries([...CHEF_FRAMES.moustachu.idle, ...CHEF_FRAMES.moustachu.walk, ...CHEF_FRAMES.moustachu.attack].map((k) => [k, 'moustachu'])),
+  tomate: 'tomate', tomate_ko: 'tomate',
+  champi: 'champi', champi_w0: 'champi', champi_w1: 'champi', champi_a0: 'champi',
+  gelee_0: 'gelee', gelee_1: 'gelee', gelee_2: 'gelee', gelee_3: 'gelee',
+  piment: 'piment', roi_tomate: 'roi_tomate',
+};
+/** Vrai si ce sprite est dessiné en 3D : l'image est 2 fois plus grande et le jeu l'affiche à moitié (nette). */
+export const is3d = (key: string): boolean => STYLE_3D && key in ART_3D;
+/** Taille d'affichage d'un sprite : 0,5 pour les images 3D (dessinées 2 fois plus grandes), 1 sinon. */
+export const artScale = (key: string): number => (is3d(key) ? 0.5 : 1);
+/** Mondes redessinés en 3D : leur grande map (public/assets/maps/wide3d_<id>.jpg) et la cuisine replacée dessus. */
+export const WORLD_3D: Partial<Record<WorldId, Partial<WorldDef>>> = {
+  clairiere: {
+    wide: { w: 1176, h: 661, area: { x: 120, y: 0, w: 940, h: 640 } },
+    pot: { x: 425, y: 162 }, counter: { x: 655, y: 166 }, board: { x: 545, y: 170 }, standLine: 188,
+    obstacles: [
+      { x: 165, y: 150, w: 110, h: 28 }, { x: 978, y: 150, w: 92, h: 76 }, // troncs couchés du haut
+      { x: 163, y: 550, w: 88, h: 55 }, { x: 742, y: 610, w: 93, h: 45 }, { x: 985, y: 545, w: 32, h: 35 }, // troncs et rocher du bas
+    ],
+  },
+};
+/** Définition d'un monde, avec sa version 3D si elle existe. */
+export const worldDef = (id: WorldId): WorldDef => (STYLE_3D && WORLD_3D[id] ? { ...WORLDS[id], ...WORLD_3D[id] } : WORLDS[id]);
+
 // ---------------------------------------------------------------- Boutique (cosmétiques uniquement)
 export type Rarity = 'commun' | 'rare' | 'epique' | 'legendaire';
 export const RARITY: Record<Rarity, { label: string; color: number; text: string }> = {

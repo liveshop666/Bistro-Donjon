@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { CHEF_ORDER, INGREDIENTS, SHOP, SPRITE_FILES, UPGRADES, WORLD_ORDER, WORLDS } from '../core/constants';
+import { ART_3D, CHEF_ORDER, INGREDIENTS, is3d, SHOP, SPRITE_FILES, STYLE_3D, UPGRADES, WORLD_3D, WORLD_ORDER, WORLDS } from '../core/constants';
 
 /** Charge les sprites et génère les petites textures procédurales (joystick, plat, effets). */
 export class BootScene extends Phaser.Scene {
@@ -16,12 +16,14 @@ export class BootScene extends Phaser.Scene {
       this.load.image('hd_' + c, `sprites/chefs/hd_${c}.png`);
       this.load.image('hdp_' + c, `sprites/chefs/hdp_${c}.png`);
     }
-    for (const f of SPRITE_FILES.chefs) this.load.image(f, `sprites/chefs/${f}.png`);
+    // style 3D : la même clé charge l'image 3D à la place du dessin pixel
+    const art = (k: string, pixel: string) => (is3d(k) ? `sprites3d/${ART_3D[k]}.png` : pixel);
+    for (const f of SPRITE_FILES.chefs) this.load.image(f, art(f, `sprites/chefs/${f}.png`));
     for (const it of SHOP) if (it.sprite) this.load.image(it.sprite, `sprites/skins/${it.sprite}.png`);
-    for (const e of SPRITE_FILES.enemies) this.load.image(e, `sprites/enemies/${e}.png`);
+    for (const e of SPRITE_FILES.enemies) this.load.image(e, art(e, `sprites/enemies/${e}.png`));
     for (const w of WORLD_ORDER) this.load.image('map_' + w, `maps/${w}.png`);
     // grandes maps paysage (le terrain de la partie) ; les petites restent pour les menus
-    for (const w of WORLD_ORDER) if (WORLDS[w].wide) this.load.image('wide_' + w, `maps/wide_${w}.jpg`);
+    for (const w of WORLD_ORDER) if (WORLDS[w].wide) this.load.image('wide_' + w, STYLE_3D && WORLD_3D[w] ? `maps/wide3d_${w}.jpg` : `maps/wide_${w}.jpg`);
     for (const i of INGREDIENTS) this.load.image('ing_' + i, `ui/ing_${i}.png`);
     for (const u of UPGRADES) this.load.image(u.icon, `ui/${u.icon}.png`);
     this.load.image('logo', '../logo.png');
@@ -31,6 +33,8 @@ export class BootScene extends Phaser.Scene {
   create(): void {
     // les dessins HD sont réduits à l'affichage : lissage pour garder tous les détails
     for (const c of CHEF_ORDER) for (const k of ['hd_' + c, 'hdp_' + c]) this.textures.get(k).setFilter(Phaser.Textures.FilterMode.LINEAR);
+    // images 3D : lissées (pas de gros pixels)
+    for (const k of Object.keys(ART_3D)) if (is3d(k) && this.textures.exists(k)) this.textures.get(k).setFilter(Phaser.Textures.FilterMode.LINEAR);
     const g = this.make.graphics({ x: 0, y: 0 }, false);
     const tex = (key: string, w: number, h: number, draw: () => void) => {
       g.clear();

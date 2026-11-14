@@ -2,8 +2,8 @@ import Phaser from 'phaser';
 import { landscapeHeight, landscapeWanted, landscapeWidth, pageCam, RES, setQuality, storedQuality } from '../core/layout';
 import { audio, Sfx, Tune } from '../audio/AudioManager';
 import {
-  ARENA, BOSS_REWARD, ChefId, ENEMIES, FREE_WORLDS, ShopItem, WORLD_HP_STEP, worldRank, CHEFS, CHOP_TIME, COMBO_GOLD, COMBO_SIZE, conveyorsOf, EnemyId, GameMode, H, IngredientId, INGREDIENTS, itemLabel, playerLevel, ORDER_PATIENCE,
-  POWER_LABEL, POWER_TIME, SHOP, Sabotage, SABOTAGE_LABEL, SABOTAGES, TIP_BONUS, UpgradeDef, W, WAVES, WORLD_ORDER, WorldDef, WorldId, WORLDS,
+  ARENA, BOSS_REWARD, ChefId, ENEMIES, FREE_WORLDS, ShopItem, WORLD_HP_STEP, worldRank, CHEFS, CHOP_TIME, COMBO_GOLD, COMBO_SIZE, conveyorsOf, worldDef, STYLE_3D, EnemyId, GameMode, H, IngredientId, INGREDIENTS, itemLabel, playerLevel, ORDER_PATIENCE,
+  POWER_LABEL, POWER_TIME, SHOP, Sabotage, SABOTAGE_LABEL, SABOTAGES, TIP_BONUS, UpgradeDef, W, WAVES, WORLD_ORDER, WorldDef, WorldId,
 } from '../core/constants';
 import { GameManager, Phase } from '../core/GameManager';
 import { RecipeManager } from '../core/RecipeManager';
@@ -131,7 +131,7 @@ export class GameScene extends Phaser.Scene {
     this.dashing = false;
     this.tick = { aura: 0, regen: 0, tornado: 0, turret: 0, barrel: 6 };
 
-    this.world = WORLDS[this.worldId];
+    this.world = worldDef(this.worldId); // version 3D du monde si elle existe
     const { pot, counter, standLine, wide } = this.world;
     ARENA.w = wide?.w ?? W;
     ARENA.h = wide?.h ?? H;
@@ -1061,6 +1061,34 @@ export class GameScene extends Phaser.Scene {
 
   private arcFx(x: number, y: number, ang: number, r: number, color: number, spread = 1.1): void {
     const g = this.add.graphics().setDepth(1700);
+    if (STYLE_3D) {
+      // style 3D : traînée de flammes épaisse (rouge, orange, jaune, coeur blanc) qui suit le coup de poêle
+      const R = r + 6;
+      g.lineStyle(26, 0x8a1208, 0.35).beginPath().arc(x, y, R - 10, ang - spread, ang + spread).strokePath();
+      g.lineStyle(18, 0xe8241a, 0.85).beginPath().arc(x, y, R - 8, ang - spread, ang + spread).strokePath();
+      g.lineStyle(12, color === 0xffffff ? 0xff8a1e : color, 1).beginPath().arc(x, y, R - 6, ang - spread * 0.92, ang + spread * 0.92).strokePath();
+      g.lineStyle(7, 0xffc533, 1).beginPath().arc(x, y, R - 4, ang - spread * 0.75, ang + spread * 0.75).strokePath();
+      g.lineStyle(3, 0xfff6d0, 1).beginPath().arc(x, y, R - 3, ang - spread * 0.55, ang + spread * 0.55).strokePath();
+      // langues de flamme qui dépassent de l'arc
+      for (let i = 0; i <= 6; i++) {
+        const a = ang - spread * 0.9 + (spread * 1.8 * i) / 6;
+        const L = 7 + Math.random() * 8;
+        g.fillStyle(i % 2 ? 0xff8a1e : 0xffc533, 1).fillTriangle(
+          x + Math.cos(a - 0.08) * (R - 2), y + Math.sin(a - 0.08) * (R - 2),
+          x + Math.cos(a + 0.08) * (R - 2), y + Math.sin(a + 0.08) * (R - 2),
+          x + Math.cos(a) * (R + L), y + Math.sin(a) * (R + L) - 4);
+      }
+      // étincelles de braise qui s'envolent au bout de l'arc
+      for (let i = 0; i < 7; i++) {
+        const a = ang - spread + Math.random() * spread * 2;
+        const px = x + Math.cos(a) * (r - 5);
+        const py = y + Math.sin(a) * (r - 5);
+        const p = this.add.image(px, py, 'particule').setTint([0xff3b1e, 0xff8a1e, 0xffc533][i % 3]).setDepth(1701).setScale(1.6);
+        this.tweens.add({ targets: p, x: px + Math.cos(a) * 14, y: py + Math.sin(a) * 14 - 10, alpha: 0, scale: 0.2, duration: 260 + Math.random() * 160, onComplete: () => p.destroy() });
+      }
+      this.tweens.add({ targets: g, alpha: 0, duration: 320, ease: 'Quad.in', onComplete: () => g.destroy() });
+      return;
+    }
     g.lineStyle(7, color, 0.9).beginPath().arc(x, y, r - 6, ang - spread, ang + spread).strokePath();
     g.lineStyle(3, 0xffffff, 0.9).beginPath().arc(x, y, r - 3, ang - spread * 0.8, ang + spread * 0.8).strokePath();
     this.tweens.add({ targets: g, alpha: 0, duration: 160, onComplete: () => g.destroy() });
