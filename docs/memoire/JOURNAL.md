@@ -5,6 +5,14 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
 ## Où on en est (14/11/2026)
 
 **14/11/2026 : mode test « tout débloqué », 7 grandes maps sur 8**
+
+*En bref (14/11, tout est en ligne sur le jeu de test) :*
+- *Tout est débloqué pour que Rudy essaie tout : à remettre avant le Play Store.*
+- *7 grandes maps sur 8 : il manque l'Usine hantée (crédits Canva épuisés).*
+- *Nouveau réglage « IMAGE : FLUIDE » dans Mon compte, pour les téléphones qui rament (cas de l'ami de Rudy).*
+- *Tous les boutons du jeu testés : aucun plantage. Seul le duel en ligne ne marche pas (pas de serveur).*
+- *En attente de Rudy : son adresse e-mail d'assistance, son logo en fichier, et 2 choix (duel en ligne caché ou serveur ; compte joueur avec Google Play Jeux plus tard).*
+
 - **MODE TEST ACTIVÉ (demande de Rudy, pour tout essayer lui-même)** : tous les packs, costumes, chefs combattants, effets, armes et les 8 mondes sont ouverts pour tout le monde. Rien n'est écrit dans la sauvegarde : quand Rudy dira « on remet », passer `TEST_UNLOCK_ALL` à `false` dans `src/core/constants.ts` et chacun retrouve exactement ce qu'il avait. **À remettre à `false` avant le Play Store.**
 - Grandes maps ajoutées : Cantine, Glacière, Volcan (générée le 14/11), Galion (générée le 14/11). Il ne manque que l'**Usine hantée** : quota Canva épuisé après 2 images, à regénérer quand les crédits reviennent (la consigne est dans le compte-rendu du 14/11 ; image de style à donner en référence : la Taverne, `MAHauLIdJrg`).
 - Les maps marchent aussi en duel (même terrain que le solo).
@@ -17,7 +25,7 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
 
 **13/11/2026 : grandes maps dans le jeu (3 sur 8)**
 - Clairière, Marché de nuit et Taverne se jouent sur leur grande map Canva (1680 x 944, affichée à 70 % : terrain de 1176 x 661). Plus de copies en miroir ni de mur invisible : la caméra suit le chef partout, en portrait comme en paysage. Images : `public/assets/maps/wide_<monde>.jpg` (originaux dans `reference/maps-paysage/`). Pour chaque monde : marmite, planche, comptoir, zone où marcher et décors solides placés sur le dessin (`wide` dans `WORLDS`, `src/core/constants.ts`). Les petites maps restent pour les menus.
-- Cantine et Glacière générées dans Canva le 13/11 (images `MAHayMktSas` et `MAHayEhCHGY`, dans ses imports Canva). Canva ne donne à Claude que des aperçus de 200 px : Rudy doit les télécharger en taille réelle et les envoyer. Volcan, Galion et Usine hantée : quota Canva épuisé, à générer quand les crédits reviennent (environ 2 à 3 images par jour en gratuit).
+- Cantine et Glacière générées dans Canva le 13/11 (images `MAHayMktSas` et `MAHayEhCHGY`, dans ses imports Canva). (Réglé le 14/11 : Claude les récupère lui-même en taille réelle, voir Notes techniques.) Volcan, Galion et Usine hantée : quota Canva épuisé, à générer quand les crédits reviennent (environ 2 à 3 images par jour en gratuit).
 - Pour ajouter une grande map : déposer l'image dans `reference/maps-paysage/`, la copier en `public/assets/maps/wide_<monde>.jpg`, puis ajouter `wide: { w: 1176, h: 661, area }` au monde et replacer pot, counter, board, standLine et obstacles (coordonnées de l'image x 0,7).
 - Reste à voir sur le téléphone : la cuisine est sous les commandes en haut de l'écran quand le chef est loin en bas (en paysage) ; en portrait, les bandes noires des téléphones allongés restent.
 **La liste détaillée de ce qui reste jusqu'au Play Store (qui fait quoi, dans quel ordre) est dans `docs/PUBLICATION.md`.**
@@ -109,6 +117,10 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
 - Murs du fond de la Taverne et de la Cantine : laissés libres, car la marmite et le comptoir sont posés devant.
 
 **Décisions à obtenir du propriétaire**
+- (14/11) Duel en ligne pour la sortie : cacher les 3 boutons EN LIGNE, ou héberger le serveur avant ?
+- (14/11) Compte joueur : Claude conseille pas de mot de passe maison, et plus tard la connexion Google Play Jeux (sauvegarde en ligne). À valider.
+- (14/11) Le logo carré (chat + tomate) en fichier, déposé dans `reference/logo.png`, pour en faire le logo de chargement.
+- (14/11) Les deux images d'exemple (cuisine avec marmites et panneaux, duel en écran coupé en deux) : à faire ou pas, et dans quel ordre.
 - Adresse e-mail d'assistance à publier (sans elle, « Nous contacter » affiche « adresse bientôt disponible »). À régler dans Vercel : `VITE_SUPPORT_EMAIL`.
 - Jeu en ligne et classement mondial : le compte Supabase gratuit de Rudy est plein (2 projets actifs : crm-prospection et duo), donc le projet « bistro-donjon » n'a pas pu être créé. Rudy a dit « pas maintenant » le 11/11, et a confirmé le 12/11 : ne pas toucher aux projets Supabase crm-prospection et duo, le classement mondial se fera plus tard. À reprendre quand il aura choisi : mettre un projet en pause, passer en payant, ou faire le duel sans compte, directement entre téléphones (sans classement).
 - Hébergeur du serveur de duel (servirait aussi au classement mondial).
@@ -116,7 +128,7 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
 - Connexion par compte : avec quel service (Google Play Jeux, e-mail via Supabase…).
 
 ## Erreurs commises et leçons
-- **Image envoyée dans la discussion crue disponible** : une image collée dans la conversation n'est pas un fichier du projet, Claude la voit mais ne peut pas l'enregistrer -> demander à Rudy de la déposer dans `reference/` (ou dans Canva).
+- **Image envoyée dans la discussion crue disponible comme fichier** : une image collée dans la conversation n'est pas un fichier du projet, Claude la voit mais ne peut pas l'enregistrer -> demander à Rudy de la déposer dans `reference/` (ou dans Canva).
 - Tests qui comptent sur la mission du jour (`test_v8`) : la mission change chaque jour, un échec « 3 missions accomplies » peut venir du tirage (ex. « finis 3x les vagues ») -> vérifier le libellé des missions avant de chercher un bug.
 - Corriger les images des maps au chargement du jeu (canvas recréés avec `textures.addCanvas`) rendait le lancement d'une partie très lent (environ 10 s dans le navigateur de test) -> corriger les images une fois pour toutes dans les fichiers, jamais au chargement.
 - **Adresse e-mail en dur** : j'ai failli publier l'adresse du propriétaire dans le jeu et la page de confidentialité sans demander. Leçon : toute donnée personnelle passe par `.env` et se demande d'abord.
