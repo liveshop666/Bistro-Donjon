@@ -26,7 +26,39 @@ export function landscapeHeight(): number {
  * est zoomée RES fois. Toutes les positions du jeu restent les mêmes ; les pixels sont plus réguliers à l'écran
  * et les dessins haute définition gardent leurs détails.
  */
-export const RES = 2;
+/**
+ * Qualité d'affichage. « haute » : rendu 2 fois plus fin (4 fois plus de pixels à dessiner), trop lourd pour
+ * certains téléphones. « fluide » : rendu simple, beaucoup plus léger. Sans choix du joueur, le jeu décide :
+ * fluide sur un téléphone modeste, et il y passe tout seul si une partie rame (voir GameScene).
+ */
+export type Quality = 'haute' | 'fluide';
+const QUALITY_KEY = 'bistro-donjon-qualite';
+export function storedQuality(): Quality | null {
+  try {
+    const q = localStorage.getItem(QUALITY_KEY);
+    return q === 'haute' || q === 'fluide' ? q : null;
+  } catch {
+    return null;
+  }
+}
+export function setQuality(q: Quality): void {
+  try {
+    localStorage.setItem(QUALITY_KEY, q);
+  } catch {
+    /* stockage indisponible */
+  }
+}
+export function wantedRes(): number {
+  const q = storedQuality();
+  if (q) return q === 'haute' ? 2 : 1;
+  const nav = navigator as Navigator & { deviceMemory?: number };
+  return (nav.deviceMemory ?? 8) <= 3 || (nav.hardwareConcurrency ?? 8) <= 4 ? 1 : 2;
+}
+export const RES = wantedRes();
+/** Si la qualité voulue n'est plus celle du jeu chargé, on recharge la page (jamais pendant une partie). */
+export function applyQuality(): void {
+  if (wantedRes() !== RES) window.location.reload();
+}
 
 /**
  * Règle une caméra : elle occupe le rectangle (vx, vy, vw, vh) de l'écran (en coordonnées de page)

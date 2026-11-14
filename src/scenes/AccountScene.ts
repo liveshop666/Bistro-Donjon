@@ -6,6 +6,7 @@ import { openKeyboard } from '../ui/Keyboard';
 import { openModal } from '../ui/Modal';
 import { BUILD_LABEL } from '../core/update';
 import { button, txt } from '../ui/text';
+import { applyQuality, RES, setQuality } from '../core/layout';
 
 export const APP_VERSION = '1.0.0';
 /** Adresse d'assistance montrée aux joueurs : à renseigner dans le fichier .env (VITE_SUPPORT_EMAIL). */
@@ -35,8 +36,13 @@ export class AccountScene extends Phaser.Scene {
       ['CONFIDENTIALITE', 0x4a4f66, () => this.privacy()],
       ['SUPPRIMER MES DONNEES', 0x9a3a2e, () => this.confirmDelete()],
     ];
-    items.forEach(([label, color, cb], i) => button(this, W / 2, 262 + i * 44, 260, 36, label, color, cb));
-    txt(this, W / 2, 440, 'Tes données sont enregistrées\nsur cet appareil uniquement.\nLa sauvegarde en ligne (connexion\navec un compte) arrivera dans une\nprochaine version.', 8, '#6b7391').setOrigin(0.5, 0);
+    // qualité d'affichage : « fluide » pour les téléphones qui rament, « haute » pour une image plus fine
+    items.splice(1, 0, [RES > 1 ? 'IMAGE : HAUTE QUALITE' : 'IMAGE : FLUIDE', 0x6a4a8f, () => {
+      setQuality(RES > 1 ? 'fluide' : 'haute');
+      applyQuality();
+    }]);
+    items.forEach(([label, color, cb], i) => button(this, W / 2, 258 + i * 38, 260, 32, label, color, cb));
+    txt(this, W / 2, 448, 'Tes données sont enregistrées\nsur cet appareil uniquement.\nLa sauvegarde en ligne (connexion\navec un compte) arrivera dans une\nprochaine version.', 8, '#6b7391').setOrigin(0.5, 0);
     txt(this, W / 2, 540, `BISTRO DONJON v${APP_VERSION}\nVersion du ${BUILD_LABEL}\nUn jeu SolveLab`, 8, '#6b7391').setOrigin(0.5, 0);
     button(this, W / 2, 606, 160, 32, 'RETOUR', 0x4a4f66, () => this.scene.start('Menu'));
     void H;

@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { landscapeMenu, MENU_SCALE, portraitMenu } from '../ui/landscapeMenu';
-import { landscapeWanted, RES } from '../core/layout';
+import { applyQuality, landscapeWanted, RES } from '../core/layout';
 import { audio } from '../audio/AudioManager';
 import { CHEF_ORDER, CHEFS, ChefId, DAILY_GIFT, FREE_WORLDS, H, itemLabel, playerLevel, W, worldUnlocked, WORLD_ORDER, WorldId, WORLDS } from '../core/constants';
 import { claimDailyGift, loadProfile, loadRun, saveProfile } from '../core/Storage';
@@ -30,6 +30,7 @@ export class MenuScene extends Phaser.Scene {
   }
 
   create(): void {
+    applyQuality(); // une partie a ramé : on repasse en rendu fluide avant d'afficher le menu
     if (!loadProfile().rulesSeen) {
       // premier lancement : on montre les règles
       saveProfile({ rulesSeen: true });
