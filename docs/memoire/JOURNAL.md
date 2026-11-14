@@ -4,6 +4,10 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
 
 ## Où on en est (14/11/2026)
 
+**15/11/2026 (3) : plus de logo avant le chargement**
+- Rudy voyait encore un logo « Bistro Donjon » avant l'écran de chargement. Appli Android (APK) : l'écran de démarrage du système est maintenant noir et vide (`windowSplashScreenAnimatedIcon` = `drawable/splash_vide.xml`, dans `values/styles.xml` et `values-v31/styles.xml`). Il faut réinstaller l'APK pour en profiter.
+- Version installée depuis Chrome : ce premier écran (icône de l'appli sur fond noir) est dessiné par Android et Chrome eux-mêmes à partir de l'icône ; le jeu ne peut pas le retirer. Le seul moyen serait l'APK (puis le Play Store).
+
 **15/11/2026 (2) : sons et mouvements de la vidéo de pub de Rudy**
 - Rudy a généré sa pub (`reference/3d/pub-video-rudy.mp4`) et veut retrouver les mêmes mouvements et les mêmes bruits dans le jeu, sans bruits « 8-bit ».
 - Sons : 8 vrais bruitages découpés dans sa vidéo (`sh tools/extract_sons.sh` -> `public/assets/sons/`) : coup de poêle (impact + flamme), attaque des flammes, frappe lourde, coup rapide, monstre écrasé, rugissement du boss, final de victoire, marmite. Ils remplacent les bruits synthétisés correspondants (`SAMPLE_OF` dans `AudioManager`) ; les autres petits bruits restent synthétisés. Musique adoucie (filtre + écho de grande salle) pour sonner moins rétro. Note : les extraits contiennent un peu de la musique de la vidéo.
