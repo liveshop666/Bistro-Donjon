@@ -50,9 +50,13 @@ export function setQuality(q: Quality): void {
 }
 export function wantedRes(): number {
   const q = storedQuality();
-  if (q) return q === 'haute' ? 2 : 1;
   const nav = navigator as Navigator & { deviceMemory?: number };
-  return (nav.deviceMemory ?? 8) <= 3 || (nav.hardwareConcurrency ?? 8) <= 4 ? 1 : 2;
+  const mem = nav.deviceMemory ?? 8;
+  const cores = nav.hardwareConcurrency ?? 8;
+  // haute définition : sur un téléphone puissant à écran très fin, rendu 3 fois plus fin (autant de pixels que l'écran)
+  const ultra = mem >= 6 && cores >= 6 && (window.devicePixelRatio || 1) >= 2.5 ? 3 : 2;
+  if (q) return q === 'haute' ? ultra : 1;
+  return mem <= 3 || cores <= 4 ? 1 : ultra;
 }
 export const RES = wantedRes();
 /** Si la qualité voulue n'est plus celle du jeu chargé, on recharge la page (jamais pendant une partie). */

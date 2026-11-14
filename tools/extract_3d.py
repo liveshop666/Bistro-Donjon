@@ -86,7 +86,7 @@ for sheet, order in SHEETS.items():
             crop.save(os.path.join(ROOT, "public", "assets", "ui3d", name + ".png"))
             print(sheet, name, crop.size)
             continue
-        th = Image.open(os.path.join(SP, pixel + ".png")).height * 2
+        th = Image.open(os.path.join(SP, pixel + ".png")).height * 4  # 4 fois la taille pixel : net même en haute définition
         crop = crop.resize((max(1, round(crop.width * th / crop.height)), th), Image.LANCZOS)
         crop.save(os.path.join(OUT, name + ".png"))
         print(sheet, name, crop.size)

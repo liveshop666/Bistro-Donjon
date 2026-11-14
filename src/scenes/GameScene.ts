@@ -183,6 +183,11 @@ export class GameScene extends Phaser.Scene {
     this.effectHit = effect?.hit ?? null;
     this.sliced = this.maxCombo = 0;
     this.chef = new Chef(this, CHEFS[this.chefId], wide ? counter.x - 60 : W / 2, standLine + 100, skin && profile.owned.includes(skin) ? skin : null);
+    // mouvement d'attaque selon l'arme (style 3D)
+    const worn = this.skinItem?.id;
+    this.chef.style = worn === 'skin_gorille' ? 'punch' : worn === 'skin_tigre' ? 'spin'
+      : worn === 'skin_taureau' || worn === 'skin_ours' || this.chefId === 'shiba' ? 'slam'
+      : this.chefId === 'noisette' ? 'double' : 'swing';
     if (this.resume) {
       const r = this.resume;
       this.chef.maxHp = r.maxHp;
@@ -373,15 +378,18 @@ export class GameScene extends Phaser.Scene {
         const diff = Math.abs(Phaser.Math.Angle.Wrap(Math.atan2(e.y - c.y, e.x - c.x) - ang));
         if (!e.dead && d < c.def.range + 8 && diff < 1.2) this.damage(e, dmg);
       }
-      this.arcFx(c.x, c.y - 16, ang, c.def.range, color);
+      if (STYLE_3D && c.style === 'punch') this.punchFx(c, tx, ty, color);
+      else this.arcFx(c.x, c.y - 16, ang, c.def.range, color);
     } else {
       // frappe lourde (zone large) ou hachoirs rapides (zone étroite)
       const zone = c.def.id === 'shiba' ? 38 : 20;
       for (const e of [...this.enemies]) {
         if (!e.dead && Math.hypot(e.x - tx, e.y - ty) < zone + e.radius) this.damage(e, dmg);
       }
-      if (c.def.id === 'shiba' && STYLE_3D) this.slamFx(tx, ty, zone, color);
+      if (c.def.id === 'shiba' && STYLE_3D) this.slamFx(tx, ty, zone, color, this.skinItem?.id);
       else if (c.def.id === 'shiba') this.ringFx(tx, ty - 6, zone, color);
+      else if (STYLE_3D && c.style === 'spin') this.spinFx(c, color);
+      else if (STYLE_3D) this.doubleFx(c, ang, color);
       else this.arcFx(c.x, c.y - 16, ang + (Math.random() - 0.5), c.def.range, color, 0.7);
     }
   }
@@ -866,7 +874,7 @@ export class GameScene extends Phaser.Scene {
     }
     // la map remplit tout l'écran et la caméra suit le chef ; interface et fenêtres par-dessus
     // style 3D : caméra un peu plus proche, personnages plus grands comme sur l'image de référence
-    if (wide) pageCam(main, 0, 0, gw, gh, 0, 0, STYLE_3D ? (land ? 1.4 : 1.15) : 1).setBounds(0, 0, ARENA.w, ARENA.h);
+    if (wide) pageCam(main, 0, 0, gw, gh, 0, 0, STYLE_3D ? (land ? 0.95 : 1) : 1).setBounds(0, 0, ARENA.w, ARENA.h);
     else pageCam(main, 0, 0, gw, gh).setBounds(-2 * W, 0, 5 * W, H);
     this.hudCam = pageCam(this.cameras.add(), 0, 0, gw, gh);
     this.ovlCam = pageCam(this.cameras.add(), 0, 0, gw, gh);
@@ -1130,7 +1138,79 @@ export class GameScene extends Phaser.Scene {
   private camFocus: { x: number; y: number; until: number } | null = null;
 
   /** Frappe lourde (style 3D, Maître Shiba et ses combattants) : onde de choc au sol, éclats et petite secousse. */
-  private slamFx(x: number, y: number, r: number, color: number): void {
+  /** Gorille : coup de poing électrique, éclairs en zigzag vers la cible, étincelles et anneau. */
+  private punchFx(c: Chef, tx: number, ty: number, color: number): void {
+    const g = this.add.graphics().setDepth(1702).setBlendMode(Phaser.BlendModes.ADD);
+    const sx = c.x + c.facing * 12;
+    const sy = c.y - 22;
+    for (let k = 0; k < 3; k++) {
+      const pts: Phaser.Math.Vector2[] = [new Phaser.Math.Vector2(sx, sy)];
+      for (let i = 1; i <= 5; i++) {
+        const t = i / 5;
+        pts.push(new Phaser.Math.Vector2(sx + (tx - sx) * t + (Math.random() - 0.5) * 14, sy + (ty - 14 - sy) * t + (Math.random() - 0.5) * 14));
+      }
+      g.lineStyle(k === 0 ? 4 : 2, k === 0 ? 0xffffff : color, 1).strokePoints(pts);
+    }
+    g.fillStyle(color, 0.5).fillCircle(tx, ty - 14, 14);
+    g.fillStyle(0xffffff, 0.9).fillCircle(tx, ty - 14, 6);
+    this.tweens.add({ targets: g, alpha: 0, duration: 200, onComplete: () => g.destroy() });
+    this.ringFx(tx, ty - 10, 26, color, 220);
+    for (let i = 0; i < 8; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const p = this.add.image(tx, ty - 14, 'particule').setTint(i % 2 ? color : 0xffffff).setDepth(1702).setBlendMode(Phaser.BlendModes.ADD);
+      this.tweens.add({ targets: p, x: tx + Math.cos(a) * 26, y: ty - 14 + Math.sin(a) * 20, alpha: 0, duration: 220, onComplete: () => p.destroy() });
+    }
+  }
+
+  /** Tigre : tourbillon de flammes autour du chef. */
+  private spinFx(c: Chef, color: number): void {
+    const cx = c.x;
+    const cy = c.y - 14;
+    const o = { t: 0 };
+    const g = this.add.graphics().setDepth(1700).setBlendMode(Phaser.BlendModes.ADD);
+    this.tweens.add({
+      targets: o, t: 1, duration: 320, ease: 'Sine.out',
+      onUpdate: () => {
+        g.clear();
+        const a0 = o.t * Math.PI * 2.2;
+        for (let k = 0; k < 3; k++) {
+          const rr = 28 + k * 6;
+          g.lineStyle(10 - k * 3, k === 2 ? 0xffffff : color, (1 - o.t) * (k === 0 ? 0.6 : 1));
+          g.beginPath().arc(cx, cy, rr, a0, a0 + Math.PI * 1.2).strokePath();
+        }
+      },
+      onComplete: () => g.destroy(),
+    });
+    for (let i = 0; i < 10; i++) {
+      const a = (Math.PI * 2 * i) / 10;
+      const p = this.add.image(cx + Math.cos(a) * 30, cy + Math.sin(a) * 22, 'particule').setTint(i % 2 ? color : 0xffffff).setDepth(1701).setScale(1.5).setBlendMode(Phaser.BlendModes.ADD);
+      this.tweens.add({ targets: p, x: cx + Math.cos(a) * 48, y: cy + Math.sin(a) * 34 - 8, alpha: 0, duration: 340, onComplete: () => p.destroy() });
+    }
+  }
+
+  /** Mlle Noisette : deux coups de hachoir croisés (un X), rapides. */
+  private doubleFx(c: Chef, ang: number, color: number): void {
+    const x = c.x;
+    const y = c.y - 16;
+    this.flameCrescent(x, y, ang - 0.35, c.def.range + 2, 0.7, color);
+    this.time.delayedCall(90, () => this.flameCrescent(x, y, ang + 0.35, c.def.range + 2, 0.7, color));
+  }
+
+  private slamFx(x: number, y: number, r: number, color: number, skin?: string): void {
+    if (skin === 'skin_taureau') {
+      // hachoir enflammé : colonne de flammes qui jaillit du sol
+      for (let i = 0; i < 14; i++) {
+        const p = this.add.image(x + (Math.random() - 0.5) * r, y - 4, 'particule').setTint([0xff3b1e, 0xff8a1e, 0xffc533][i % 3]).setDepth(1701).setScale(2).setBlendMode(Phaser.BlendModes.ADD);
+        this.tweens.add({ targets: p, y: y - 30 - Math.random() * 30, alpha: 0, scale: 0.3, duration: 360 + Math.random() * 200, onComplete: () => p.destroy() });
+      }
+    } else if (skin === 'skin_ours') {
+      // marteau de glace : éclats de glace qui jaillissent
+      for (let i = 0; i < 10; i++) {
+        const a = -Math.PI * (0.1 + 0.8 * Math.random());
+        const s = this.add.image(x, y - 4, 'etincelle').setTint(0xbff0ff).setDepth(1701).setScale(0.35).setAngle(Math.random() * 90);
+        this.tweens.add({ targets: s, x: x + Math.cos(a) * r * 1.3, y: y - 4 + Math.sin(a) * r, angle: '+=180', alpha: 0, duration: 420, ease: 'Quad.out', onComplete: () => s.destroy() });
+      }
+    }
     const fire = Phaser.Display.Color.ValueToColor(color);
     const ring = this.add.graphics({ x, y }).setDepth(1700).setBlendMode(Phaser.BlendModes.ADD);
     const o = { t: 0 };

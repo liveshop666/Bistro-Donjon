@@ -117,7 +117,7 @@ export class Hud {
     scene.input.on('pointerupoutside', this.releaseFn);
 
     // bouton PAUSE en bas (celui du haut reste aussi) ; pas en paysage
-    if (!land) this.bottomPause(onPause);
+    if (!land && !STYLE_3D) this.bottomPause(onPause); // style 3D : la pause est en haut à droite (une zone vide bloquait tout le toucher en vertical)
 
     for (const o of scene.children.list) if (!before.has(o)) this.own.add(o);
     recipes.onChange = () => this.buildOrders();
