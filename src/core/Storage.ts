@@ -1,4 +1,4 @@
-import { ChefId, DAILY_GIFT, IngredientId, SHOP, ShopItem, UpgradeId, WorldId } from './constants';
+import { allOwnable, ChefId, DAILY_GIFT, IngredientId, SHOP, ShopItem, TEST_UNLOCK_ALL, UpgradeId, WORLD_ORDER, WorldId } from './constants';
 
 /** Sauvegardes locales : profil du joueur et partie en cours. */
 
@@ -71,14 +71,24 @@ function write(key: string, value: unknown): void {
   }
 }
 
-export function loadProfile(): Profile {
+function storedProfile(): Profile {
   const raw = read<Partial<Profile>>(PROFILE_KEY) ?? {};
   const p = { ...DEFAULT, ...raw };
   // anciens profils : le total gagné démarre à ce que le joueur possède déjà
   if (raw.earned === undefined) p.earned = p.coins;
   return p;
 }
-export const saveProfile = (p: Partial<Profile>): void => write(PROFILE_KEY, { ...loadProfile(), ...p });
+/** Profil vu par le jeu. En mode test, tout est possédé et les 8 mondes sont ouverts, sans toucher à la sauvegarde. */
+export function loadProfile(): Profile {
+  const p = storedProfile();
+  return TEST_UNLOCK_ALL ? { ...p, owned: allOwnable(), unlocked: WORLD_ORDER.length } : p;
+}
+export function saveProfile(p: Partial<Profile>): void {
+  const next = { ...storedProfile(), ...p };
+  // mode test : ce qui est « possédé » est factice, on garde les vraies valeurs de la sauvegarde
+  if (TEST_UNLOCK_ALL) Object.assign(next, { owned: storedProfile().owned, unlocked: storedProfile().unlocked });
+  write(PROFILE_KEY, next);
+}
 
 export function loadRun(): RunSave | null {
   const r = read<RunSave>(RUN_KEY);

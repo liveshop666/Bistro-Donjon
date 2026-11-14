@@ -2,7 +2,16 @@
 
 Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en haut à chaque session.
 
-## Où on en est (12/11/2026)
+## Où on en est (14/11/2026)
+
+**14/11/2026 : mode test « tout débloqué », 7 grandes maps sur 8**
+- **MODE TEST ACTIVÉ (demande de Rudy, pour tout essayer lui-même)** : tous les packs, costumes, chefs combattants, effets, armes et les 8 mondes sont ouverts pour tout le monde. Rien n'est écrit dans la sauvegarde : quand Rudy dira « on remet », passer `TEST_UNLOCK_ALL` à `false` dans `src/core/constants.ts` et chacun retrouve exactement ce qu'il avait. **À remettre à `false` avant le Play Store.**
+- Grandes maps ajoutées : Cantine, Glacière, Volcan (générée le 14/11), Galion (générée le 14/11). Il ne manque que l'**Usine hantée** : quota Canva épuisé après 2 images, à regénérer quand les crédits reviennent (la consigne est dans le compte-rendu du 14/11 ; image de style à donner en référence : la Taverne, `MAHauLIdJrg`).
+- Les maps marchent aussi en duel (même terrain que le solo).
+- Tapis roulants de la Cantine : sur la grande map, deux bandes sur toute la largeur où l'on marche.
+- Cuisine plus visible (demande de Rudy « il faut qu'on voie tout ») : un halo clignote au sol sous la marmite (orange), la planche (vert) et le service (jaune) ; en paysage, la caméra tient le chef un peu plus bas pour que la cuisine ne soit plus cachée sous les commandes.
+- Testé dans le navigateur : les 4 nouveaux mondes en paysage, en portrait et en duel, sans erreur ; boutique en mode test ; costume premium en jeu. Pas de partie complète jouée sur ces 4 mondes : les décors solides sont placés à l'œil, à ajuster après les essais de Rudy.
+- **Pas fait, demandé le 14/11** : (1) le logo carré (chat cuisinier + tomate) comme logo de chargement, sans le blanc sur les côtés : l'image envoyée dans la discussion n'arrive pas dans les fichiers, Rudy doit la déposer dans `reference/` (nom conseillé : `logo.png`) ; (2) ses deux images d'exemple (cuisine avec marmites et panneaux de recettes, duel en écran coupé en deux avec un stand par chef) : ce sont de nouveaux dessins et une nouvelle mise en page du duel, à préciser avec lui.
 
 **13/11/2026 : grandes maps dans le jeu (3 sur 8)**
 - Clairière, Marché de nuit et Taverne se jouent sur leur grande map Canva (1680 x 944, affichée à 70 % : terrain de 1176 x 661). Plus de copies en miroir ni de mur invisible : la caméra suit le chef partout, en portrait comme en paysage. Images : `public/assets/maps/wide_<monde>.jpg` (originaux dans `reference/maps-paysage/`). Pour chaque monde : marmite, planche, comptoir, zone où marcher et décors solides placés sur le dessin (`wide` dans `WORLDS`, `src/core/constants.ts`). Les petites maps restent pour les menus.
@@ -105,6 +114,7 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
 - Connexion par compte : avec quel service (Google Play Jeux, e-mail via Supabase…).
 
 ## Erreurs commises et leçons
+- **Image envoyée dans la discussion crue disponible** : une image collée dans la conversation n'est pas un fichier du projet, Claude la voit mais ne peut pas l'enregistrer -> demander à Rudy de la déposer dans `reference/` (ou dans Canva).
 - Tests qui comptent sur la mission du jour (`test_v8`) : la mission change chaque jour, un échec « 3 missions accomplies » peut venir du tirage (ex. « finis 3x les vagues ») -> vérifier le libellé des missions avant de chercher un bug.
 - Corriger les images des maps au chargement du jeu (canvas recréés avec `textures.addCanvas`) rendait le lancement d'une partie très lent (environ 10 s dans le navigateur de test) -> corriger les images une fois pour toutes dans les fichiers, jamais au chargement.
 - **Adresse e-mail en dur** : j'ai failli publier l'adresse du propriétaire dans le jeu et la page de confidentialité sans demander. Leçon : toute donnée personnelle passe par `.env` et se demande d'abord.
@@ -122,6 +132,9 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
 - **Scène relancée à moitié pendant le test** : arrêter toutes les scènes et démarrer « Game » dans la même image laisse une scène sans caméra. Leçon : arrêter, attendre un instant, puis démarrer.
 
 ## Notes techniques
+- Récupérer une image Canva en taille réelle (trouvé le 14/11) : Canva ne donne que des aperçus de 200 px, mais on peut poser l'image sur une page d'un design puis exporter la page. Le design « Bistro Donjon - export des maps » (`DAHa4Him79Y`) sert à ça : ouvrir une modification (`read-design` avec `open_transaction`), `add_page` 2720 x 1536, `insert_fill` avec l'identifiant de l'image, enregistrer, puis `export-design` en JPG largeur 1680 sur les pages voulues. Rudy n'a plus besoin de télécharger les maps à la main.
+- Mode test : `loadProfile()` (Storage) renvoie tout possédé quand `TEST_UNLOCK_ALL` est vrai, et `saveProfile()` n'enregistre jamais `owned` ni `unlocked` dans ce mode.
+- Tapis roulants : `conveyorsOf(monde)` dans `constants.ts` (bandes différentes pour petite et grande map).
 - Menu et boutique en paysage : dessinés exprès (`createLandscape()` dans `MenuScene` et `ShopScene`), canvas de 360 de haut via `landscapeMenu()` ; en portrait `portraitMenu()`. Les deux redémarrent l'écran quand on tourne le téléphone. Mon compte, Règles, Duel : `setupLandscapeMenu(this[, coupe])` (deux colonnes).
 - Deux colonnes : `src/ui/landscapeMenu.ts`, 3 caméras : colonne gauche, colonne droite (défilée de la hauteur de coupe) et fenêtres (objets de profondeur >= 3000, zoom réduit si la fenêtre est trop haute). La caméra principale ne sert que de fond. Pour lire la position d'un doigt en coordonnées de page : `pageToWorld()`.
 - Paysage : `src/core/layout.ts` (canvas large, 480 de haut). `GameScene.setupLayout()` change la taille du canvas et crée 2 caméras en plus : `hudCam` (interface fixe, coordonnées d'écran) et `ovlCam` (objets de profondeur >= 2040 : bannières, fumée, fenêtres, dessinés en coordonnées portrait au centre). `filterCameras()` (événement `prerender`) choisit la caméra de chaque objet. Le `Hud` calcule ses positions selon la taille du canvas et est reconstruit à chaque rotation. Les gestes de tranche sont convertis en coordonnées de la carte (`getWorldPoint`). En quittant la partie, le canvas revient à 360 x 640. Rotation Android : `screenOrientation="fullUser"` dans `AndroidManifest.xml` (suit le réglage de rotation auto du téléphone).

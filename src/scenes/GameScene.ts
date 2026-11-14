@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { landscapeHeight, landscapeWanted, landscapeWidth, pageCam, RES } from '../core/layout';
 import { audio, Sfx, Tune } from '../audio/AudioManager';
 import {
-  ARENA, BOSS_REWARD, ChefId, ENEMIES, FREE_WORLDS, ShopItem, WORLD_HP_STEP, worldRank, CHEFS, CHOP_TIME, COMBO_GOLD, COMBO_SIZE, CONVEYORS, EnemyId, GameMode, H, IngredientId, INGREDIENTS, itemLabel, playerLevel, ORDER_PATIENCE,
+  ARENA, BOSS_REWARD, ChefId, ENEMIES, FREE_WORLDS, ShopItem, WORLD_HP_STEP, worldRank, CHEFS, CHOP_TIME, COMBO_GOLD, COMBO_SIZE, conveyorsOf, EnemyId, GameMode, H, IngredientId, INGREDIENTS, itemLabel, playerLevel, ORDER_PATIENCE,
   POWER_LABEL, POWER_TIME, SHOP, Sabotage, SABOTAGE_LABEL, SABOTAGES, TIP_BONUS, UpgradeDef, W, WAVES, WORLD_ORDER, WorldDef, WorldId, WORLDS,
 } from '../core/constants';
 import { GameManager, Phase } from '../core/GameManager';
@@ -146,11 +146,11 @@ export class GameScene extends Phaser.Scene {
         this.add.image(k * W - Math.sign(k) * 2 * Math.abs(k), 0, 'map_' + this.worldId).setOrigin(0).setDepth(-101 - Math.abs(k)).setFlipX(k % 2 !== 0);
       }
     }
-    if (this.world.mechanic === 'tapis') {
-      for (const c of CONVEYORS) {
-        this.add.rectangle(0, c.y, W, c.h, 0x4ff3ff, 0.12).setOrigin(0).setDepth(-50);
-        this.conveyors.push(this.add.tileSprite(0, c.y + c.h / 2, W, 12, 'fleche_tapis').setOrigin(0, 0.5).setAlpha(0.5).setDepth(-49));
-      }
+    // tapis roulants : sur une grande map, ils ne couvrent que la zone où l'on marche
+    const [bx, bw] = wide ? [wide.area.x, wide.area.w] : [0, W];
+    for (const c of conveyorsOf(this.world)) {
+      this.add.rectangle(bx, c.y, bw, c.h, 0x4ff3ff, 0.12).setOrigin(0).setDepth(-50);
+      this.conveyors.push(this.add.tileSprite(bx, c.y + c.h / 2, bw, 12, 'fleche_tapis').setOrigin(0, 0.5).setAlpha(0.5).setDepth(-49));
     }
 
     this.gm = new GameManager(this.mode);
@@ -167,6 +167,11 @@ export class GameScene extends Phaser.Scene {
     this.add.image(counter.x, counter.y, 'comptoir').setOrigin(0.5, 1).setDepth(counter.y);
     txt(this, pot.x, pot.y + 4, 'MARMITE', 8, '#ffe9b0').setOrigin(0.5, 0).setDepth(-10);
     txt(this, counter.x, counter.y + 4, 'SERVICE', 8, '#ffe9b0').setOrigin(0.5, 0).setDepth(-10);
+    // halo au sol sous chaque poste de cuisine, pour les repérer d'un coup d'œil sur les grandes maps
+    for (const [p, color] of [[pot, 0xff9a3c], [board, 0x7dff7d], [counter, 0xffe27a]] as const) {
+      const halo = this.add.ellipse(p.x, p.y - 2, 58, 22, color, 0.4).setDepth(-20);
+      this.tweens.add({ targets: halo, alpha: 0.12, scaleX: 1.2, scaleY: 1.2, duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    }
     this.counterHint = txt(this, counter.x, counter.y - 40, 'ICI !', 8, '#ffe27a').setOrigin(0.5).setDepth(1500).setVisible(false);
 
     const profile = loadProfile();
@@ -306,7 +311,7 @@ export class GameScene extends Phaser.Scene {
 
   private updateChef(dt: number): void {
     const { chef, gm } = this;
-    const onBelt = this.world.mechanic === 'tapis' && CONVEYORS.some((c) => chef.y >= c.y && chef.y <= c.y + c.h);
+    const onBelt = conveyorsOf(this.world).some((c) => chef.y >= c.y && chef.y <= c.y + c.h);
     const speed = chef.def.speed * (1 + 0.15 * gm.level('bottes')) * (chef.powers.vitesse > 0 ? 1.35 : 1) * (onBelt ? 1.6 : 1);
     const dir = this.inverseT > 0 ? this.touch.dir.clone().negate() : this.touch.dir;
     if (!this.dashing) chef.move(dir, speed, dt, this.bounds, this.blocked);
@@ -868,7 +873,8 @@ export class GameScene extends Phaser.Scene {
     const vh = main.height / main.zoom;
     const [x0, x1] = this.world.wide ? [0, ARENA.w] : [-2 * W, 3 * W];
     const tx = Phaser.Math.Clamp(this.chef.x, x0 + vw / 2, x1 - vw / 2);
-    const ty = Phaser.Math.Clamp(this.chef.y, vh / 2, Math.max(vh / 2, ARENA.h - vh / 2));
+    // en paysage, les commandes couvrent le haut de l'écran : le chef est tenu un peu plus bas pour laisser voir la cuisine
+    const ty = Phaser.Math.Clamp(this.chef.y - (this.land ? 60 : 0), vh / 2, Math.max(vh / 2, ARENA.h - vh / 2));
     const c = main.midPoint;
     main.centerOn(c.x + (tx - c.x) * k, c.y + (ty - c.y) * k);
   }

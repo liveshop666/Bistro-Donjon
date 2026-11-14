@@ -214,27 +214,38 @@ export const WORLDS: Record<WorldId, WorldDef> = {
   },
   cantine: {
     id: 'cantine', name: 'CANTINE CYBER', hint: 'Tapis roulants rapides', mechanic: 'tapis',
-    pot: { x: 90, y: 284 }, counter: { x: 266, y: 284 }, board: { x: 178, y: 292 }, standLine: 320,
+    wide: { w: 1176, h: 661, area: { x: 120, y: 0, w: 936, h: 648 } },
+    pot: { x: 470, y: 222 }, counter: { x: 715, y: 222 }, board: { x: 590, y: 228 }, standLine: 244,
+    obstacles: [
+      { x: 120, y: 214, w: 165, h: 95 }, { x: 895, y: 214, w: 161, h: 95 }, // distributeurs
+      { x: 120, y: 515, w: 185, h: 146 }, { x: 870, y: 515, w: 186, h: 146 }, // blocs des poubelles, en bas
+    ],
   },
   // ---- Mondes 5 à 8 (planche du 11/11/2026) : nouveaux monstres, boss Roi Fromage
   glaciere: {
     id: 'glaciere', name: 'LA GLACIERE', hint: 'Monstres givrés', mechanic: 'none',
-    pot: { x: 120, y: 280 }, counter: { x: 250, y: 280 }, board: { x: 185, y: 288 }, standLine: 316,
-    obstacles: [{ x: 0, y: 500, w: 56, h: 140 }, { x: 286, y: 596, w: 74, h: 44 }], // cristaux et sapin gelés du bas
+    wide: { w: 1176, h: 661, area: { x: 160, y: 0, w: 850, h: 600 } },
+    pot: { x: 455, y: 236 }, counter: { x: 705, y: 236 }, board: { x: 580, y: 242 }, standLine: 258,
+    obstacles: [{ x: 188, y: 566, w: 70, h: 40 }, { x: 918, y: 566, w: 72, h: 40 }], // tonneaux gelés du bas
     swap: { tomate: ['ail'], champi: ['aubergine'], gelee: ['oignon'], piment: ['mais'] },
     boss: 'roi_fromage', bossName: 'ROI FROMAGE', minion: 'cube_fromage',
   },
   volcan: {
     id: 'volcan', name: 'VOLCAN BARBECUE', hint: 'Tonneaux explosifs', mechanic: 'tonneaux',
-    pot: { x: 110, y: 280 }, counter: { x: 250, y: 280 }, board: { x: 180, y: 288 }, standLine: 316,
-    obstacles: [{ x: 0, y: 330, w: 42, h: 180 }, { x: 318, y: 330, w: 42, h: 180 }], // rivières de lave
+    wide: { w: 1176, h: 661, area: { x: 160, y: 0, w: 860, h: 556 } },
+    pot: { x: 470, y: 186 }, counter: { x: 665, y: 204 }, board: { x: 340, y: 188 }, standLine: 222,
+    obstacles: [{ x: 745, y: 200, w: 170, h: 38 }, { x: 160, y: 470, w: 36, h: 90 }], // tabourets du comptoir, tonneaux
     swap: { tomate: ['ail'], champi: ['citrouille'], gelee: ['oignon'], piment: ['hotdog'] },
     boss: 'roi_fromage', bossName: 'ROI FROMAGE', minion: 'cube_fromage',
   },
   bateau: {
     id: 'bateau', name: 'GALION PIRATE', hint: 'Monstres en file serrée', mechanic: 'file',
-    pot: { x: 130, y: 292 }, counter: { x: 245, y: 292 }, board: { x: 188, y: 300 }, standLine: 328,
-    obstacles: [{ x: 0, y: 330, w: 30, h: 310 }, { x: 330, y: 330, w: 30, h: 310 }], // bastingages : on ne marche pas sur la mer
+    wide: { w: 1176, h: 661, area: { x: 210, y: 0, w: 785, h: 585 } },
+    pot: { x: 497, y: 196 }, counter: { x: 665, y: 206 }, board: { x: 382, y: 194 }, standLine: 226,
+    obstacles: [
+      { x: 722, y: 206, w: 192, h: 46 }, { x: 950, y: 192, w: 50, h: 30 }, // tabourets du comptoir, gros tonneau
+      { x: 215, y: 548, w: 65, h: 40 }, { x: 900, y: 548, w: 65, h: 40 }, // canons du bas
+    ],
     swap: { tomate: ['ail', 'cube_fromage'], champi: ['aubergine', 'citrouille'], gelee: ['oignon'], piment: ['mais', 'hotdog'] },
     boss: 'roi_fromage', bossName: 'ROI FROMAGE', minion: 'cube_fromage',
   },
@@ -259,16 +270,26 @@ export const worldRank = (id: WorldId): number => Math.max(0, WORLD_ORDER.indexO
  * Les mondes 5 à 8 s'obtiennent avec un pack de la boutique (payant, ou énormément de pièces).
  */
 export const FREE_WORLDS = 4;
+/**
+ * MODE TEST (demande de Rudy du 14/11) : tout est débloqué pour essayer le jeu en entier (packs, costumes,
+ * effets, armes, chefs combattants, les 8 mondes). Rien n'est écrit dans la sauvegarde du joueur :
+ * remettre `false` suffit pour retrouver exactement ce qu'il possédait. À REMETTRE À `false` AVANT LE PLAY STORE.
+ */
+export const TEST_UNLOCK_ALL = true;
 export const worldKey = (id: WorldId): string => 'monde_' + id;
 export function worldUnlocked(id: WorldId, unlocked: number, owned: string[]): boolean {
   const i = WORLD_ORDER.indexOf(id);
   return i < FREE_WORLDS ? i < unlocked : owned.includes(worldKey(id));
 }
+/** Tout ce qu'on peut posséder : articles de la boutique, contenu des packs, clés des mondes payants. */
+export const allOwnable = (): string[] => [...new Set([...SHOP.flatMap((it) => [it.id, ...(it.items ?? [])]), ...WORLD_ORDER.map(worldKey)])];
 
 export const WORLD_ORDER: WorldId[] = ['clairiere', 'marche', 'taverne', 'cantine', 'glaciere', 'volcan', 'bateau', 'bonbons'];
 export const CHEF_ORDER: ChefId[] = ['moustachu', 'shiba', 'noisette'];
-/** Bandes horizontales des tapis roulants (monde 4). */
+/** Bandes horizontales des tapis roulants (Cantine, Usine hantée) : petite map, puis grande map. */
 export const CONVEYORS = [{ y: 430, h: 36 }, { y: 540, h: 36 }];
+export const WIDE_CONVEYORS = [{ y: 340, h: 36 }, { y: 450, h: 36 }];
+export const conveyorsOf = (w: WorldDef): { y: number; h: number }[] => (w.mechanic !== 'tapis' ? [] : w.wide ? WIDE_CONVEYORS : CONVEYORS);
 
 // ---------------------------------------------------------------- Cuisine
 /** Patience d'un client (s). Servi avant la moitié : pourboire. Dépassée : le client part, le combo retombe. */
