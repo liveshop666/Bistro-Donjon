@@ -122,6 +122,12 @@ export class BootScene extends Phaser.Scene {
       g.fillStyle(0xa9713d).fillRect(1, 5, 10, 4);
     });
     g.destroy();
+    // écran de chargement (logo, dans index.html) : il s'efface en fondu
+    const splash = document.getElementById('splash');
+    if (splash) {
+      splash.style.opacity = '0';
+      window.setTimeout(() => splash.remove(), 350);
+    }
     this.scene.start('Menu');
   }
 }
