@@ -21,6 +21,12 @@ SHEETS = {
     "monstres-3d.png": [("ail", "enemies/ail"), ("aubergine", "enemies/aubergine"), ("mais", "enemies/mais"), ("oignon", "enemies/oignon"),
                         ("citrouille", "enemies/citrouille"), ("hotdog", "enemies/hotdog"), ("cube_fromage", "enemies/cube_fromage"),
                         ("roi_fromage", "enemies/roi_fromage")],
+    "costumes-3d.png": [("skin_patissier", "skins/skin_patissier"), ("skin_chevalier", "skins/skin_chevalier"),
+                        ("skin_samourai", "skins/skin_samourai"), ("skin_shiba_samourai", "skins/skin_shiba_samourai"),
+                        ("skin_cyber", "skins/skin_cyber"), ("skin_astronaute", "skins/skin_astronaute")],
+    # objets de la cuisine et ingrédients : même taille que les dessins pixel (cadre max), dossier ui3d
+    "cuisine-3d.png": [("marmite", "=42x46"), ("planche", "=36x24"), ("comptoir", "=48x30"), ("ing_tomate", "=18x18"),
+                       ("ing_champignon", "=18x18"), ("ing_sucre", "=18x18"), ("ing_piment", "=18x18")],
 }
 os.makedirs(OUT, exist_ok=True)
 for sheet, order in SHEETS.items():
@@ -55,12 +61,17 @@ for sheet, order in SHEETS.items():
             break
     n = len(order)
     bodies = sorted(ids[np.argsort(sizes)[::-1][:n]], key=lambda i: cents[i - 1][1])
+    boxes = ndimage.find_objects(lab)
     owner = {}
     for i in ids:
         if sizes[i - 1] < 30:
             continue  # poussière
         cy, cx = cents[i - 1]
-        owner[i] = min(range(n), key=lambda b: abs(cents[bodies[b] - 1][1] - cx) + 0.3 * abs(cents[bodies[b] - 1][0] - cy))
+        # morceau détaché (arme, éclair) : au corps dont le bord est le plus proche (pas le centre : un corps large tirerait tout)
+        def gap(b):
+            sl = boxes[bodies[b] - 1]
+            return max(sl[1].start - cx, 0, cx - sl[1].stop) + 0.3 * max(sl[0].start - cy, 0, cy - sl[0].stop)
+        owner[i] = min(range(n), key=gap)
     for b, (name, pixel) in enumerate(order):
         mine = [i for i, o in owner.items() if o == b]
         m = np.isin(lab, mine)
@@ -68,6 +79,13 @@ for sheet, order in SHEETS.items():
         out = rgba.copy()
         out[:, :, 3] = np.where(m, rgba[:, :, 3], 0)
         crop = Image.fromarray(out).crop((xs.min(), ys.min(), xs.max() + 1, ys.max() + 1))
+        if pixel.startswith("="):
+            bw, bh = map(int, pixel[1:].split("x"))
+            k = min(bw / crop.width, bh / crop.height)
+            crop = crop.resize((max(1, round(crop.width * k)), max(1, round(crop.height * k))), Image.LANCZOS)
+            crop.save(os.path.join(ROOT, "public", "assets", "ui3d", name + ".png"))
+            print(sheet, name, crop.size)
+            continue
         th = Image.open(os.path.join(SP, pixel + ".png")).height * 2
         crop = crop.resize((max(1, round(crop.width * th / crop.height)), th), Image.LANCZOS)
         crop.save(os.path.join(OUT, name + ".png"))

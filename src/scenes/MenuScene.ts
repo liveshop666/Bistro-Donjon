@@ -82,7 +82,7 @@ export class MenuScene extends Phaser.Scene {
     });
     this.info = txt(this, W / 2, 204, '').setOrigin(0.5, 0);
     this.stats = this.add.graphics();
-    ['VIE', 'VITESSE', 'DEGATS'].forEach((s, i) => txt(this, 96, 250 + i * 14, s, 8, '#bfc8e0'));
+    ['VIE', 'VITESSE', 'DEGATS'].forEach((s, i) => txt(this, 96, 250 + i * 14, s, 8, '#bfc8e0').setOrigin(0, 0.15));
 
     // --- Mondes
     txt(this, W / 2, 304, 'CHOISIS TON MONDE', 8, '#8fe0ff').setOrigin(0.5);

@@ -8,38 +8,49 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload(): void {
+    // barre de chargement de l'écran d'accueil (index.html)
+    const fill = document.getElementById('splash-fill');
+    const label = document.getElementById('splash-txt');
+    this.load.on('progress', (v: number) => {
+      if (fill) fill.style.width = `${Math.max(4, Math.round(v * 100))}%`;
+      if (label) label.textContent = `Chargement... ${Math.round(v * 100)} %`;
+    });
     this.load.setPath('assets/');
     for (const c of CHEF_ORDER) {
       this.load.image(c, `sprites/chefs/${c}.png`);
       this.load.image('portrait_' + c, `sprites/chefs/portrait_${c}.png`);
       // grands dessins haute définition (menu en paysage), découpés par tools/extract_hd_chefs.py
-      this.load.image('hd_' + c, `sprites/chefs/hd_${c}.png`);
-      this.load.image('hdp_' + c, `sprites/chefs/hdp_${c}.png`);
+      this.load.image('hd_' + c, STYLE_3D ? `sprites3d/${c}.png` : `sprites/chefs/hd_${c}.png`);
+      this.load.image('hdp_' + c, STYLE_3D ? `sprites3d/${c}.png` : `sprites/chefs/hdp_${c}.png`);
     }
     // style 3D : la même clé charge l'image 3D à la place du dessin pixel
     const art = (k: string, pixel: string) => (is3d(k) ? `sprites3d/${ART_3D[k]}.png` : pixel);
     for (const f of SPRITE_FILES.chefs) this.load.image(f, art(f, `sprites/chefs/${f}.png`));
     for (const it of SHOP) if (it.sprite) this.load.image(it.sprite, art(it.sprite, `sprites/skins/${it.sprite}.png`));
     for (const e of SPRITE_FILES.enemies) this.load.image(e, art(e, `sprites/enemies/${e}.png`));
-    for (const w of WORLD_ORDER) this.load.image('map_' + w, `maps/${w}.png`);
+    // style 3D : les fonds des menus (et les vignettes des mondes) sont tirés des maps 3D
+    for (const w of WORLD_ORDER) this.load.image('map_' + w, STYLE_3D ? `maps/port3d_${w}.jpg` : `maps/${w}.png`);
     // grandes maps paysage (le terrain de la partie) ; les petites restent pour les menus
     for (const w of WORLD_ORDER) if (WORLDS[w].wide) this.load.image('wide_' + w, STYLE_3D && WORLD_3D[w] ? `maps/wide3d_${w}.jpg` : `maps/wide_${w}.jpg`);
-    for (const i of INGREDIENTS) this.load.image('ing_' + i, `ui/ing_${i}.png`);
+    if (!STYLE_3D) for (const i of INGREDIENTS) this.load.image('ing_' + i, `ui/ing_${i}.png`);
     for (const u of UPGRADES) this.load.image(u.icon, `ui/${u.icon}.png`);
     this.load.image('logo', '../logo.png');
     // interface façon image de référence (découpée par tools/extract_ui3d.py)
     if (STYLE_3D) for (const k of ['btn_attaque', 'btn_feu', 'joy_pommeau', 'chrono', 'piece', 'pause', 'coeur', 'coeur_vide']) this.load.image('ui3d_' + k, `ui3d/${k}.png`);
-    for (const k of ['marmite', 'coeur', 'piece', 'bouton_ultime']) this.load.image(k, `ui/${k}.png`);
+    for (const k of ['marmite', 'coeur', 'piece', 'bouton_ultime']) this.load.image(k, STYLE_3D && k === 'marmite' ? 'ui3d/marmite.png' : `ui/${k}.png`);
+    // style 3D : planche, comptoir et ingrédients redessinés (même taille que les dessins pixel)
+    if (STYLE_3D) for (const k of ['planche', 'comptoir', 'ing_tomate', 'ing_champignon', 'ing_sucre', 'ing_piment']) this.load.image(k, `ui3d/${k}.png`);
   }
 
   create(): void {
     // les dessins HD sont réduits à l'affichage : lissage pour garder tous les détails
     for (const c of CHEF_ORDER) for (const k of ['hd_' + c, 'hdp_' + c]) this.textures.get(k).setFilter(Phaser.Textures.FilterMode.LINEAR);
-    for (const k of this.textures.getTextureKeys()) if (k.startsWith('ui3d_')) this.textures.get(k).setFilter(Phaser.Textures.FilterMode.LINEAR);
+    for (const k of this.textures.getTextureKeys()) if (k.startsWith('ui3d_') || (STYLE_3D && (k.startsWith('ing_') || ['marmite', 'planche', 'comptoir'].includes(k)))) this.textures.get(k).setFilter(Phaser.Textures.FilterMode.LINEAR);
     // images 3D : lissées (pas de gros pixels)
     for (const k of Object.keys(ART_3D)) if (is3d(k) && this.textures.exists(k)) this.textures.get(k).setFilter(Phaser.Textures.FilterMode.LINEAR);
     const g = this.make.graphics({ x: 0, y: 0 }, false);
     const tex = (key: string, w: number, h: number, draw: () => void) => {
+      if (this.textures.exists(key)) return; // déjà chargé (image 3D)
       g.clear();
       draw();
       g.generateTexture(key, w, h);

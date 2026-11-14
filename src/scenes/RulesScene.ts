@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { setupLandscapeMenu } from '../ui/landscapeMenu';
-import { H, W } from '../core/constants';
+import { H, STYLE_3D, W } from '../core/constants';
 import { button, txt } from '../ui/text';
 
 const PAGES: { title: string; icon: string; text: string }[] = [
@@ -113,7 +113,9 @@ export class RulesScene extends Phaser.Scene {
     this.icon = this.add.image(W / 2, 86, 'marmite');
     this.title = txt(this, W / 2, 136, '', 16, '#8fe0ff').setOrigin(0.5);
     this.body = this.add
-      .text(W / 2, 160, '', { fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#ffffff', align: 'left', lineSpacing: 6 })
+      .text(W / 2, 160, '', STYLE_3D
+        ? { fontFamily: '"Lilita One"', fontSize: '13px', color: '#ffffff', align: 'left', lineSpacing: 3, stroke: '#1a1018', strokeThickness: 3 }
+        : { fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#ffffff', align: 'left', lineSpacing: 6 })
       .setOrigin(0.5, 0);
     this.dots = txt(this, W / 2, 566, '', 8, '#bfc8e0').setOrigin(0.5);
     button(this, 70, 602, 120, 34, 'RETOUR', 0x4a4f66, () => this.go(-1));

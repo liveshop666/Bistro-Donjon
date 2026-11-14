@@ -44,7 +44,7 @@ export class AccountScene extends Phaser.Scene {
     }]);
     items.forEach(([label, color, cb], i) => button(this, W / 2, 252 + i * 35, 260, 30, label, color, cb));
     txt(this, W / 2, 484, 'Ton compte est enregistré sur cet\nappareil. La sauvegarde en ligne\narrivera dans une prochaine version.', 8, '#6b7391').setOrigin(0.5, 0);
-    txt(this, W / 2, 530, `BISTRO DONJON v${APP_VERSION}\nVersion du ${BUILD_LABEL}\nUn jeu SolveLab`, 8, '#6b7391').setOrigin(0.5, 0);
+    txt(this, W / 2, 538, `BISTRO DONJON v${APP_VERSION}\nVersion du ${BUILD_LABEL}\nUn jeu SolveLab`, 8, '#6b7391').setOrigin(0.5, 0);
     button(this, W / 2, 606, 160, 32, 'RETOUR', 0x4a4f66, () => this.scene.start('Menu'));
     void H;
     setupLandscapeMenu(this); // paysage : la page en deux colonnes qui remplissent l'écran

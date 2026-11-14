@@ -3,7 +3,7 @@ import { landscapeMenu, MENU_SCALE, portraitMenu } from '../ui/landscapeMenu';
 import { landscapeWanted } from '../core/layout';
 import { audio } from '../audio/AudioManager';
 import { billing } from '../core/Billing';
-import { CHEFS, H, itemLabel, RARITY, SHOP, ShopItem, TEST_PAYMENTS, W } from '../core/constants';
+import { CHEFS, H, itemLabel, RARITY, SHOP, ShopItem, STYLE_3D, TEST_PAYMENTS, W } from '../core/constants';
 import { addCoins, loadProfile, nextMilestone, recordPurchase, saveProfile } from '../core/Storage';
 import { openModal } from '../ui/Modal';
 import { button, txt } from '../ui/text';
@@ -142,9 +142,17 @@ export class ShopScene extends Phaser.Scene {
     const equipped = owned && (it.kind === 'skin' ? p.skins[it.chef!] === it.id : p.effect === it.id);
     const r = RARITY[it.rarity];
     const g = this.add.graphics();
+    if (STYLE_3D) {
+      // carte arrondie : bord de la couleur de la rareté, fond sombre, vitrine éclairée pour l'article
+      g.fillStyle(0x000000, 0.45).fillRoundedRect(-54, -71, 108, 148, 12);
+      g.fillStyle(r.color).fillRoundedRect(-54, -74, 108, 148, 12);
+      g.fillStyle(owned ? 0x24402c : 0x241a2a).fillRoundedRect(-51, -71, 102, 142, 10);
+      g.fillStyle(0xffffff, 0.06).fillRoundedRect(-46, -40, 92, 62, 8);
+    } else {
     g.fillStyle(r.color).fillRect(-54, -74, 108, 148);
     g.fillStyle(owned ? 0x2f5a3a : 0x2a2a44).fillRect(-51, -71, 102, 142);
     g.fillStyle(0x14141f, 0.6).fillRect(-46, -40, 92, 62);
+    }
     const preview = it.world
       ? this.add.container(0, 0, [this.add.image(-24, -9, 'map_' + it.world).setScale(58 / 640), this.fit(this.add.image(16, -6, it.sprite!), 52, 52)])
       : it.sprite ? this.fit(this.add.image(0, -8, it.sprite)) : this.slash(it.color ?? 0xffffff, !!it.rainbow);

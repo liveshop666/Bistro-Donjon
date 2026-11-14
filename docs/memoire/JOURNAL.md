@@ -4,6 +4,13 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
 
 ## Où on en est (14/11/2026)
 
+**15/11/2026 : toute l'application en 3D, nouvel écran de chargement (fusionné, demande de Rudy)**
+- Écran de chargement : plus d'image ; « BISTRO DONJON » en grand et une barre qui se remplit avec le vrai chargement (« Chargement... 63 % »), puis la page d'accueil. Le démarrage de l'appli Android n'affiche plus de logo (fond noir).
+- En 3D en plus : les 6 costumes de la boutique, la marmite, la planche, le comptoir et les 4 ingrédients (planches `reference/3d/costumes-3d.png` et `cuisine-3d.png`, `python3 tools/extract_3d.py`).
+- Menus, boutique, Mon compte, Mes articles, Règles, Duel, inscription : fonds tirés des maps 3D, police arrondie Lilita One avec contour, boutons bombés arrondis, fenêtres arrondies au liseré doré, cartes de boutique arrondies, grands chefs 3D au menu. Commandes en jeu en pastilles sombres.
+- Testé : tous les écrans en portrait et en paysage, une fenêtre de boutique, l'écran de chargement, parties en 3D, robot dans 4 mondes (il atteint la cuisine dans 2 mondes) ; aucune erreur.
+- Le logo (chat + Roi Tomate) reste l'icône de l'appli.
+
 **14/11/2026 (fin de nuit) : tout le jeu en 3D, façon image de référence de Rudy**
 - Rudy a envoyé l'image à reproduire (`reference/3d/reference-rudy.jpg`) : « exactement pareil » (flamme de la poêle, boutons, joystick, toutes les maps), et « que tout fonctionne, pas que du dessin ».
 - Fait : les 8 maps en 3D (`public/assets/maps/wide3d_<monde>.jpg`, originaux dans `reference/3d/`), les 3 chefs, les 4 chefs combattants des packs, les 12 monstres et les 2 boss en 3D (3 planches découpées par `python3 tools/extract_3d.py`).

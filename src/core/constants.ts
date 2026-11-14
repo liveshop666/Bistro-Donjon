@@ -334,7 +334,7 @@ export const SPRITE_FILES = {
 /**
  * STYLE 3D : remplace des dessins pixel par des images au rendu 3D (planche reference/3d/personnages-3d.png, découpée
  * par tools/extract_3d.py dans public/assets/sprites3d/). Les dessins pixel restent : `false` revient au jeu d'avant.
- * Depuis le 14/11 au soir : les 8 maps, les 3 chefs, les 4 chefs combattants et tous les monstres (les 6 costumes restent pixel).
+ * Depuis le 15/11 : tout le jeu (maps, chefs, combattants, costumes, monstres, cuisine, ingrédients, menus, boutique).
  */
 export const STYLE_3D = true;
 /** Clé d'un sprite du jeu -> fichier 3D qui le remplace (toutes les images d'animation d'un personnage prennent la même). */
@@ -343,6 +343,8 @@ export const ART_3D: Record<string, string> = {
   ...Object.fromEntries([...chef3d('moustachu'), ...chef3d('shiba'), ...chef3d('noisette')]),
   // chefs combattants des packs
   skin_taureau: 'skin_taureau', skin_ours: 'skin_ours', skin_gorille: 'skin_gorille', skin_tigre: 'skin_tigre',
+  // costumes de la boutique
+  ...Object.fromEntries(['skin_patissier', 'skin_chevalier', 'skin_samourai', 'skin_shiba_samourai', 'skin_cyber', 'skin_astronaute'].map((k) => [k, k])),
   // monstres des mondes 5 à 8 et Roi Fromage
   ail: 'ail', aubergine: 'aubergine', mais: 'mais', oignon: 'oignon', citrouille: 'citrouille', hotdog: 'hotdog', cube_fromage: 'cube_fromage', roi_fromage: 'roi_fromage',
   tomate: 'tomate', tomate_ko: 'tomate',
