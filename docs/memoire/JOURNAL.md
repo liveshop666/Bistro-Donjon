@@ -4,6 +4,18 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
 
 ## Où on en est (14/11/2026)
 
+**15/11/2026 (4) : joystick en vertical, champ de vision, mouvements par arme, lisibilité, netteté**
+- Bug corrigé : en vertical, le joystick ne marchait plus du tout. Cause : la zone du bouton PAUSE du bas, vidée en style 3D (taille 0), faisait planter le toucher (« hitAreaCallback is not a function »). Leçon ajoutée.
+- Champ de vision plus grand (Rudy : « je vois pas toute la map ») : caméra 0,95 en paysage, 1 en portrait, et personnages 3D affichés 1,4 fois la taille des anciens dessins (`ART_SIZE`).
+- Netteté (« 4K ») : personnages 3D enregistrés 4 fois plus grands (`ART_RES`), et rendu 3 fois plus fin sur les téléphones puissants à écran très fin (`wantedRes`). Les téléphones modestes restent en « fluide ». Les maps 3D gardent leur taille (1680 px de large) : plus fines, il faudrait les regénérer plus grandes.
+- Un mouvement et un effet par arme (`Chef.style`) : Chef Moustachu = grand coup de poêle et croissant de feu ; Maître Shiba, Taureau et Ours = arme levée puis abattue, onde de choc (colonne de flammes pour le Taureau, éclats de glace pour l'Ours) ; Gorille = coups de poing alternés avec ses poêles, éclairs ; Tigre = tourbillon de flammes bleues ; Mlle Noisette = deux coups croisés.
+- Écriture plus grande partout (12 et 21 px au lieu de 11 et 20), textes du menu resserrés, boss de l'écran Duel à la bonne taille.
+- Testé : joystick au vrai toucher en vertical et en horizontal, tous les écrans, parties avec chaque arme, robot dans 4 mondes ; aucune erreur.
+
+**15/11/2026 (3) : plus de logo avant le chargement**
+- Rudy voyait encore un logo « Bistro Donjon » avant l'écran de chargement. Appli Android (APK) : l'écran de démarrage du système est maintenant noir et vide (`windowSplashScreenAnimatedIcon` = `drawable/splash_vide.xml`, dans `values/styles.xml` et `values-v31/styles.xml`). Il faut réinstaller l'APK pour en profiter.
+- Version installée depuis Chrome : ce premier écran (icône de l'appli sur fond noir) est dessiné par Android et Chrome eux-mêmes à partir de l'icône ; le jeu ne peut pas le retirer. Le seul moyen serait l'APK (puis le Play Store).
+
 **15/11/2026 (2) : sons et mouvements de la vidéo de pub de Rudy**
 - Rudy a généré sa pub (`reference/3d/pub-video-rudy.mp4`) et veut retrouver les mêmes mouvements et les mêmes bruits dans le jeu, sans bruits « 8-bit ».
 - Sons : 8 vrais bruitages découpés dans sa vidéo (`sh tools/extract_sons.sh` -> `public/assets/sons/`) : coup de poêle (impact + flamme), attaque des flammes, frappe lourde, coup rapide, monstre écrasé, rugissement du boss, final de victoire, marmite. Ils remplacent les bruits synthétisés correspondants (`SAMPLE_OF` dans `AudioManager`) ; les autres petits bruits restent synthétisés. Musique adoucie (filtre + écho de grande salle) pour sonner moins rétro. Note : les extraits contiennent un peu de la musique de la vidéo.
@@ -175,6 +187,7 @@ Détails :
 - Connexion par compte : avec quel service (Google Play Jeux, e-mail via Supabase…).
 
 ## Erreurs commises et leçons
+- **Zone tactile de taille zéro** : une zone `setInteractive()` vide (bouton PAUSE déplacé hors écran avec w = h = 0) a cassé tout le toucher en vertical -> ne jamais créer de zone tactile vide ; ne pas créer le bouton du tout. Tester le joystick avec de vrais touchers (CDP `Input.dispatchTouchEvent`), pas seulement la souris.
 - **Image envoyée dans la discussion crue disponible comme fichier** : une image collée dans la conversation n'est pas un fichier du projet, Claude la voit mais ne peut pas l'enregistrer -> demander à Rudy de la déposer dans `reference/` (ou dans Canva).
 - Tests qui comptent sur la mission du jour (`test_v8`) : la mission change chaque jour, un échec « 3 missions accomplies » peut venir du tirage (ex. « finis 3x les vagues ») -> vérifier le libellé des missions avant de chercher un bug.
 - Corriger les images des maps au chargement du jeu (canvas recréés avec `textures.addCanvas`) rendait le lancement d'une partie très lent (environ 10 s dans le navigateur de test) -> corriger les images une fois pour toutes dans les fichiers, jamais au chargement.

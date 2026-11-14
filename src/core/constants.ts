@@ -352,11 +352,14 @@ export const ART_3D: Record<string, string> = {
   gelee_0: 'gelee', gelee_1: 'gelee', gelee_2: 'gelee', gelee_3: 'gelee',
   piment: 'piment', roi_tomate: 'roi_tomate',
 };
-/** Vrai si ce sprite est dessiné en 3D : l'image est 2 fois plus grande et le jeu l'affiche à moitié (nette). */
+/** Vrai si ce sprite est dessiné en 3D (image plus grande, réduite à l'affichage : nette). */
 export const is3d = (key: string): boolean => STYLE_3D && key in ART_3D;
 /** Taille d'affichage d'un sprite : 0,5 pour les images 3D (dessinées 2 fois plus grandes), 1 sinon. */
-// style 3D : personnages affichés 20 % plus grands que les anciens dessins (demande de Rudy, 15/11 : « ça fait un peu petit »)
-export const artScale = (key: string): number => (is3d(key) ? 0.6 : 1);
+/** Images 3D des personnages : 4 fois la taille des anciens dessins pixel (tools/extract_3d.py), pour rester nettes. */
+export const ART_RES = 4;
+/** Taille d'affichage des personnages 3D par rapport aux anciens dessins : 1,4 (Rudy, 15/11 : « ça fait un peu petit »). */
+export const ART_SIZE = 1.4;
+export const artScale = (key: string): number => (is3d(key) ? ART_SIZE / ART_RES : 1);
 /** Mondes redessinés en 3D : leur grande map (public/assets/maps/wide3d_<id>.jpg) et la cuisine replacée dessus
  * (vide quand la map 3D garde la disposition de la grande map pixel). */
 export const WORLD_3D: Partial<Record<WorldId, Partial<WorldDef>>> = {

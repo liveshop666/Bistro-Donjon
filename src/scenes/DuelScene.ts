@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { setupLandscapeMenu } from '../ui/landscapeMenu';
 import { audio } from '../audio/AudioManager';
-import { ChefId, CHEFS, H, W, WorldId } from '../core/constants';
+import { ChefId, CHEFS, H, W, WorldId , artScale } from '../core/constants';
 import { loadProfile } from '../core/Storage';
 import { BotLink } from '../network/DuelLink';
 import { MultiplayerClient } from '../network/MultiplayerClient';
@@ -35,7 +35,7 @@ export class DuelScene extends Phaser.Scene {
     txt(this, W / 2, 50, 'GUERRE DES\nSTANDS', 16, '#ff6a5a').setOrigin(0.5).setStroke('#1b1b2b', 4);
     this.add.image(W / 2 - 60, 120, 'portrait_' + this.chef);
     txt(this, W / 2, 120, 'VS', 16, '#ffc533').setOrigin(0.5);
-    this.add.image(W / 2 + 60, 120, 'roi_tomate').setScale(0.55);
+    this.add.image(W / 2 + 60, 120, 'roi_tomate').setScale(0.55 * artScale('roi_tomate'));
     txt(this, W / 2, 176, '2 minutes. Le plus riche gagne.\n3 plats d\'affilée = sabotage !', 8, '#bfc8e0').setOrigin(0.5);
     this.status = txt(this, W / 2, 470, '', 8, '#ffe27a').setOrigin(0.5, 0);
 

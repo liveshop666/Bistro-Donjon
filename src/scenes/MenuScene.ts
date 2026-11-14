@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { landscapeMenu, MENU_SCALE, portraitMenu } from '../ui/landscapeMenu';
 import { applyQuality, landscapeWanted, RES } from '../core/layout';
 import { audio } from '../audio/AudioManager';
-import { CHEF_ORDER, CHEFS, ChefId, is3d, DAILY_GIFT, FREE_WORLDS, H, itemLabel, playerLevel, W, worldUnlocked, WORLD_ORDER, WorldId, WORLDS } from '../core/constants';
+import { CHEF_ORDER, CHEFS, ChefId, is3d, STYLE_3D, DAILY_GIFT, FREE_WORLDS, H, itemLabel, playerLevel, W, worldUnlocked, WORLD_ORDER, WorldId, WORLDS } from '../core/constants';
 import { claimDailyGift, loadProfile, loadRun, saveProfile } from '../core/Storage';
 import { openModal } from '../ui/Modal';
 import { claimBonus, claimMission, dailyMissions, MISSION_BONUS, MISSIONS, missionsStatus } from '../core/Missions';
@@ -56,7 +56,8 @@ export class MenuScene extends Phaser.Scene {
     this.bg = this.add.image(0, 0, 'map_' + this.world).setOrigin(0);
     this.add.rectangle(0, 0, W, H, 0x0c0c18, 0.72).setOrigin(0);
 
-    const title = txt(this, W / 2, 50, 'BISTRO\nDONJON', 32, '#ffc533').setOrigin(0.5);
+    const title = txt(this, W / 2, 46, 'BISTRO\nDONJON', 32, '#ffc533').setOrigin(0.5);
+    if (STYLE_3D) title.setLineSpacing(-10).setY(40);
     title.setStroke('#7a2a12', 6);
     this.tweens.add({ targets: title, y: 53, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     const lvl = playerLevel(profile.earned);
@@ -81,6 +82,7 @@ export class MenuScene extends Phaser.Scene {
         });
     });
     this.info = txt(this, W / 2, 204, '').setOrigin(0.5, 0);
+    if (STYLE_3D) this.info.setLineSpacing(-3).setY(199); // police plus grande : on resserre pour ne pas toucher VIE / VITESSE
     this.stats = this.add.graphics();
     ['VIE', 'VITESSE', 'DEGATS'].forEach((s, i) => txt(this, 96, 250 + i * 14, s, 8, '#bfc8e0').setOrigin(0, 0.15));
 
@@ -99,7 +101,7 @@ export class MenuScene extends Phaser.Scene {
       this.setWorldPage(this.worldPage + (dx < 0 ? 1 : -1));
     });
     this.drawWorlds();
-    this.worldInfo = txt(this, W / 2, 464, '').setOrigin(0.5, 0);
+    this.worldInfo = txt(this, W / 2, 458, '').setOrigin(0.5, 0);
     this.frame = this.add.graphics();
 
     // --- Boutons

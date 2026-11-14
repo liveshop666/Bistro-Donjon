@@ -6,7 +6,7 @@ import { FONT, STYLE_3D } from '../core/constants';
 export function txt(scene: Phaser.Scene, x: number, y: number, str: string, size = 8, color = '#ffffff'): Phaser.GameObjects.Text {
   if (STYLE_3D) {
     // style 3D : police arrondie (Lilita One), un peu plus grande, contour sombre comme sur l'image de référence
-    const px = size <= 8 ? 11 : size <= 16 ? 20 : Math.round(size * 1.25);
+    const px = size <= 8 ? 12 : size <= 16 ? 21 : 34; // plus grand et lisible (Rudy, 15/11)
     return scene.add
       .text(x, y, str, { fontFamily: '"Lilita One"', fontSize: `${px}px`, color, align: 'center', lineSpacing: 0 })
       .setStroke('#1a1018', size <= 8 ? 3 : 4)
