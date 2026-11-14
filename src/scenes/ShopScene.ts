@@ -3,8 +3,8 @@ import { landscapeMenu, MENU_SCALE, portraitMenu } from '../ui/landscapeMenu';
 import { landscapeWanted } from '../core/layout';
 import { audio } from '../audio/AudioManager';
 import { billing } from '../core/Billing';
-import { CHEFS, H, itemLabel, RARITY, SHOP, ShopItem, W } from '../core/constants';
-import { addCoins, loadProfile, nextMilestone, saveProfile } from '../core/Storage';
+import { CHEFS, H, itemLabel, RARITY, SHOP, ShopItem, TEST_PAYMENTS, W } from '../core/constants';
+import { addCoins, loadProfile, nextMilestone, recordPurchase, saveProfile } from '../core/Storage';
 import { openModal } from '../ui/Modal';
 import { button, txt } from '../ui/text';
 
@@ -265,18 +265,22 @@ export class ShopScene extends Phaser.Scene {
       return;
     }
     // Achat réel (premium). Le paiement n'est pas encore branché : voir core/Billing.ts.
-    const grant = () => {
-      const q = loadProfile();
-      saveProfile({ owned: [...new Set([...q.owned, it.id, ...(it.items ?? [])])] });
+    const grant = (price: string) => {
+      const order = recordPurchase(it, price);
       audio.sfx(it.kind === 'pack' || it.rarity === 'legendaire' ? 'legendaire' : 'piece');
       if (it.kind === 'pack') this.draw();
       else equip(true);
+      this.receipt(it, price, order);
     };
     const euroBtn = {
       label: `ACHETER : ${it.euro}`, color: 0xb03a5a,
       action: () => {
+        if (!billing.available && TEST_PAYMENTS) {
+          this.time.delayedCall(50, () => this.checkout(it, () => grant(it.euro!)));
+          return;
+        }
         void billing.buy(it.id).then((ok) => {
-          if (ok) grant();
+          if (ok) grant(it.euro!);
           else if (!billing.available) info('BIENTOT', 'Le paiement arrive bientôt.\nCet article sera en vente\nà la sortie du jeu.');
         });
       },
@@ -293,7 +297,7 @@ export class ShopScene extends Phaser.Scene {
             return;
           }
           saveProfile({ coins: q.coins - price });
-          grant();
+          grant(`${price} pièces`);
         },
       };
       // un pack de monde s'obtient en payant, ou avec énormément de pièces
@@ -311,5 +315,31 @@ export class ShopScene extends Phaser.Scene {
       return;
     }
     openModal(this, title, [euroBtn, close], `${note}\n\nPremium : achat réel uniquement.`);
+  }
+
+  /** Écran de paiement (paiement de test tant que Google Play n'est pas branché) : récapitulatif, puis PAYER. */
+  private checkout(it: ShopItem, onPaid: () => void): void {
+    openModal(this, 'PAIEMENT', [
+      {
+        label: `PAYER ${it.euro}`, color: 0x3d7a4a,
+        action: () => {
+          // petite attente, comme un vrai paiement
+          const wait = openModal(this, 'PAIEMENT', [], 'Paiement en cours...\n');
+          this.time.delayedCall(900, () => {
+            wait();
+            onPaid();
+          });
+        },
+      },
+      { label: 'ANNULER', action: () => {} },
+    ], `${itemLabel(it)}\n${it.euro}\n\nPAIEMENT DE TEST\nAucun argent n'est débité.\nÀ la sortie du jeu, le paiement\npassera par Google Play.`);
+  }
+
+  /** Reçu après un achat : numéro de commande, et l'article à retrouver dans Mon compte > Mes articles. */
+  private receipt(it: ShopItem, price: string, order: string): void {
+    this.time.delayedCall(60, () => openModal(this, 'ACHAT CONFIRME', [
+      { label: 'VOIR MES ARTICLES', color: 0xe8642a, action: () => { this.scene.start('Collection'); } },
+      { label: 'CONTINUER', action: () => {} },
+    ], `${itemLabel(it)}\n${price}\n\nCommande ${order}\n\nC'est à toi ! Retrouve-le dans\nMon compte > Mes articles.`));
   }
 }

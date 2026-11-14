@@ -232,26 +232,25 @@ export const WORLDS: Record<WorldId, WorldDef> = {
   },
   volcan: {
     id: 'volcan', name: 'VOLCAN BARBECUE', hint: 'Tonneaux explosifs', mechanic: 'tonneaux',
-    wide: { w: 1176, h: 661, area: { x: 160, y: 0, w: 860, h: 556 } },
-    pot: { x: 470, y: 186 }, counter: { x: 665, y: 204 }, board: { x: 340, y: 188 }, standLine: 222,
-    obstacles: [{ x: 745, y: 200, w: 170, h: 38 }, { x: 160, y: 470, w: 36, h: 90 }], // tabourets du comptoir, tonneaux
+    // grande map refaite le 14/11 depuis la petite map d'origine (grill de lave, rivières de lave sur les côtés)
+    wide: { w: 1176, h: 661, area: { x: 215, y: 0, w: 750, h: 650 } },
+    pot: { x: 505, y: 290 }, counter: { x: 660, y: 290 }, board: { x: 583, y: 294 }, standLine: 310,
     swap: { tomate: ['ail'], champi: ['citrouille'], gelee: ['oignon'], piment: ['hotdog'] },
     boss: 'roi_fromage', bossName: 'ROI FROMAGE', minion: 'cube_fromage',
   },
   bateau: {
     id: 'bateau', name: 'GALION PIRATE', hint: 'Monstres en file serrée', mechanic: 'file',
-    wide: { w: 1176, h: 661, area: { x: 210, y: 0, w: 785, h: 585 } },
-    pot: { x: 497, y: 196 }, counter: { x: 665, y: 206 }, board: { x: 382, y: 194 }, standLine: 226,
-    obstacles: [
-      { x: 722, y: 206, w: 192, h: 46 }, { x: 950, y: 192, w: 50, h: 30 }, // tabourets du comptoir, gros tonneau
-      { x: 215, y: 548, w: 65, h: 40 }, { x: 900, y: 548, w: 65, h: 40 }, // canons du bas
-    ],
+    // grande map refaite le 14/11 depuis la petite map d'origine (pont du galion, la mer de chaque côté)
+    wide: { w: 1176, h: 661, area: { x: 245, y: 0, w: 690, h: 645 } },
+    pot: { x: 510, y: 296 }, counter: { x: 660, y: 296 }, board: { x: 585, y: 300 }, standLine: 316,
     swap: { tomate: ['ail', 'cube_fromage'], champi: ['aubergine', 'citrouille'], gelee: ['oignon'], piment: ['mais', 'hotdog'] },
     boss: 'roi_fromage', bossName: 'ROI FROMAGE', minion: 'cube_fromage',
   },
   bonbons: {
     id: 'bonbons', name: 'USINE HANTEE', hint: 'Tapis roulants rapides', mechanic: 'tapis',
-    pot: { x: 112, y: 280 }, counter: { x: 250, y: 280 }, board: { x: 181, y: 288 }, standLine: 316,
+    // grande map du 14/11 (style de la petite map d'origine) : on marche entre les deux tapis roulants du milieu
+    wide: { w: 1176, h: 661, area: { x: 300, y: 0, w: 572, h: 655 } },
+    pot: { x: 515, y: 290 }, counter: { x: 665, y: 290 }, board: { x: 590, y: 294 }, standLine: 308,
     swap: { tomate: ['ail', 'cube_fromage'], champi: ['aubergine', 'citrouille'], gelee: ['oignon'], piment: ['mais', 'hotdog'] },
     boss: 'roi_fromage', bossName: 'ROI FROMAGE', minion: 'cube_fromage',
   },
@@ -276,6 +275,12 @@ export const FREE_WORLDS = 4;
  * remettre `false` suffit pour retrouver exactement ce qu'il possédait. À REMETTRE À `false` AVANT LE PLAY STORE.
  */
 export const TEST_UNLOCK_ALL = true;
+/**
+ * PAIEMENT DE TEST (14/11) : tant que Google Play Billing n'est pas branché, un achat en euros passe par un faux
+ * écran de paiement, gratuit, pour essayer tout le parcours (payer, reçu, Mes articles). À REMETTRE À `false`
+ * AVANT LE PLAY STORE (sinon tout le premium serait gratuit).
+ */
+export const TEST_PAYMENTS = true;
 export const worldKey = (id: WorldId): string => 'monde_' + id;
 export function worldUnlocked(id: WorldId, unlocked: number, owned: string[]): boolean {
   const i = WORLD_ORDER.indexOf(id);
@@ -289,7 +294,11 @@ export const CHEF_ORDER: ChefId[] = ['moustachu', 'shiba', 'noisette'];
 /** Bandes horizontales des tapis roulants (Cantine, Usine hantée) : petite map, puis grande map. */
 export const CONVEYORS = [{ y: 430, h: 36 }, { y: 540, h: 36 }];
 export const WIDE_CONVEYORS = [{ y: 340, h: 36 }, { y: 450, h: 36 }];
-export const conveyorsOf = (w: WorldDef): { y: number; h: number }[] => (w.mechanic !== 'tapis' ? [] : w.wide ? WIDE_CONVEYORS : CONVEYORS);
+/** Tapis roulants : bandes horizontales (largeur du terrain), ou rectangles posés sur les tapis dessinés de la map. */
+export interface Conveyor { y: number; h: number; x?: number; w?: number }
+/** Usine hantée, grande map : les deux tapis verticaux dessinés au milieu font courir le chef plus vite. */
+const BONBONS_CONVEYORS: Conveyor[] = [{ x: 302, w: 66, y: 300, h: 361 }, { x: 806, w: 64, y: 300, h: 361 }];
+export const conveyorsOf = (w: WorldDef): Conveyor[] => (w.mechanic !== 'tapis' ? [] : !w.wide ? CONVEYORS : w.id === 'bonbons' ? BONBONS_CONVEYORS : WIDE_CONVEYORS);
 
 // ---------------------------------------------------------------- Cuisine
 /** Patience d'un client (s). Servi avant la moitié : pourboire. Dépassée : le client part, le combo retombe. */

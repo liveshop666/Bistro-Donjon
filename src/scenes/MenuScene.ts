@@ -37,6 +37,11 @@ export class MenuScene extends Phaser.Scene {
       this.scene.start('Rules');
       return;
     }
+    if (!loadProfile().registered) {
+      // pas encore de compte : inscription d'abord (pseudo + accord), une seule fois
+      this.scene.start('Signup');
+      return;
+    }
     const gift = claimDailyGift(); // cadeau du jour, une fois par jour
     const profile = loadProfile();
     this.chef = profile.chef;

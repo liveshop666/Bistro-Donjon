@@ -31,6 +31,18 @@ export interface Profile {
   /** Effet d'arme équipé. */
   effect: string | null;
   pseudo: string;
+  /** Date de création du compte (AAAA-MM-JJ), vide tant que le joueur ne s'est pas inscrit. */
+  registered: string;
+  /** Historique des achats (boutique), du plus ancien au plus récent. */
+  purchases: Purchase[];
+}
+
+/** Un achat de la boutique : article, prix payé (« 1,99 EUR » ou « 12000 pièces »), date et numéro de commande. */
+export interface Purchase {
+  id: string;
+  price: string;
+  date: string;
+  order: string;
 }
 
 /** Partie solo sauvegardée : on reprend au début de la vague enregistrée. */
@@ -51,7 +63,7 @@ export interface RunSave {
   inv: Record<IngredientId, { n: number; sliced: number }>;
 }
 
-const DEFAULT: Profile = { best: 0, chef: 'moustachu', world: 'clairiere', unlocked: 1, rulesSeen: false, duelWins: 0, coins: 0, earned: 0, lastGift: '', streak: 0, runs: [], missions: null, owned: [], skins: {}, effect: null, pseudo: '' };
+const DEFAULT: Profile = { best: 0, chef: 'moustachu', world: 'clairiere', unlocked: 1, rulesSeen: false, duelWins: 0, coins: 0, earned: 0, lastGift: '', streak: 0, runs: [], missions: null, owned: [], skins: {}, effect: null, pseudo: '', registered: '', purchases: [] };
 
 function read<T>(key: string): T | null {
   try {
@@ -116,6 +128,18 @@ export function addCoins(n: number): ShopItem[] {
   const gifts = SHOP.filter((it) => it.palier !== undefined && earned >= it.palier && !p.owned.includes(it.id));
   saveProfile({ coins: p.coins + Math.max(0, n), earned, owned: [...p.owned, ...gifts.map((g) => g.id)] });
   return gifts;
+}
+
+/**
+ * Enregistre un achat : l'article (et le contenu d'un pack) devient possédé, et l'achat entre dans l'historique.
+ * Renvoie le numéro de commande.
+ */
+export function recordPurchase(it: ShopItem, price: string): string {
+  const p = storedProfile();
+  const order = 'BD-' + (Date.now().toString(36).slice(-4) + Math.random().toString(36).slice(2, 5)).toUpperCase();
+  const owned = [...new Set([...p.owned, it.id, ...(it.items ?? [])])];
+  write(PROFILE_KEY, { ...p, owned, purchases: [...p.purchases, { id: it.id, price, date: new Date().toISOString().slice(0, 10), order }] });
+  return order;
 }
 
 /** Prochain cadeau de palier pas encore atteint, et pièces restant à gagner. */

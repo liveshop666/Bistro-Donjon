@@ -4,18 +4,33 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
 
 ## Où on en est (14/11/2026)
 
+**14/11/2026 (soir) : les 8 grandes maps, Mes articles, paiement de test, inscription**
+
+*En bref :*
+- *Les 8 mondes ont leur grande map, plus aucune copie en miroir. Volcan et Galion refaits dans le style de leur petite map d'origine (demande de Rudy : « la première map »), Usine hantée ajoutée.*
+- *Mon compte > MES ARTICLES : tout ce que le joueur possède, pour l'équiper (costumes, effets et armes), ses mondes pour y jouer, et l'historique de ses achats avec numéro de commande.*
+- *Achat en euros : écran de paiement (paiement de test, gratuit), puis reçu « ACHAT CONFIRME » avec un bouton vers Mes articles.*
+- *Inscription au premier lancement : pseudo + accord sur les règles et la confidentialité. Pas de mot de passe (compte sur le téléphone ; la connexion en ligne viendra avec la base de données, à la fin, comme Rudy l'a décidé).*
+- *Tout reste débloqué (choix de Rudy du 14/11) : il ne peut donc pas tester l'achat lui-même tant que le mode test est actif.*
+
+Détails :
+- `TEST_PAYMENTS` (`src/core/constants.ts`) : faux paiement gratuit tant que Google Play n'est pas branché. **À remettre à `false` avant le Play Store**, comme `TEST_UNLOCK_ALL`.
+- Achats : `recordPurchase()` (`Storage.ts`) rend l'article possédé et l'ajoute à `purchases` (article, prix, date, commande). Les achats en pièces y sont aussi.
+- Écrans nouveaux : `CollectionScene` (Mes articles, 4 onglets), `SignupScene` (inscription, s'affiche tant que `registered` est vide).
+- Usine hantée : on marche entre les deux tapis du milieu ; ces deux tapis verticaux font courir le chef (`BONBONS_CONVEYORS`).
+- Testé dans le navigateur : inscription complète (refus sans pseudo, clavier, case à cocher, bienvenue), Mon compte, Mes articles (équiper, onglets, mondes), paiement de test et reçu, historique ; les 3 nouvelles maps en portrait, en paysage et en duel ; aucune erreur.
+
 **14/11/2026 : mode test « tout débloqué », 7 grandes maps sur 8**
 
 *En bref (14/11, tout est en ligne sur le jeu de test) :*
 - *Tout est débloqué pour que Rudy essaie tout : à remettre avant le Play Store.*
-- *7 grandes maps sur 8 : il manque l'Usine hantée (crédits Canva épuisés).*
 - *Nouveau réglage « IMAGE : FLUIDE » dans Mon compte, pour les téléphones qui rament (cas de l'ami de Rudy).*
 - *Tous les boutons du jeu testés : aucun plantage. Seul le duel en ligne ne marche pas (pas de serveur).*
 - *Le logo (chat + Roi Tomate) est l'icône et l'écran de chargement.*
 - *En attente de Rudy : son adresse e-mail d'assistance, et 2 choix (duel en ligne caché ou serveur ; compte joueur avec Google Play Jeux plus tard).*
 
 - **MODE TEST ACTIVÉ (demande de Rudy, pour tout essayer lui-même)** : tous les packs, costumes, chefs combattants, effets, armes et les 8 mondes sont ouverts pour tout le monde. Rien n'est écrit dans la sauvegarde : quand Rudy dira « on remet », passer `TEST_UNLOCK_ALL` à `false` dans `src/core/constants.ts` et chacun retrouve exactement ce qu'il avait. **À remettre à `false` avant le Play Store.**
-- Grandes maps ajoutées : Cantine, Glacière, Volcan (générée le 14/11), Galion (générée le 14/11). Il ne manque que l'**Usine hantée** : quota Canva épuisé après 2 images, à regénérer quand les crédits reviennent (la consigne est dans le compte-rendu du 14/11 ; image de style à donner en référence : la Taverne, `MAHauLIdJrg`).
+- Grandes maps ajoutées : Cantine, Glacière, Volcan (générée le 14/11), Galion (générée le 14/11). (Volcan et Galion refaits le soir même, Usine hantée ajoutée : voir plus haut.)
 - Les maps marchent aussi en duel (même terrain que le solo).
 - Tapis roulants de la Cantine : sur la grande map, deux bandes sur toute la largeur où l'on marche.
 - Cuisine plus visible (demande de Rudy « il faut qu'on voie tout ») : un halo clignote au sol sous la marmite (orange), la planche (vert) et le service (jaune) ; en paysage, la caméra tient le chef un peu plus bas pour que la cuisine ne soit plus cachée sous les commandes.

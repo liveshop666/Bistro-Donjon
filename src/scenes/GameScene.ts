@@ -139,18 +139,18 @@ export class GameScene extends Phaser.Scene {
       // grande map paysage : tout le terrain est dessiné, la caméra suit le chef (portrait comme paysage)
       this.add.image(0, 0, 'wide_' + this.worldId).setOrigin(0).setDisplaySize(wide.w, wide.h).setDepth(-100);
     } else {
+      // monde sans grande map (il n'y en a plus depuis le 14/11) : une seule map, jamais de copies en miroir
       this.add.image(0, 0, 'map_' + this.worldId).setOrigin(0).setDepth(-100);
-      // Paysage : en attendant les maps dessinées en largeur, le décor est prolongé de chaque côté (copies en miroir).
-      for (const k of [-2, -1, 1, 2]) {
-        // copies posées 2 pixels à cheval sur leur voisine : pas de fine ligne noire entre deux morceaux
-        this.add.image(k * W - Math.sign(k) * 2 * Math.abs(k), 0, 'map_' + this.worldId).setOrigin(0).setDepth(-101 - Math.abs(k)).setFlipX(k % 2 !== 0);
-      }
     }
     // tapis roulants : sur une grande map, ils ne couvrent que la zone où l'on marche
     const [bx, bw] = wide ? [wide.area.x, wide.area.w] : [0, W];
     for (const c of conveyorsOf(this.world)) {
-      this.add.rectangle(bx, c.y, bw, c.h, 0x4ff3ff, 0.12).setOrigin(0).setDepth(-50);
-      this.conveyors.push(this.add.tileSprite(bx, c.y + c.h / 2, bw, 12, 'fleche_tapis').setOrigin(0, 0.5).setAlpha(0.5).setDepth(-49));
+      const [x, w] = c.x !== undefined ? [c.x, c.w!] : [bx, bw];
+      this.add.rectangle(x, c.y, w, c.h, 0x4ff3ff, 0.12).setOrigin(0).setDepth(-50);
+      if (c.x !== undefined) {
+        // tapis vertical dessiné sur la map : flèches tournées vers le bas
+        this.conveyors.push(this.add.tileSprite(x + w / 2, c.y + c.h / 2, c.h, 12, 'fleche_tapis').setAngle(90).setAlpha(0.5).setDepth(-49));
+      } else this.conveyors.push(this.add.tileSprite(x, c.y + c.h / 2, w, 12, 'fleche_tapis').setOrigin(0, 0.5).setAlpha(0.5).setDepth(-49));
     }
 
     this.gm = new GameManager(this.mode);
@@ -312,7 +312,7 @@ export class GameScene extends Phaser.Scene {
 
   private updateChef(dt: number): void {
     const { chef, gm } = this;
-    const onBelt = conveyorsOf(this.world).some((c) => chef.y >= c.y && chef.y <= c.y + c.h);
+    const onBelt = conveyorsOf(this.world).some((c) => chef.y >= c.y && chef.y <= c.y + c.h && (c.x === undefined || (chef.x >= c.x && chef.x <= c.x + c.w!)));
     const speed = chef.def.speed * (1 + 0.15 * gm.level('bottes')) * (chef.powers.vitesse > 0 ? 1.35 : 1) * (onBelt ? 1.6 : 1);
     const dir = this.inverseT > 0 ? this.touch.dir.clone().negate() : this.touch.dir;
     if (!this.dashing) chef.move(dir, speed, dt, this.bounds, this.blocked);

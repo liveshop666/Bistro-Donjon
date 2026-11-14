@@ -24,6 +24,7 @@ export class BootScene extends Phaser.Scene {
     for (const w of WORLD_ORDER) if (WORLDS[w].wide) this.load.image('wide_' + w, `maps/wide_${w}.jpg`);
     for (const i of INGREDIENTS) this.load.image('ing_' + i, `ui/ing_${i}.png`);
     for (const u of UPGRADES) this.load.image(u.icon, `ui/${u.icon}.png`);
+    this.load.image('logo', '../logo.png');
     for (const k of ['marmite', 'coeur', 'piece', 'bouton_ultime']) this.load.image(k, `ui/${k}.png`);
   }
 
