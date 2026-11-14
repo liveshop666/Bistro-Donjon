@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { ARENA, artScale, ENEMIES, EnemyDef, EnemyId, is3d } from '../core/constants';
+import { ARENA, artScale, ENEMIES, EnemyDef, EnemyId, is3d, STYLE_3D } from '../core/constants';
 import anchors from '../core/spriteAnchors.json';
 
 export interface EnemyApi {
@@ -174,9 +174,20 @@ export class Enemy {
     return [this.dir.x * 230, this.dir.y * 230];
   }
 
-  hit(dmg: number): void {
+  /** Style 3D : écrasement de l'impact (1 = au moment du coup, retombe à 0). */
+  private squish = 0;
+
+  /** @param fromX/fromY d'où vient le coup : en style 3D le monstre recule un peu (vidéo de Rudy) */
+  hit(dmg: number, fromX?: number, fromY?: number): void {
     this.hp -= dmg;
     this.flash = 0.08;
+    if (STYLE_3D && fromX !== undefined && fromY !== undefined && this.def.ai !== 'boss') {
+      const a = Math.atan2(this.y - fromY, this.x - fromX);
+      const push = this.mini ? 10 : 7;
+      this.x = Phaser.Math.Clamp(this.x + Math.cos(a) * push, 0, ARENA.w);
+      this.y = Math.min(ARENA.h, this.y + Math.sin(a) * push);
+      this.squish = 1;
+    }
   }
 
   separate(other: Enemy): void {
@@ -201,6 +212,8 @@ export class Enemy {
     let lift = this.hop * 12 + flying;
     let squash = 1;
     // Nouveaux monstres (une seule image) : marche dessinée par le code, rebond + écrasement + balancement
+    this.squish = Math.max(0, this.squish - 0.12);
+    if (this.squish > 0) squash *= 1 - 0.28 * Math.sin(this.squish * Math.PI);
     const walking = (WALK_BY_CODE.has(this.def.id) || is3d(this.sprite.texture.key)) && this.moveSpeed > 2 && this.stun <= 0;
     const step = Math.abs(Math.sin(this.t * (6 + this.moveSpeed / 12)));
     if (walking) {
@@ -241,6 +254,16 @@ export class Enemy {
       return;
     }
     const sp = this.sprite;
+    if (STYLE_3D && this.def.ai !== 'boss') {
+      // vidéo de Rudy : le monstre vaincu est projeté en arrière en tournoyant, puis disparaît
+      const dir = this.faceLeft ? 1 : -1;
+      sp.setTintFill(0xffffff);
+      this.scene.time.delayedCall(50, () => sp.active && sp.clearTint());
+      this.scene.tweens.add({ targets: sp, x: sp.x + dir * 46, angle: dir * 300, duration: 420, ease: 'Quad.out' });
+      this.scene.tweens.add({ targets: sp, y: sp.y - 34, duration: 210, ease: 'Quad.out', yoyo: true });
+      this.scene.tweens.add({ targets: sp, alpha: 0, scaleX: sp.scaleX * 0.7, scaleY: sp.scaleY * 0.7, delay: 220, duration: 200, onComplete: () => sp.destroy() });
+      return;
+    }
     if (this.def.id === 'tomate') sp.setTexture('tomate_ko').setRotation(0);
     sp.setTintFill(0xffffff);
     this.scene.time.delayedCall(60, () => sp.active && sp.clearTint());

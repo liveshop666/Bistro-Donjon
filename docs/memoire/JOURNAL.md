@@ -4,6 +4,13 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
 
 ## Où on en est (14/11/2026)
 
+**15/11/2026 (2) : sons et mouvements de la vidéo de pub de Rudy**
+- Rudy a généré sa pub (`reference/3d/pub-video-rudy.mp4`) et veut retrouver les mêmes mouvements et les mêmes bruits dans le jeu, sans bruits « 8-bit ».
+- Sons : 8 vrais bruitages découpés dans sa vidéo (`sh tools/extract_sons.sh` -> `public/assets/sons/`) : coup de poêle (impact + flamme), attaque des flammes, frappe lourde, coup rapide, monstre écrasé, rugissement du boss, final de victoire, marmite. Ils remplacent les bruits synthétisés correspondants (`SAMPLE_OF` dans `AudioManager`) ; les autres petits bruits restent synthétisés. Musique adoucie (filtre + écho de grande salle) pour sonner moins rétro. Note : les extraits contiennent un peu de la musique de la vidéo.
+- Mouvements : le chef lève sa poêle puis frappe d'un grand coup (étirement puis écrasement), croissant de feu plus large ; le monstre touché recule et s'écrase ; gouttes de la couleur du monstre (vert pour la gelée, rouge pour la tomate...), étoile d'impact, petite secousse et arrêt sur image ; le monstre vaincu est projeté en tournoyant ; le boss qui arrive a droit à un gros plan (la caméra va le voir, zoome, rugissement et secousse).
+- Personnages 3D 20 % plus grands (`artScale` 0,6) et caméra un peu plus proche en paysage (demande de Rudy : « un peu petit »).
+- Testé : coup image par image, gros plan du boss, 6 mondes, robot dans 4 mondes ; aucune erreur. Les sons n'ont pas pu être écoutés ici (pas de haut-parleur) : à vérifier sur le téléphone.
+
 **15/11/2026 : toute l'application en 3D, nouvel écran de chargement (fusionné, demande de Rudy)**
 - Écran de chargement : plus d'image ; « BISTRO DONJON » en grand et une barre qui se remplit avec le vrai chargement (« Chargement... 63 % »), puis la page d'accueil. Le démarrage de l'appli Android n'affiche plus de logo (fond noir).
 - En 3D en plus : les 6 costumes de la boutique, la marmite, la planche, le comptoir et les 4 ingrédients (planches `reference/3d/costumes-3d.png` et `cuisine-3d.png`, `python3 tools/extract_3d.py`).

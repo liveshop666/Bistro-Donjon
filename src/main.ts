@@ -15,6 +15,9 @@ import { SignupScene } from './scenes/SignupScene';
 import { App } from '@capacitor/app';
 import { reloadIfUpdated } from './core/update';
 import { RES } from './core/layout';
+import { STYLE_3D } from './core/constants';
+// style 3D : vrais bruitages (découpés dans la vidéo de pub de Rudy)
+if (STYLE_3D) audio.useRealSounds();
 
 const parent = document.getElementById('game') as HTMLDivElement;
 

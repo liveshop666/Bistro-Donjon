@@ -121,7 +121,48 @@ const TUNES: Record<Tune, TuneDef> = {
 const hz = (midi: number): number => 440 * Math.pow(2, (midi - 69) / 12);
 const MUTE_KEY = 'bistro-donjon-muet';
 
+/**
+ * Style 3D (15/11, demande de Rudy) : les gros bruitages sont de vrais sons, découpés dans sa vidéo de pub
+ * (tools/extract_sons.sh -> public/assets/sons/). Les autres bruitages restent synthétisés.
+ */
+const SAMPLE_OF: Partial<Record<Sfx, string>> = {
+  coup_poele: 'poele', coup_hachoir: 'wok', coup_wok: 'wok', coup_elec: 'wok',
+  coup_rouleau: 'lourd', coup_hache: 'lourd', coup_glace: 'lourd', choc: 'lourd',
+  splat: 'ecrase', pop: 'ecrase', ultime: 'flamme', rugissement: 'boss', victoire: 'final', marmite: 'marmite',
+};
+const SAMPLE_VOL: Record<string, number> = { poele: 0.55, wok: 0.5, lourd: 0.6, ecrase: 0.45, flamme: 0.7, boss: 0.8, final: 0.8, marmite: 0.4 };
+
 class AudioManager {
+  private samples = new Map<string, AudioBuffer>();
+  private realSounds = false;
+
+  /** Charge les vrais bruitages (style 3D). Appelé une fois au démarrage. */
+  useRealSounds(base = 'assets/sons/'): void {
+    this.realSounds = true;
+    const ctx = this.context();
+    if (!ctx) return;
+    for (const name of new Set(Object.values(SAMPLE_OF))) {
+      void fetch(`${base}${name}.mp3`)
+        .then((r) => r.arrayBuffer())
+        .then((b) => ctx.decodeAudioData(b))
+        .then((buf) => this.samples.set(name!, buf))
+        .catch(() => undefined); // son absent : le bruitage synthétisé prend le relais
+    }
+  }
+
+  /** Joue un vrai son s'il est chargé ; renvoie faux sinon. Légère variation de hauteur pour ne pas lasser. */
+  private playSample(name: string): boolean {
+    const buf = this.samples.get(name);
+    if (!buf || !this.ctx) return false;
+    const src = this.ctx.createBufferSource();
+    src.buffer = buf;
+    src.playbackRate.value = 0.94 + Math.random() * 0.12;
+    const g = this.ctx.createGain();
+    g.gain.value = SAMPLE_VOL[name] ?? 0.6;
+    src.connect(g).connect(this.sfxBus);
+    src.start();
+    return true;
+  }
   muted = false;
   private ctx: AudioContext | null = null;
   private master!: GainNode;
@@ -162,7 +203,25 @@ class AudioManager {
     this.master.connect(ctx.destination);
     this.musicBus = ctx.createGain();
     this.musicBus.gain.value = 0.2; // musique en retrait : les bruitages (coups, monstres) restent au premier plan
-    this.musicBus.connect(this.master);
+    if (this.realSounds) {
+      // style 3D : on adoucit les ondes carrées (filtre) et on ajoute un écho de grande salle
+      const soft = ctx.createBiquadFilter();
+      soft.type = 'lowpass';
+      soft.frequency.value = 2200;
+      const rev = ctx.createConvolver();
+      const len = Math.floor(ctx.sampleRate * 1.8);
+      const ir = ctx.createBuffer(2, len, ctx.sampleRate);
+      for (let c = 0; c < 2; c++) {
+        const d = ir.getChannelData(c);
+        for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+      }
+      rev.buffer = ir;
+      const wet = ctx.createGain();
+      wet.gain.value = 0.35;
+      this.musicBus.connect(soft).connect(this.master);
+      soft.connect(rev).connect(wet).connect(this.master);
+      this.musicBus.gain.value = 0.26;
+    } else this.musicBus.connect(this.master);
     this.sfxBus = ctx.createGain();
     this.sfxBus.gain.value = 0.9;
     this.sfxBus.connect(this.master);
@@ -232,6 +291,8 @@ class AudioManager {
     if (now - (this.last[name] ?? -1) < 0.045) return;
     this.last[name] = now;
     const b = this.sfxBus;
+    const real = this.realSounds ? SAMPLE_OF[name] : undefined;
+    if (real && this.playSample(real)) return;
 
     switch (name) {
       case 'clic': // bouton appuyé : « Bouton rétro » (choix de Rudy, 12/11)
