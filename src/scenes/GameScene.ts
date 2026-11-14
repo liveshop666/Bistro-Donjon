@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { landscapeHeight, landscapeWanted, landscapeWidth, pageCam, RES } from '../core/layout';
+import { landscapeHeight, landscapeWanted, landscapeWidth, pageCam, RES, setQuality, storedQuality } from '../core/layout';
 import { audio, Sfx, Tune } from '../audio/AudioManager';
 import {
   ARENA, BOSS_REWARD, ChefId, ENEMIES, FREE_WORLDS, ShopItem, WORLD_HP_STEP, worldRank, CHEFS, CHOP_TIME, COMBO_GOLD, COMBO_SIZE, conveyorsOf, EnemyId, GameMode, H, IngredientId, INGREDIENTS, itemLabel, playerLevel, ORDER_PATIENCE,
@@ -264,6 +264,7 @@ export class GameScene extends Phaser.Scene {
   update(time: number, delta: number): void {
     const dt = Math.min(delta, 50) / 1000;
     this.touch.update(dt);
+    this.watchFps(delta);
     if (this.hudCam) this.followChef(Math.min(1, dt * 6));
     const { gm, chef } = this;
     // en duel en ligne le temps ne s'arrête pas : le menu pause s'affiche par-dessus
@@ -864,6 +865,21 @@ export class GameScene extends Phaser.Scene {
     this.hudCam = pageCam(this.cameras.add(), 0, 0, gw, gh);
     this.ovlCam = pageCam(this.cameras.add(), 0, 0, gw, gh);
     this.followChef(1);
+  }
+
+  /**
+   * Le téléphone n'arrive pas à suivre en qualité haute (moins de 40 images par seconde sur 8 s de jeu) :
+   * on retient « fluide », appliqué au retour au menu. Un choix fait par le joueur dans Mon compte n'est jamais changé.
+   */
+  private fpsT = 0;
+  private fpsN = 0;
+  private watchFps(delta: number): void {
+    if (RES < 2 || storedQuality() || this.paused || delta > 500) return;
+    this.fpsT += delta;
+    this.fpsN++;
+    if (this.fpsT < 8000) return;
+    if ((this.fpsN * 1000) / this.fpsT < 40) setQuality('fluide');
+    this.fpsT = this.fpsN = 0;
   }
 
   /** En paysage, la map défile pour garder le chef au milieu de l'écran. */
