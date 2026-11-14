@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { COMBO_SIZE, IngredientId, INGREDIENTS, ORDER_PATIENCE, POWER_LABEL, PowerId, W, WAVES } from '../core/constants';
+import { COMBO_SIZE, IngredientId, INGREDIENTS, ORDER_PATIENCE, POWER_LABEL, PowerId, STYLE_3D, W, WAVES } from '../core/constants';
 import { GameManager } from '../core/GameManager';
 import { RecipeManager } from '../core/RecipeManager';
 import { Chef } from '../entities/Chef';
@@ -23,9 +23,9 @@ export class Hud {
   /** Tous les objets de l'interface fixe (pour les caméras en paysage et pour tout détruire). */
   private own = new Set<Phaser.GameObjects.GameObject>();
   private releaseFn: (p: Phaser.Input.Pointer) => void;
-  private bars: Phaser.GameObjects.Graphics;
-  private timer: Phaser.GameObjects.Text;
-  private gold: Phaser.GameObjects.Text;
+  private bars!: Phaser.GameObjects.Graphics;
+  private timer!: Phaser.GameObjects.Text;
+  private gold!: Phaser.GameObjects.Text;
   private powers: Phaser.GameObjects.Text;
   private invTexts = {} as Record<IngredientId, Phaser.GameObjects.Text>;
   private slicedTexts = {} as Record<IngredientId, Phaser.GameObjects.Text>;
@@ -56,8 +56,16 @@ export class Hud {
       this.ULT = { x: sw - 150, y: sh - 50, r: 32 };
       this.PAUSE = { x: -100, y: -100, w: 0, h: 0 }; // pas de bouton PAUSE en bas : celui du haut à droite suffit
     }
+    if (STYLE_3D) {
+      // comme l'image de référence (14/11) : gros bouton rouge d'attaque, bouton orange des flammes collé en haut à droite
+      this.ATK = land ? { x: sw - 108, y: sh - 58, r: 42 } : { x: 284, y: sh - 64, r: 42 };
+      this.ULT = land ? { x: sw - 46, y: sh - 112, r: 32 } : { x: 320, y: sh - 132, r: 30 };
+      this.PAUSE = { x: -100, y: -100, w: 0, h: 0 }; // la pause est en haut à droite, comme sur la référence
+    }
     const { ATK, ULT } = this;
 
+    if (STYLE_3D) this.top3d(sw, onPause);
+    else {
     if (land) {
       scene.add.rectangle(0, 0, 100, 26, 0x14141f, 0.8).setOrigin(0).setDepth(D);
       scene.add.rectangle(sw / 2 - 70, 0, 140, 26, 0x14141f, 0.8).setOrigin(0).setDepth(D);
@@ -70,10 +78,11 @@ export class Hud {
     scene.add.image(sw - 12, 13, 'ico_pause').setDepth(D + 1).setInteractive({ useHandCursor: true }).on('pointerdown', onPause);
     if (land) scene.add.zone(sw - 16, 14, 36, 30).setDepth(D + 3).setInteractive({ useHandCursor: true }).on('pointerdown', onPause);
     scene.add.image(sw - 32, 13, 'piece').setDepth(D + 1);
+    }
     this.patience = scene.add.graphics().setDepth(D + 2);
     this.combo = txt(scene, 6, land ? 32 : 70, '', 8, '#ffc533').setDepth(D + 1).setStroke('#14141f', 3);
     this.rival = txt(scene, sw - 6, land ? 32 : 70, '', 8, '#ff9d8a').setOrigin(1, 0).setDepth(D + 1).setStroke('#14141f', 3);
-    this.gold = txt(scene, sw - 42, 13, '0', 8, '#ffd23e').setOrigin(1, 0.5).setDepth(D + 1);
+    if (!STYLE_3D) this.gold = txt(scene, sw - 42, 13, '0', 8, '#ffd23e').setOrigin(1, 0.5).setDepth(D + 1);
     this.powers = txt(scene, sw / 2, land ? 72 : 84, '', 8, '#8fe0ff').setOrigin(0.5, 0).setDepth(D + 1).setStroke('#14141f', 3);
 
     // inventaire
@@ -88,12 +97,14 @@ export class Hud {
 
     // bouton d'ultime
     this.ultRing = scene.add.graphics().setDepth(D + 1);
-    this.ultBtn = scene.add.image(ULT.x, ULT.y, 'btn_feu').setDepth(D + 2).setInteractive({ useHandCursor: true });
+    this.ultBtn = scene.add.image(ULT.x, ULT.y, STYLE_3D ? 'ui3d_btn_feu' : 'btn_feu').setDepth(D + 2).setInteractive({ useHandCursor: true });
     this.ultBtn.on('pointerdown', onUlt);
 
     // bouton d'attaque (maintenir pour frapper)
     this.atkBtn = scene.add.graphics().setDepth(D + 1);
-    this.atkIcon = scene.add.image(ATK.x, ATK.y, 'ico_hachoir').setDepth(D + 2).setScale(0.62).setAngle(-30);
+    this.atkIcon = STYLE_3D
+      ? scene.add.image(ATK.x, ATK.y, 'ui3d_btn_attaque').setDepth(D + 2).setScale(0.5)
+      : scene.add.image(ATK.x, ATK.y, 'ico_hachoir').setDepth(D + 2).setScale(0.62).setAngle(-30);
     scene.add
       .zone(ATK.x, ATK.y, ATK.r * 2 + 8, ATK.r * 2 + 8)
       .setDepth(D + 3)
@@ -122,6 +133,49 @@ export class Hud {
     scene.add.zone(PAUSE.x, PAUSE.y, PAUSE.w, PAUSE.h).setDepth(D + 3).setInteractive({ useHandCursor: true }).on('pointerdown', onPause);
   }
 
+  // ------------------------------------------------------------------ interface façon image de référence (style 3D)
+  private hearts: Phaser.GameObjects.Image[] = [];
+  private heartsFull: Phaser.GameObjects.Image[] = [];
+
+  /** Haut de l'écran : coeurs à gauche, chrono au centre, pièces et pause à droite (pastilles sombres arrondies). */
+  private top3d(sw: number, onPause: () => void): void {
+    const { scene } = this;
+    for (let i = 0; i < 8; i++) {
+      this.hearts.push(scene.add.image(14 + i * 19, 14, 'ui3d_coeur_vide').setScale(0.45).setDepth(D + 1));
+      this.heartsFull.push(scene.add.image(14 + i * 19, 14, 'ui3d_coeur').setScale(0.45).setDepth(D + 2));
+    }
+    scene.add.image(10, 31, 'ico_stand').setDepth(D + 1);
+    this.bars = scene.add.graphics().setDepth(D + 1);
+    const pill = (x: number, w: number) => scene.add.graphics().setDepth(D).fillStyle(0x0c0c18, 0.55).fillRoundedRect(x - w / 2, 3, w, 23, 11.5);
+    pill(sw / 2, 116);
+    scene.add.image(sw / 2 - 44, 14.5, 'ui3d_chrono').setScale(0.45).setDepth(D + 1);
+    this.timer = scene.add.text(sw / 2 + 8, 14.5, '', { fontFamily: '"Lilita One"', fontSize: '16px', color: '#ffffff' }).setOrigin(0.5).setDepth(D + 1).setShadow(0, 1, '#000000', 2);
+    pill(sw - 74, 76);
+    scene.add.image(sw - 98, 14.5, 'ui3d_piece').setScale(0.45).setDepth(D + 1);
+    this.gold = scene.add.text(sw - 86, 14.5, '0', { fontFamily: '"Lilita One"', fontSize: '16px', color: '#ffffff' }).setOrigin(0, 0.5).setDepth(D + 1).setShadow(0, 1, '#000000', 2);
+    scene.add.image(sw - 17, 15, 'ui3d_pause').setScale(0.5).setDepth(D + 1);
+    scene.add.zone(sw - 17, 15, 34, 30).setDepth(D + 3).setInteractive({ useHandCursor: true }).on('pointerdown', onPause);
+  }
+
+  private refresh3d(): void {
+    const { gm, chef } = this;
+    // un coeur = 2 points de vie, demi-coeur si impair
+    const n = Math.ceil(chef.maxHp / 2);
+    this.hearts.forEach((h, i) => h.setVisible(i < n));
+    this.heartsFull.forEach((h, i) => {
+      const v = Phaser.Math.Clamp(chef.hp - i * 2, 0, 2);
+      h.setVisible(i < n && v > 0).setCrop(0, 0, v === 1 ? 20 : 40, 40);
+    });
+    this.bars.clear();
+    this.bars.fillStyle(0x000000, 0.6).fillRoundedRect(18, 28, 60, 6, 3);
+    this.bars.fillStyle(0xe0a04a).fillRoundedRect(19, 29, Math.max(2, Math.round((58 * gm.standHp) / gm.standMax)), 4, 2);
+    const mm = Math.max(0, Math.ceil(gm.timeLeft));
+    const clock = `${String(Math.floor(mm / 60)).padStart(2, '0')}:${String(mm % 60).padStart(2, '0')}`;
+    const label = gm.mode === 'duel' ? `DUEL ${clock}` : gm.phase === 'boss' ? 'BOSS !' : gm.phase === 'kitchen' ? `CUISINE ${clock}` : `${Math.min(gm.wave + 1, WAVES.length)}/${WAVES.length}  ${clock}`;
+    this.timer.setText(label).setColor(gm.phase === 'kitchen' ? '#ffd23e' : gm.phase === 'boss' ? '#ff8a7a' : '#ffffff');
+    this.gold.setText(gm.gold.toLocaleString('fr-FR'));
+  }
+
   /** Vrai si l'objet fait partie de l'interface fixe (bandeaux, boutons, commandes). */
   owns(o: Phaser.GameObjects.GameObject): boolean {
     return this.own.has(o) || this.orderUi.includes(o);
@@ -129,7 +183,7 @@ export class Hud {
 
   /** Coin haut-gauche de la commande n° i : côte à côte, centrées sous le chrono. */
   private orderPos(i: number): { x: number; y: number } {
-    return { x: (this.land ? Math.round(this.sw / 2 - 178) : 4) + i * 178, y: 29 };
+    return { x: (this.land ? Math.round(this.sw / 2 - 178) : 4) + i * 178, y: STYLE_3D ? 38 : 29 };
   }
 
   /** Détruit toute l'interface (quand on tourne le téléphone, elle est reconstruite). */
@@ -157,7 +211,7 @@ export class Hud {
       Math.hypot(x - ULT.x, y - ULT.y) < ULT.r + 4 ||
       Math.hypot(x - ATK.x, y - ATK.y) < ATK.r + 6 ||
       (Math.abs(x - PAUSE.x) < PAUSE.w / 2 + 2 && Math.abs(y - PAUSE.y) < PAUSE.h / 2 + 2) ||
-      (x > W - 26 && y < 26)
+      (x > W - 36 && y < 30)
     );
   }
 
@@ -195,6 +249,8 @@ export class Hud {
 
   refresh(time: number): void {
     const { gm, chef } = this;
+    if (STYLE_3D) this.refresh3d();
+    else {
     this.bars.clear();
     this.bars.fillStyle(0x000000).fillRect(18, 4, 72, 8).fillRect(18, 15, 72, 8);
     this.bars.fillStyle(0xe8483a).fillRect(19, 5, Math.round((70 * chef.hp) / chef.maxHp), 6);
@@ -206,6 +262,7 @@ export class Hud {
       gm.mode === 'duel' ? `DUEL ${clock}` : gm.phase === 'boss' ? 'BOSS !' : gm.phase === 'kitchen' ? `CUISINE ${clock}` : `VAGUE ${Math.min(gm.wave + 1, WAVES.length)}/${WAVES.length} ${clock}`;
     this.timer.setText(label).setColor(gm.phase === 'kitchen' ? '#ffd23e' : gm.phase === 'boss' ? '#ff6a5a' : '#ffffff');
     this.gold.setText(String(gm.gold));
+    }
 
     for (const ing of INGREDIENTS) {
       const s = chef.inv[ing];
@@ -244,6 +301,13 @@ export class Hud {
     this.ultRing.arc(ULT.x, ULT.y, ULT.r + 2, -Math.PI / 2, -Math.PI / 2 + (Math.PI * 2 * chef.ult) / 100).strokePath();
     const s = (ULT.r * 2) / 128;
     this.ultBtn.setAlpha(ready ? 1 : 0.6).setTint(ready ? 0xffffff : 0x8a8a9a).setScale(ready ? s * (1 + Math.sin(time / 120) * 0.05) : s * 0.92);
+    if (STYLE_3D) {
+      // bouton d'attaque de la référence : il s'enfonce et fonce un peu quand on appuie
+      const held3d = this.attackHeld;
+      this.atkBtn.clear();
+      this.atkIcon.setScale(held3d ? 0.46 : 0.5).setTint(held3d ? 0xd8d8d8 : 0xffffff).setY(ATK.y + (held3d ? 2 : 0));
+      return;
+    }
 
     // bouton d'attaque : s'enfonce quand on appuie
     const held = this.attackHeld;

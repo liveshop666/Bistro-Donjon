@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import '@fontsource/press-start-2p';
+import '@fontsource/lilita-one'; // chiffres de l'interface 3D (chrono, pièces), comme sur l'image de référence
 import { audio } from './audio/AudioManager';
 import { H, W } from './core/constants';
 import { BootScene } from './scenes/BootScene';
@@ -32,7 +33,7 @@ function fitParent(w = W, h = H): void {
 }
 fitParent(W * RES, H * RES);
 
-document.fonts.load('8px "Press Start 2P"').finally(() => {
+Promise.all([document.fonts.load('8px "Press Start 2P"'), document.fonts.load('16px "Lilita One"')]).finally(() => {
   const game = new Phaser.Game({
     type: Phaser.AUTO,
     parent,

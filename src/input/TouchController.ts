@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { RES } from '../core/layout';
+import { STYLE_3D } from '../core/constants';
 
 const JOY_RADIUS = 34;
 const DEADZONE = 5;
@@ -36,8 +37,10 @@ export class TouchController {
   constructor(scene: Phaser.Scene, private isUi: (x: number, y: number) => boolean) {
     scene.input.addPointer(2);
     // textures dessinées 2 fois plus grandes (nettes avec le rendu fin) : affichées à moitié
-    this.base = scene.add.image(0, 0, 'joy_base').setDepth(2500).setVisible(false).setAlpha(0.85).setScale(0.5);
-    this.thumb = scene.add.image(0, 0, 'joy_thumb').setDepth(2501).setVisible(false).setAlpha(0.95).setScale(0.5);
+    this.base = scene.add.image(0, 0, STYLE_3D ? 'joy_base3d' : 'joy_base').setDepth(2500).setVisible(false).setAlpha(0.85).setScale(0.5);
+    this.thumb = scene.add.image(0, 0, STYLE_3D ? 'ui3d_joy_pommeau' : 'joy_thumb').setDepth(2501).setVisible(false).setAlpha(0.95).setScale(0.5);
+    this.scene = scene;
+    this.rest();
     this.trail = scene.add.graphics().setDepth(1900);
 
     scene.input.on('pointerdown', this.down, this);
@@ -56,8 +59,8 @@ export class TouchController {
     if (this.joyId === -1) {
       this.joyId = p.id;
       this.origin.set(P.x, P.y);
-      this.base.setPosition(P.x, P.y).setVisible(true);
-      this.thumb.setPosition(P.x, P.y).setVisible(true);
+      this.base.setPosition(P.x, P.y).setVisible(true).setAlpha(0.85);
+      this.thumb.setPosition(P.x, P.y).setVisible(true).setAlpha(0.95);
     }
   }
 
@@ -102,6 +105,20 @@ export class TouchController {
     this.touchDir.set(0, 0);
     this.base.setVisible(false);
     this.thumb.setVisible(false);
+    this.rest();
+  }
+
+  private scene: Phaser.Scene;
+  /** Style 3D : au repos, le joystick attend en bas à gauche (comme sur l'image de référence), un peu transparent. */
+  rest(): void {
+    if (!STYLE_3D || this.joyId !== -1) return;
+    const w = this.scene.scale.width / RES;
+    const h = this.scene.scale.height / RES;
+    const land = w > h;
+    const x = land ? 78 : 64;
+    const y = land ? h - 76 : h - 116;
+    this.base.setPosition(x, y).setVisible(true).setAlpha(0.6);
+    this.thumb.setPosition(x, y).setVisible(true).setAlpha(0.75);
   }
 
   /** Vrai pour le joystick et la traînée de doigt (dessinés en coordonnées d'écran). */

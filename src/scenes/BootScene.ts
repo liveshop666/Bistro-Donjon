@@ -19,7 +19,7 @@ export class BootScene extends Phaser.Scene {
     // style 3D : la même clé charge l'image 3D à la place du dessin pixel
     const art = (k: string, pixel: string) => (is3d(k) ? `sprites3d/${ART_3D[k]}.png` : pixel);
     for (const f of SPRITE_FILES.chefs) this.load.image(f, art(f, `sprites/chefs/${f}.png`));
-    for (const it of SHOP) if (it.sprite) this.load.image(it.sprite, `sprites/skins/${it.sprite}.png`);
+    for (const it of SHOP) if (it.sprite) this.load.image(it.sprite, art(it.sprite, `sprites/skins/${it.sprite}.png`));
     for (const e of SPRITE_FILES.enemies) this.load.image(e, art(e, `sprites/enemies/${e}.png`));
     for (const w of WORLD_ORDER) this.load.image('map_' + w, `maps/${w}.png`);
     // grandes maps paysage (le terrain de la partie) ; les petites restent pour les menus
@@ -27,12 +27,15 @@ export class BootScene extends Phaser.Scene {
     for (const i of INGREDIENTS) this.load.image('ing_' + i, `ui/ing_${i}.png`);
     for (const u of UPGRADES) this.load.image(u.icon, `ui/${u.icon}.png`);
     this.load.image('logo', '../logo.png');
+    // interface façon image de référence (découpée par tools/extract_ui3d.py)
+    if (STYLE_3D) for (const k of ['btn_attaque', 'btn_feu', 'joy_pommeau', 'chrono', 'piece', 'pause', 'coeur', 'coeur_vide']) this.load.image('ui3d_' + k, `ui3d/${k}.png`);
     for (const k of ['marmite', 'coeur', 'piece', 'bouton_ultime']) this.load.image(k, `ui/${k}.png`);
   }
 
   create(): void {
     // les dessins HD sont réduits à l'affichage : lissage pour garder tous les détails
     for (const c of CHEF_ORDER) for (const k of ['hd_' + c, 'hdp_' + c]) this.textures.get(k).setFilter(Phaser.Textures.FilterMode.LINEAR);
+    for (const k of this.textures.getTextureKeys()) if (k.startsWith('ui3d_')) this.textures.get(k).setFilter(Phaser.Textures.FilterMode.LINEAR);
     // images 3D : lissées (pas de gros pixels)
     for (const k of Object.keys(ART_3D)) if (is3d(k) && this.textures.exists(k)) this.textures.get(k).setFilter(Phaser.Textures.FilterMode.LINEAR);
     const g = this.make.graphics({ x: 0, y: 0 }, false);
@@ -59,6 +62,15 @@ export class BootScene extends Phaser.Scene {
       g.fillStyle(0xe8642a, 1).fillCircle(34, 32, 26);
       g.fillStyle(0xff9a4a, 1).fillCircle(32, 28, 18);
       g.fillStyle(0xffffff, 0.55).fillEllipse(26, 20, 16, 9);
+    });
+    // socle du joystick façon image de référence : disque sombre transparent, liseré clair, 4 flèches grises
+    tex('joy_base3d', 184, 184, () => {
+      g.fillStyle(0x000000, 0.38).fillCircle(92, 92, 90);
+      g.lineStyle(3, 0xffffff, 0.22).strokeCircle(92, 92, 88);
+      g.fillStyle(0x000000, 0.22).fillCircle(92, 92, 60);
+      g.fillStyle(0x9aa0aa, 0.75);
+      g.fillTriangle(92, 16, 80, 32, 104, 32).fillTriangle(92, 168, 80, 152, 104, 152);
+      g.fillTriangle(16, 92, 32, 80, 32, 104).fillTriangle(168, 92, 152, 80, 152, 104);
     });
     // icône du bouton d'attaque : un hachoir de cuisine
     tex('ico_hachoir', 64, 64, () => {

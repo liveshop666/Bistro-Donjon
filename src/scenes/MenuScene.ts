@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { landscapeMenu, MENU_SCALE, portraitMenu } from '../ui/landscapeMenu';
 import { applyQuality, landscapeWanted, RES } from '../core/layout';
 import { audio } from '../audio/AudioManager';
-import { CHEF_ORDER, CHEFS, ChefId, DAILY_GIFT, FREE_WORLDS, H, itemLabel, playerLevel, W, worldUnlocked, WORLD_ORDER, WorldId, WORLDS } from '../core/constants';
+import { CHEF_ORDER, CHEFS, ChefId, is3d, DAILY_GIFT, FREE_WORLDS, H, itemLabel, playerLevel, W, worldUnlocked, WORLD_ORDER, WorldId, WORLDS } from '../core/constants';
 import { claimDailyGift, loadProfile, loadRun, saveProfile } from '../core/Storage';
 import { openModal } from '../ui/Modal';
 import { claimBonus, claimMission, dailyMissions, MISSION_BONUS, MISSIONS, missionsStatus } from '../core/Missions';
@@ -236,7 +236,8 @@ export class MenuScene extends Phaser.Scene {
     // le chef en grand : dessin haute définition (ou le costume équipé, agrandi en nombre entier)
     const worn = skin && p.owned.includes(skin) ? skin : null;
     const img = add(this.add.image(cx, 240, worn ?? 'hd_' + this.chef).setOrigin(0.5, 1));
-    img.setScale(worn ? Math.max(1, Math.floor(Math.min(3, 190 / img.width, 160 / img.height))) : Math.min(190 / img.width, 150 / img.height));
+    // costume pixel : agrandi en nombre entier ; costume 3D ou dessin HD : ajusté à la place disponible
+    img.setScale(worn && !is3d(worn) ? Math.max(1, Math.floor(Math.min(3, 190 / img.width, 160 / img.height))) : Math.min(190 / img.width, 150 / img.height));
     add(txt(this, cx, 250, c.name, 8, '#ffc533').setOrigin(0.5, 0));
     add(txt(this, cx, 264, `${c.weapon}\n${c.ultimateName}`, 8, '#bfc8e0').setOrigin(0.5, 0).setAlign('center'));
     CHEF_ORDER.forEach((id, i) => {

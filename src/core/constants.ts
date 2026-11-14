@@ -334,12 +334,17 @@ export const SPRITE_FILES = {
 /**
  * STYLE 3D : remplace des dessins pixel par des images au rendu 3D (planche reference/3d/personnages-3d.png, découpée
  * par tools/extract_3d.py dans public/assets/sprites3d/). Les dessins pixel restent : `false` revient au jeu d'avant.
- * Essai sur la Clairière : Chef Moustachu, tomate, champignon, gelée, piment, Roi Tomate et la map.
+ * Depuis le 14/11 au soir : les 8 maps, les 3 chefs, les 4 chefs combattants et tous les monstres (les 6 costumes restent pixel).
  */
 export const STYLE_3D = true;
 /** Clé d'un sprite du jeu -> fichier 3D qui le remplace (toutes les images d'animation d'un personnage prennent la même). */
+const chef3d = (id: ChefId) => [...CHEF_FRAMES[id].idle, ...CHEF_FRAMES[id].walk, ...CHEF_FRAMES[id].attack].map((k) => [k, id]);
 export const ART_3D: Record<string, string> = {
-  ...Object.fromEntries([...CHEF_FRAMES.moustachu.idle, ...CHEF_FRAMES.moustachu.walk, ...CHEF_FRAMES.moustachu.attack].map((k) => [k, 'moustachu'])),
+  ...Object.fromEntries([...chef3d('moustachu'), ...chef3d('shiba'), ...chef3d('noisette')]),
+  // chefs combattants des packs
+  skin_taureau: 'skin_taureau', skin_ours: 'skin_ours', skin_gorille: 'skin_gorille', skin_tigre: 'skin_tigre',
+  // monstres des mondes 5 à 8 et Roi Fromage
+  ail: 'ail', aubergine: 'aubergine', mais: 'mais', oignon: 'oignon', citrouille: 'citrouille', hotdog: 'hotdog', cube_fromage: 'cube_fromage', roi_fromage: 'roi_fromage',
   tomate: 'tomate', tomate_ko: 'tomate',
   champi: 'champi', champi_w0: 'champi', champi_w1: 'champi', champi_a0: 'champi',
   gelee_0: 'gelee', gelee_1: 'gelee', gelee_2: 'gelee', gelee_3: 'gelee',
@@ -349,8 +354,23 @@ export const ART_3D: Record<string, string> = {
 export const is3d = (key: string): boolean => STYLE_3D && key in ART_3D;
 /** Taille d'affichage d'un sprite : 0,5 pour les images 3D (dessinées 2 fois plus grandes), 1 sinon. */
 export const artScale = (key: string): number => (is3d(key) ? 0.5 : 1);
-/** Mondes redessinés en 3D : leur grande map (public/assets/maps/wide3d_<id>.jpg) et la cuisine replacée dessus. */
+/** Mondes redessinés en 3D : leur grande map (public/assets/maps/wide3d_<id>.jpg) et la cuisine replacée dessus
+ * (vide quand la map 3D garde la disposition de la grande map pixel). */
 export const WORLD_3D: Partial<Record<WorldId, Partial<WorldDef>>> = {
+  cantine: {}, glaciere: {}, volcan: {}, bateau: {}, bonbons: {},
+  taverne: {
+    wide: { w: 1176, h: 661, area: { x: 100, y: 0, w: 985, h: 640 } },
+    pot: { x: 487, y: 222 }, counter: { x: 705, y: 238 }, board: { x: 336, y: 226 }, standLine: 258,
+    obstacles: [{ x: 100, y: 180, w: 32, h: 170 }, { x: 808, y: 228, w: 192, h: 32 }], // tonneaux de gauche, tabourets du comptoir
+  },
+  marche: {
+    wide: { w: 1176, h: 661, area: { x: 200, y: 0, w: 800, h: 645 } },
+    pot: { x: 490, y: 194 }, counter: { x: 690, y: 198 }, board: { x: 590, y: 200 }, standLine: 218,
+    obstacles: [
+      { x: 322, y: 560, w: 26, h: 100 }, { x: 812, y: 560, w: 26, h: 100 }, // poteaux des lanternes du bas
+      { x: 375, y: 580, w: 85, h: 81 }, { x: 720, y: 625, w: 90, h: 36 }, { x: 962, y: 540, w: 38, h: 60 }, // caisses et tonneau
+    ],
+  },
   clairiere: {
     wide: { w: 1176, h: 661, area: { x: 120, y: 0, w: 940, h: 640 } },
     pot: { x: 425, y: 162 }, counter: { x: 655, y: 166 }, board: { x: 545, y: 170 }, standLine: 188,

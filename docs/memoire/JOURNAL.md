@@ -4,6 +4,15 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
 
 ## Où on en est (14/11/2026)
 
+**14/11/2026 (fin de nuit) : tout le jeu en 3D, façon image de référence de Rudy**
+- Rudy a envoyé l'image à reproduire (`reference/3d/reference-rudy.jpg`) : « exactement pareil » (flamme de la poêle, boutons, joystick, toutes les maps), et « que tout fonctionne, pas que du dessin ».
+- Fait : les 8 maps en 3D (`public/assets/maps/wide3d_<monde>.jpg`, originaux dans `reference/3d/`), les 3 chefs, les 4 chefs combattants des packs, les 12 monstres et les 2 boss en 3D (3 planches découpées par `python3 tools/extract_3d.py`).
+- Interface copiée de la référence (`python3 tools/extract_ui3d.py` découpe les vrais éléments de l'image dans `public/assets/ui3d/`) : coeurs en haut à gauche (1 coeur = 2 points de vie), chrono et pièces dans des pastilles sombres avec la police Lilita One, bouton pause carré, gros bouton rouge à l'épée et bouton orange des flammes collé en haut à droite, joystick visible en bas à gauche au repos (il suit le pouce quand on touche).
+- Effets : Chef Moustachu et Mlle Noisette lancent un croissant de feu (rouge, orange, jaune, coeur blanc) qui se déploie avec des braises ; la couleur suit l'arme ou l'effet équipé. Maître Shiba et ses combattants frappent le sol : onde de choc, éclats, petite secousse. Caméra un peu plus proche pour des personnages plus grands.
+- Tout marche comme avant (même moteur) : un robot a joué dans 4 mondes avec les 3 chefs sans aucune erreur ; captures vérifiées dans 6 mondes en portrait et en paysage.
+- Reste en pixel : les 6 costumes de la boutique, les ingrédients, la marmite, la planche, le comptoir, et les menus. `STYLE_3D = false` (`src/core/constants.ts`) revient au jeu pixel.
+- Le design Canva « export des maps » a disparu du compte de Rudy ; remplacé par « Bistro Donjon - export 3D » (`DAHa7uXcGeY`).
+
 **14/11/2026 (nuit) : essai du jeu en 3D, nouveaux boutons**
 - Demande de Rudy : « tout en 3D, comme l'image générée » (`reference/3d/concept-3d.jpg`). Décision de Claude, expliquée à Rudy : on garde le moteur du jeu (tout ce qui marche) et on remplace les dessins par des images au rendu 3D. Un vrai moteur 3D voudrait dire tout réécrire.
 - Essai fait sur la Clairière : map 3D (`public/assets/maps/wide3d_clairiere.jpg`), Chef Moustachu, tomate, champignon, gelée, piment et Roi Tomate en 3D (planche `reference/3d/personnages-3d.png` découpée par `python3 tools/extract_3d.py` dans `public/assets/sprites3d/`). Coup de poêle : grosse traînée de flammes avec étincelles, et le chef pivote en frappant.
@@ -170,7 +179,7 @@ Détails :
 - **Scène relancée à moitié pendant le test** : arrêter toutes les scènes et démarrer « Game » dans la même image laisse une scène sans caméra. Leçon : arrêter, attendre un instant, puis démarrer.
 
 ## Notes techniques
-- Récupérer une image Canva en taille réelle (trouvé le 14/11) : Canva ne donne que des aperçus de 200 px, mais on peut poser l'image sur une page d'un design puis exporter la page. Le design « Bistro Donjon - export des maps » (`DAHa4Him79Y`) sert à ça : ouvrir une modification (`read-design` avec `open_transaction`), `add_page` 2720 x 1536, `insert_fill` avec l'identifiant de l'image, enregistrer, puis `export-design` en JPG largeur 1680 sur les pages voulues. Rudy n'a plus besoin de télécharger les maps à la main.
+- Récupérer une image Canva en taille réelle (trouvé le 14/11) : Canva ne donne que des aperçus de 200 px, mais on peut poser l'image sur une page d'un design puis exporter la page. Le design « Bistro Donjon - export 3D » (`DAHa7uXcGeY`, l'ancien `DAHa4Him79Y` a disparu) sert à ça : ouvrir une modification (`read-design` avec `open_transaction`), `add_page` 2720 x 1536, `insert_fill` avec l'identifiant de l'image, enregistrer, puis `export-design` en JPG largeur 1680 sur les pages voulues. Rudy n'a plus besoin de télécharger les maps à la main.
 - Qualité d'affichage : `RES` (`src/core/layout.ts`) vaut 2 (haute) ou 1 (fluide), décidé au chargement par `wantedRes()` ; choix gardé dans `bistro-donjon-qualite`. `GameScene.watchFps()` mesure les images par seconde, `applyQuality()` recharge la page au menu si la qualité voulue a changé.
 - Mode test : `loadProfile()` (Storage) renvoie tout possédé quand `TEST_UNLOCK_ALL` est vrai, et `saveProfile()` n'enregistre jamais `owned` ni `unlocked` dans ce mode.
 - Tapis roulants : `conveyorsOf(monde)` dans `constants.ts` (bandes différentes pour petite et grande map).
