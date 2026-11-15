@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { ARENA, artScale, ENEMIES, EnemyDef, EnemyId, is3d, STYLE_3D } from '../core/constants';
+import { ARENA, artScale, ENEMIES, EnemyDef, EnemyId, is3d, STYLE_3D, px } from '../core/constants';
 import anchors from '../core/spriteAnchors.json';
 
 export interface EnemyApi {
@@ -217,7 +217,7 @@ export class Enemy {
     const walking = (WALK_BY_CODE.has(this.def.id) || is3d(this.sprite.texture.key)) && this.moveSpeed > 2 && this.stun <= 0;
     const step = Math.abs(Math.sin(this.t * (6 + this.moveSpeed / 12)));
     if (walking) {
-      lift += step * 2.5;
+      lift += step * (STYLE_3D ? 1.2 : 2.5);
       squash = 1 - 0.07 * (1 - step);
     }
     // images d'animation
@@ -230,12 +230,12 @@ export class Enemy {
       this.sprite.setTexture(key);
       this.anchor = is3d(key) ? 0.5 : ((anchors as Record<string, number>)[key] ?? 0.5);
     }
-    const wobble = walking ? Math.sin(this.t * (6 + this.moveSpeed / 12)) * 6 : this.def.ai === 'stand' && !this.atStand ? Math.sin(this.t * 6) * 3 : 0;
+    const wobble = walking ? Math.sin(this.t * (6 + this.moveSpeed / 12)) * (STYLE_3D ? 4 : 6) : this.def.ai === 'stand' && !this.atStand ? Math.sin(this.t * 6) * 3 : 0;
     const yOff = this.def.id === 'tomate' ? this.sprite.displayHeight / 2 : 0;
     this.sprite
       .setFlipX(this.def.id === 'tomate' ? false : this.faceLeft)
       .setOrigin(this.faceLeft && this.def.id !== 'tomate' ? 1 - this.anchor : this.anchor, this.def.id === 'tomate' ? 0.5 : 1)
-      .setPosition(Math.round(this.x), Math.round(this.y - lift - yOff))
+      .setPosition(px(this.x), px(this.y - lift - yOff))
       .setScale(s * artScale(this.sprite.texture.key) * (2 - squash), s * artScale(this.sprite.texture.key) * squash)
       .setDepth(this.y);
     if (this.def.id !== 'tomate') this.sprite.setAngle(wobble);

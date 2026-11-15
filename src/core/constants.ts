@@ -1,3 +1,4 @@
+import Phaser from 'phaser';
 /** Données d'équilibrage et de contenu de Bistro Donjon. Tout se règle ici. */
 
 export const W = 360;
@@ -277,7 +278,7 @@ export const FREE_WORLDS = 4;
 export const TEST_UNLOCK_ALL = true;
 /**
  * PAIEMENT DE TEST (14/11) : tant que Google Play Billing n'est pas branché, un achat en euros passe par un faux
- * écran de paiement, gratuit, pour essayer tout le parcours (payer, reçu, Mes articles). À REMETTRE À `false`
+ * écran de paiement, gratuit, pour essayer tout le parcours (payer, reçu, Ma collection). À REMETTRE À `false`
  * AVANT LE PLAY STORE (sinon tout le premium serait gratuit).
  */
 export const TEST_PAYMENTS = true;
@@ -339,7 +340,13 @@ export const SPRITE_FILES = {
 export const STYLE_3D = true;
 /** Clé d'un sprite du jeu -> fichier 3D qui le remplace (toutes les images d'animation d'un personnage prennent la même). */
 // les images d'attaque montrent la vraie pose d'attaque 3D (arme en plein geste) : <chef>_atk
-const chef3d = (id: ChefId) => [...[...CHEF_FRAMES[id].idle, ...CHEF_FRAMES[id].walk].map((k) => [k, id]), ...CHEF_FRAMES[id].attack.map((k) => [k, id + '_atk'])];
+// marche : les images de pas montrent la vraie pose de marche 3D (<chef>_mar), en alternance avec la pose debout
+const walk3d = (id: ChefId) => {
+  const w = CHEF_FRAMES[id].walk;
+  const withIdle = w.some((k) => CHEF_FRAMES[id].idle.includes(k));
+  return w.filter((k) => !CHEF_FRAMES[id].idle.includes(k)).map((k) => [k, withIdle || w.indexOf(k) % 2 === 1 ? id + '_mar' : id]);
+};
+const chef3d = (id: ChefId) => [...CHEF_FRAMES[id].idle.map((k) => [k, id]), ...walk3d(id), ...CHEF_FRAMES[id].attack.map((k) => [k, id + '_atk'])];
 export const ART_3D: Record<string, string> = {
   ...Object.fromEntries([...chef3d('moustachu'), ...chef3d('shiba'), ...chef3d('noisette')]),
   // chefs combattants des packs
@@ -348,6 +355,8 @@ export const ART_3D: Record<string, string> = {
   ...Object.fromEntries(['skin_patissier', 'skin_chevalier', 'skin_samourai', 'skin_shiba_samourai', 'skin_cyber', 'skin_astronaute'].map((k) => [k, k])),
   // poses d'attaque 3D de tous les costumes et combattants (chargées à part, voir BootScene)
   ...Object.fromEntries(['skin_patissier', 'skin_chevalier', 'skin_samourai', 'skin_shiba_samourai', 'skin_cyber', 'skin_astronaute', 'skin_taureau', 'skin_ours', 'skin_gorille', 'skin_tigre'].map((k) => [k + '_atk', k + '_atk'])),
+  // poses de marche 3D (un pas en avant), alternées avec la pose debout pendant la marche
+  ...Object.fromEntries(['skin_patissier', 'skin_chevalier', 'skin_samourai', 'skin_shiba_samourai', 'skin_cyber', 'skin_astronaute', 'skin_taureau', 'skin_ours', 'skin_gorille', 'skin_tigre'].map((k) => [k + '_mar', k + '_mar'])),
   // monstres des mondes 5 à 8 et Roi Fromage
   ail: 'ail', aubergine: 'aubergine', mais: 'mais', oignon: 'oignon', citrouille: 'citrouille', hotdog: 'hotdog', cube_fromage: 'cube_fromage', roi_fromage: 'roi_fromage',
   tomate: 'tomate', tomate_ko: 'tomate',
@@ -357,13 +366,30 @@ export const ART_3D: Record<string, string> = {
 };
 /** Vrai si ce sprite est dessiné en 3D (image plus grande, réduite à l'affichage : nette). */
 export const is3d = (key: string): boolean => STYLE_3D && key in ART_3D;
-/** Petites images redessinées en 3D (public/assets/ui3d/), enregistrées 2 fois plus grandes : affichées à moitié. */
+/** Petites images redessinées en 3D (public/assets/ui3d/), enregistrées en haute définition : affichées réduites. */
 export const UI3D_2X = ['ico_couteaux', 'ico_etoile', 'ico_engrenage', 'ico_sac', 'ico_tornade', 'ico_epees', 'ico_coeur', 'ico_bouclier', 'plat', 'tonneau', 'boule_feu', 'cadenas'];
-/** Facteur d'affichage d'une petite image : 0,5 si elle est en 3D (2 fois plus grande), 1 sinon. */
-export const uiScale = (key: string): number => (STYLE_3D && UI3D_2X.includes(key) ? 0.5 : 1);
+/** Objets de la cuisine et ingrédients 3D, eux aussi en haute définition. */
+export const UI3D_HD = [...UI3D_2X, 'marmite', 'planche', 'comptoir', 'ing_tomate', 'ing_champignon', 'ing_sucre', 'ing_piment'];
+/** Taille réelle (en pixels de page) d'une image 3D enregistrée en haute définition. */
+const UI_BOX: Record<string, [number, number]> = {
+  ico_couteaux: [24, 24], ico_etoile: [24, 24], ico_engrenage: [24, 24], ico_sac: [24, 24], ico_tornade: [24, 24], ico_epees: [24, 24],
+  ico_coeur: [24, 24], ico_bouclier: [24, 24], plat: [18, 14], tonneau: [18, 22], boule_feu: [10, 10], cadenas: [16, 18],
+  marmite: [42, 46], planche: [36, 24], comptoir: [48, 30], ing_tomate: [18, 18], ing_champignon: [18, 18], ing_sucre: [18, 18], ing_piment: [18, 18],
+};
+/** Image enregistrée en haute définition : on la ramène à sa taille d'affichage (son cadre). 1 sinon. */
+export function uiScale(key: string, tex?: { width: number; height: number }): number {
+  if (!STYLE_3D || !UI_BOX[key] || !tex) return STYLE_3D && UI_BOX[key] ? 0.25 : 1;
+  const [bw, bh] = UI_BOX[key];
+  return Math.min(bw / tex.width, bh / tex.height);
+}
+/** Met une image 3D haute définition à sa taille d'affichage (multipliée par k). */
+export function fitUi<T extends Phaser.GameObjects.Image>(img: T, k = 1): T {
+  const src = img.scene.textures.get(img.texture.key).getSourceImage() as { width: number; height: number };
+  return img.setScale(uiScale(img.texture.key, src) * k) as T;
+}
 /** Taille d'affichage d'un sprite : 0,5 pour les images 3D (dessinées 2 fois plus grandes), 1 sinon. */
 /** Images 3D des personnages : 4 fois la taille des anciens dessins pixel (tools/extract_3d.py), pour rester nettes. */
-export const ART_RES = 4;
+export const ART_RES = 6;
 /** Taille d'affichage des personnages 3D par rapport aux anciens dessins : 1,7 (caméra plus haute, Rudy 15/11). */
 export const ART_SIZE = 1.7;
 export const artScale = (key: string): number => (is3d(key) ? ART_SIZE / ART_RES : 1);
@@ -490,3 +516,6 @@ export function playerLevel(earned: number): { level: number; into: number; span
 
 /** Cadeau du jour : pièces offertes selon le nombre de jours joués d'affilée (plafonné au 7e jour). */
 export const DAILY_GIFT = [100, 150, 200, 250, 300, 400, 500];
+
+/** Position à l'écran : arrondie au pixel en pixel art, libre en 3D (sinon les personnages avancent par petits sauts). */
+export const px = (v: number): number => (STYLE_3D ? v : Math.round(v));

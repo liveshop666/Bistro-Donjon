@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { ART_3D, CHEF_ORDER, INGREDIENTS, is3d, SHOP, SPRITE_FILES, STYLE_3D, UPGRADES, WORLD_3D, WORLD_ORDER, WORLDS, UI3D_2X } from '../core/constants';
+import { ART_3D, CHEF_ORDER, INGREDIENTS, is3d, SHOP, SPRITE_FILES, STYLE_3D, UPGRADES, WORLD_3D, WORLD_ORDER, WORLDS, UI3D_2X, UI3D_HD } from '../core/constants';
 
 /** Charge les sprites et génère les petites textures procédurales (joystick, plat, effets). */
 export class BootScene extends Phaser.Scene {
@@ -28,9 +28,13 @@ export class BootScene extends Phaser.Scene {
     for (const f of SPRITE_FILES.chefs) this.load.image(f, art(f, `sprites/chefs/${f}.png`));
     for (const it of SHOP) if (it.sprite) this.load.image(it.sprite, art(it.sprite, `sprites/skins/${it.sprite}.png`));
     // poses d'attaque 3D des costumes
-    if (STYLE_3D) for (const it of SHOP) if (it.sprite && it.kind === 'skin') this.load.image(it.sprite + '_atk', `sprites3d/${it.sprite}_atk.png`);
+    if (STYLE_3D) for (const it of SHOP) if (it.sprite && it.kind === 'skin') {
+      this.load.image(it.sprite + '_atk', `sprites3d/${it.sprite}_atk.png`);
+      this.load.image(it.sprite + '_mar', `sprites3d/${it.sprite}_mar.png`);
+    }
     for (const e of SPRITE_FILES.enemies) this.load.image(e, art(e, `sprites/enemies/${e}.png`));
     // style 3D : les fonds des menus (et les vignettes des mondes) sont tirés des maps 3D
+    if (STYLE_3D) for (const w of WORLD_ORDER) this.load.image('thumb_' + w, `maps/thumb3d_${w}.jpg`); // vignettes de l'onglet LES MAPS
     for (const w of WORLD_ORDER) this.load.image('map_' + w, STYLE_3D ? `maps/port3d_${w}.jpg` : `maps/${w}.png`);
     // grandes maps paysage (le terrain de la partie) ; les petites restent pour les menus
     for (const w of WORLD_ORDER) if (WORLDS[w].wide) this.load.image('wide_' + w, STYLE_3D && WORLD_3D[w] ? `maps/wide3d_${w}.jpg` : `maps/wide_${w}.jpg`);
@@ -49,7 +53,7 @@ export class BootScene extends Phaser.Scene {
   create(): void {
     // les dessins HD sont réduits à l'affichage : lissage pour garder tous les détails
     for (const c of CHEF_ORDER) for (const k of ['hd_' + c, 'hdp_' + c]) this.textures.get(k).setFilter(Phaser.Textures.FilterMode.LINEAR);
-    for (const k of this.textures.getTextureKeys()) if (k.startsWith('ui3d_') || (STYLE_3D && (k.startsWith('ing_') || UI3D_2X.includes(k) || ['marmite', 'planche', 'comptoir'].includes(k)))) this.textures.get(k).setFilter(Phaser.Textures.FilterMode.LINEAR);
+    for (const k of this.textures.getTextureKeys()) if (k.startsWith('ui3d_') || (STYLE_3D && UI3D_HD.includes(k))) this.textures.get(k).setFilter(Phaser.Textures.FilterMode.LINEAR);
     // images 3D : lissées (pas de gros pixels)
     for (const k of Object.keys(ART_3D)) if (is3d(k) && this.textures.exists(k)) this.textures.get(k).setFilter(Phaser.Textures.FilterMode.LINEAR);
     const g = this.make.graphics({ x: 0, y: 0 }, false);
@@ -79,13 +83,13 @@ export class BootScene extends Phaser.Scene {
       g.fillStyle(0xffffff, 0.55).fillEllipse(26, 20, 16, 9);
     });
     // socle du joystick façon image de référence : disque sombre transparent, liseré clair, 4 flèches grises
-    tex('joy_base3d', 184, 184, () => {
-      g.fillStyle(0x000000, 0.38).fillCircle(92, 92, 90);
-      g.lineStyle(3, 0xffffff, 0.22).strokeCircle(92, 92, 88);
-      g.fillStyle(0x000000, 0.22).fillCircle(92, 92, 60);
+    tex('joy_base3d', 368, 368, () => {
+      g.fillStyle(0x000000, 0.38).fillCircle(184, 184, 180);
+      g.lineStyle(6, 0xffffff, 0.22).strokeCircle(184, 184, 176);
+      g.fillStyle(0x000000, 0.22).fillCircle(184, 184, 120);
       g.fillStyle(0x9aa0aa, 0.75);
-      g.fillTriangle(92, 16, 80, 32, 104, 32).fillTriangle(92, 168, 80, 152, 104, 152);
-      g.fillTriangle(16, 92, 32, 80, 32, 104).fillTriangle(168, 92, 152, 80, 152, 104);
+      g.fillTriangle(184, 32, 160, 64, 208, 64).fillTriangle(184, 336, 160, 304, 208, 304);
+      g.fillTriangle(32, 184, 64, 160, 64, 208).fillTriangle(336, 184, 304, 160, 304, 208);
     });
     // icône du bouton d'attaque : un hachoir de cuisine
     tex('ico_hachoir', 64, 64, () => {

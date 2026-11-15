@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { setupLandscapeMenu } from '../ui/landscapeMenu';
-import { H, STYLE_3D, W } from '../core/constants';
+import { H, STYLE_3D, W, fitUi, artScale, UI3D_HD } from '../core/constants';
 import { button, txt } from '../ui/text';
 
 const PAGES: { title: string; icon: string; text: string }[] = [
@@ -134,7 +134,9 @@ export class RulesScene extends Phaser.Scene {
     const p = PAGES[this.page];
     this.title.setText(p.title);
     this.body.setText(p.text);
-    this.icon.setTexture(p.icon).setScale(p.icon === 'roi_tomate' ? 0.7 : p.icon === 'tomate' ? 2 : 1);
+    this.icon.setTexture(p.icon).setScale(p.icon === 'roi_tomate' ? 0.7 * artScale('roi_tomate') : p.icon === 'tomate' ? 2 * artScale('tomate') : 1);
+    if (UI3D_HD.includes(p.icon)) fitUi(this.icon, 2);
+    if (p.icon.startsWith('portrait_')) this.icon.setDisplaySize(64, 64);
     this.dots.setText(PAGES.map((_, i) => (i === this.page ? '[*]' : ' . ')).join(''));
     (this.next.getAt(1) as Phaser.GameObjects.Text).setText(this.page === PAGES.length - 1 ? "C'EST PARTI !" : 'SUIVANT');
   }

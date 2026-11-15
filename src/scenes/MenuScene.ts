@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
 import { landscapeMenu, MENU_SCALE, portraitMenu } from '../ui/landscapeMenu';
-import { applyQuality, landscapeWanted, RES } from '../core/layout';
+import { landscapeWanted, RES } from '../core/layout';
 import { audio } from '../audio/AudioManager';
-import { CHEF_ORDER, CHEFS, ChefId, is3d, STYLE_3D, DAILY_GIFT, FREE_WORLDS, H, itemLabel, playerLevel, W, worldUnlocked, WORLD_ORDER, WorldId, WORLDS, uiScale } from '../core/constants';
+import { CHEF_ORDER, CHEFS, ChefId, is3d, STYLE_3D, DAILY_GIFT, FREE_WORLDS, H, itemLabel, playerLevel, W, worldUnlocked, WORLD_ORDER, WorldId, WORLDS, fitUi } from '../core/constants';
 import { claimDailyGift, loadProfile, loadRun, saveProfile } from '../core/Storage';
 import { openModal } from '../ui/Modal';
 import { claimBonus, claimMission, dailyMissions, MISSION_BONUS, MISSIONS, missionsStatus } from '../core/Missions';
@@ -30,7 +30,6 @@ export class MenuScene extends Phaser.Scene {
   }
 
   create(): void {
-    applyQuality(); // une partie a ramé : on repasse en rendu fluide avant d'afficher le menu
     if (!loadProfile().rulesSeen) {
       // premier lancement : on montre les règles
       saveProfile({ rulesSeen: true });
@@ -87,7 +86,7 @@ export class MenuScene extends Phaser.Scene {
     ['VIE', 'VITESSE', 'DEGATS'].forEach((s, i) => txt(this, 96, 250 + i * 14, s, 8, '#bfc8e0').setOrigin(0, 0.15));
 
     // --- Mondes
-    txt(this, W / 2, 304, 'CHOISIS TON MONDE', 8, '#8fe0ff').setOrigin(0.5);
+    button(this, W / 2 - 8, 304, 150, 22, 'TOUTES LES MAPS', 0x3d5c8f, () => this.scene.start('Maps'));
     this.worldPage = Math.floor(WORLD_ORDER.indexOf(this.world) / 4);
     this.worldObjs = [];
     this.pageBtn = txt(this, W - 6, 304, '', 8, '#ffc533').setOrigin(1, 0.5).setInteractive({ useHandCursor: true });
@@ -199,6 +198,7 @@ export class MenuScene extends Phaser.Scene {
     button(this, 67, 97, 118, 30, 'BOUTIQUE', 0xc98a1e, () => this.scene.start('Shop'));
     button(this, 67, 133, 118, 30, 'MON COMPTE', 0x4a4f66, () => this.scene.start('Account'));
     button(this, 67, 169, 118, 30, 'REGLES', 0x4a4f66, () => this.scene.start('Rules'));
+    button(this, 67, 205, 118, 30, 'LES MAPS', 0x3d5c8f, () => this.scene.start('Maps'));
     txt(this, 6, h - 12, `V ${BUILD_LABEL}`, 8, '#6b7391');
     txt(this, 6, h - 30, `RECORD : ${profile.best}`, 8, '#bfc8e0');
 
@@ -261,7 +261,7 @@ export class MenuScene extends Phaser.Scene {
     const th = add(this.add.image(px + 10, 66, 'map_' + this.world).setOrigin(0).setScale(68 / W));
     if (locked) {
       th.setTint(0x333344);
-      add(this.add.image(px + 44, 126, 'cadenas').setScale(uiScale('cadenas')));
+      add(fitUi(this.add.image(px + 44, 126, 'cadenas')));
     }
     add(this.add.graphics()).lineStyle(2, locked ? 0x6b7391 : 0xffc533).strokeRect(px + 9, 65, 70, 123);
     add(txt(this, px + 88, 70, wd.name, 8, '#ffc533').setWordWrapWidth(144));
@@ -372,7 +372,7 @@ export class MenuScene extends Phaser.Scene {
       const img = add(this.add.image(x, 378, 'map_' + id).setScale(0.2));
       if (locked) {
         img.setTint(0x333344);
-        add(this.add.image(x, 378, 'cadenas').setScale(uiScale('cadenas')));
+        add(fitUi(this.add.image(x, 378, 'cadenas')));
       }
       img.setInteractive({ useHandCursor: true }).on('pointerup', (p: Phaser.Input.Pointer) => {
         if (Math.abs(p.x - p.downX) / RES > 12) return; // c'était un glissement, pas un appui

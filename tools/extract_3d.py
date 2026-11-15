@@ -31,6 +31,13 @@ SHEETS = {
                               ("skin_samourai_atk", "skins/skin_samourai"), ("skin_shiba_samourai_atk", "skins/skin_shiba_samourai"),
                               ("skin_cyber_atk", "skins/skin_cyber"), ("skin_astronaute_atk", "skins/skin_astronaute")],
     "attaque-tigre.png": [("skin_tigre_atk", "skins/skin_tigre")],
+    # poses de marche (en pleine foulée) : <nom>_mar
+    "marche-chefs.png": [("moustachu_mar", "chefs/moustachu_i0"), ("noisette_mar", "chefs/noisette_i0"), ("shiba_mar", "chefs/shiba_i0"),
+                         ("skin_taureau_mar", "skins/skin_taureau"), ("skin_ours_mar", "skins/skin_ours"), ("skin_gorille_mar", "skins/skin_gorille")],
+    "marche-costumes.png": [("skin_patissier_mar", "skins/skin_patissier"), ("skin_chevalier_mar", "skins/skin_chevalier"),
+                            ("skin_samourai_mar", "skins/skin_samourai"), ("skin_shiba_samourai_mar", "skins/skin_shiba_samourai"),
+                            ("skin_cyber_mar", "skins/skin_cyber"), ("skin_astronaute_mar", "skins/skin_astronaute")],
+    "marche-tigre.png": [("skin_tigre_mar", "skins/skin_tigre")],
     # objets de la cuisine et ingrédients : même taille que les dessins pixel (cadre max), dossier ui3d
     "cuisine-3d.png": [("marmite", "=42x46"), ("planche", "=36x24"), ("comptoir", "=48x30"), ("ing_tomate", "=18x18"),
                        ("ing_champignon", "=18x18"), ("ing_sucre", "=18x18"), ("ing_piment", "=18x18")],
@@ -39,11 +46,13 @@ SHEETS = {
 CUTS = {
     "attaques-chefs.png": [0, 552, 975, 1292, 1745, 2205, 2720],
     "attaques-costumes.png": [0, 476, 914, 1315, 1794, 2200, 2720],
+    "marche-chefs.png": [0, 443, 890, 1283, 1792, 2236, 2720],
+    "marche-costumes.png": [0, 445, 950, 1300, 1795, 2245, 2720],
 }
 
 
 def save(crop, name, pixel):
-    th = Image.open(os.path.join(SP, pixel + ".png")).height * 4  # 4 fois la taille pixel : net même en haute définition
+    th = Image.open(os.path.join(SP, pixel + ".png")).height * 6  # 6 fois la taille pixel : net même sur un écran très fin
     crop = crop.resize((max(1, round(crop.width * th / crop.height)), th), Image.LANCZOS)
     crop.save(os.path.join(OUT, name + ".png"))
     print(name, crop.size)
@@ -55,8 +64,17 @@ for sheet, order in SHEETS.items():
     if sheet in CUTS:
         a = np.array(im)[:, :, 3] > 40
         for (name, pixel), x0, x1 in zip(order, CUTS[sheet][:-1], CUTS[sheet][1:]):
-            ys, xs = np.nonzero(a[:, x0:x1])
-            save(im.crop((x0 + xs.min(), ys.min(), x0 + xs.max() + 1, ys.max() + 1)), name, pixel)
+            col = a[:, x0:x1].copy()
+            lab, k = ndimage.label(col)
+            if k > 1:  # retire les petits morceaux du voisin coupés au bord de la colonne
+                sizes = ndimage.sum(col, lab, range(1, k + 1))
+                for j, (sl, sz) in enumerate(zip(ndimage.find_objects(lab), sizes), 1):
+                    if sz < sizes.max() * 0.06 and (sl[1].start == 0 or sl[1].stop == x1 - x0):
+                        col[lab == j] = False
+            ys, xs = np.nonzero(col)
+            part = np.array(im)[:, x0:x1].copy()
+            part[:, :, 3] = np.where(col, part[:, :, 3], 0)
+            save(Image.fromarray(part).crop((xs.min(), ys.min(), xs.max() + 1, ys.max() + 1)), name, pixel)
         continue
     rgba = np.array(im)
     alpha = rgba[:, :, 3] > 40
@@ -118,12 +136,12 @@ for sheet, order in SHEETS.items():
         crop = Image.fromarray(out).crop((xs.min(), ys.min(), xs.max() + 1, ys.max() + 1))
         if pixel.startswith("="):
             bw, bh = map(int, pixel[1:].split("x"))
-            k = min(bw / crop.width, bh / crop.height)
+            k = min(bw * 4 / crop.width, bh * 4 / crop.height, 1)  # 4 fois le cadre (sans dépasser l'image d'origine)
             crop = crop.resize((max(1, round(crop.width * k)), max(1, round(crop.height * k))), Image.LANCZOS)
             crop.save(os.path.join(ROOT, "public", "assets", "ui3d", name + ".png"))
             print(sheet, name, crop.size)
             continue
-        th = Image.open(os.path.join(SP, pixel + ".png")).height * 4  # 4 fois la taille pixel : net même en haute définition
+        th = Image.open(os.path.join(SP, pixel + ".png")).height * 6  # 6 fois la taille pixel : net même sur un écran très fin
         crop = crop.resize((max(1, round(crop.width * th / crop.height)), th), Image.LANCZOS)
         crop.save(os.path.join(OUT, name + ".png"))
         print(sheet, name, crop.size)
@@ -147,7 +165,7 @@ for r, row in enumerate(ICONES):
         yy, xx = np.nonzero(sub)
         crop = im.crop((x0 + xx.min(), y0 + yy.min(), x0 + xx.max() + 1, y0 + yy.max() + 1))
         bw, bh = CADRE.get(name, (24, 24))
-        k = min(bw * 2 / crop.width, bh * 2 / crop.height)
+        k = min(bw * 4 / crop.width, bh * 4 / crop.height, 1)
         crop = crop.resize((max(1, round(crop.width * k)), max(1, round(crop.height * k))), Image.LANCZOS)
         crop.save(os.path.join(ROOT, "public", "assets", "ui3d", name + ".png"))
         print(name, crop.size)

@@ -3,7 +3,7 @@ import { landscapeMenu, MENU_SCALE, portraitMenu } from '../ui/landscapeMenu';
 import { landscapeWanted } from '../core/layout';
 import { audio } from '../audio/AudioManager';
 import { billing } from '../core/Billing';
-import { CHEFS, H, itemLabel, RARITY, SHOP, ShopItem, STYLE_3D, TEST_PAYMENTS, W, uiScale } from '../core/constants';
+import { CHEFS, H, itemLabel, RARITY, SHOP, ShopItem, STYLE_3D, TEST_PAYMENTS, W, fitUi } from '../core/constants';
 import { addCoins, loadProfile, nextMilestone, recordPurchase, saveProfile } from '../core/Storage';
 import { openModal } from '../ui/Modal';
 import { button, txt } from '../ui/text';
@@ -178,7 +178,7 @@ export class ShopScene extends Phaser.Scene {
       txt(this, 0, 46, status, 8, color).setOrigin(0.5),
       txt(this, 0, 60, detail, 8, detailColor).setOrigin(0.5),
     ];
-    if (!owned && it.coins === undefined) parts.push(this.add.image(36, -30, 'cadenas').setScale(uiScale('cadenas')));
+    if (!owned && it.coins === undefined) parts.push(fitUi(this.add.image(36, -30, 'cadenas')));
     const c = this.add.container(x, y, parts).setSize(108, 148).setInteractive({ useHandCursor: true });
     c.on('pointerup', () => {
       if (!this.land) return this.open(it);
@@ -343,11 +343,11 @@ export class ShopScene extends Phaser.Scene {
     ], `${itemLabel(it)}\n${it.euro}\n\nPAIEMENT DE TEST\nAucun argent n'est débité.\nÀ la sortie du jeu, le paiement\npassera par Google Play.`);
   }
 
-  /** Reçu après un achat : numéro de commande, et l'article à retrouver dans Mon compte > Mes articles. */
+  /** Reçu après un achat : numéro de commande, et l'article à retrouver dans Mon compte > Ma collection. */
   private receipt(it: ShopItem, price: string, order: string): void {
     this.time.delayedCall(60, () => openModal(this, 'ACHAT CONFIRME', [
-      { label: 'VOIR MES ARTICLES', color: 0xe8642a, action: () => { this.scene.start('Collection'); } },
+      { label: 'VOIR MA COLLECTION', color: 0xe8642a, action: () => { this.scene.start('Collection'); } },
       { label: 'CONTINUER', action: () => {} },
-    ], `${itemLabel(it)}\n${price}\n\nCommande ${order}\n\nC'est à toi ! Retrouve-le dans\nMon compte > Mes articles.`));
+    ], `${itemLabel(it)}\n${price}\n\nCommande ${order}\n\nC'est à toi ! Retrouve-le dans\nMon compte > Ma collection.`));
   }
 }

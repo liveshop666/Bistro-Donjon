@@ -9,7 +9,7 @@ type Tab = 'costumes' | 'effets' | 'mondes' | 'achats';
 const PER_PAGE = 8;
 
 /**
- * Mon compte > Mes articles : tout ce que le joueur possède (achats, cadeaux, pièces), pour l'équiper,
+ * Mon compte > Ma collection : tout ce que le joueur possède (achats, cadeaux, pièces), pour l'équiper,
  * les mondes débloqués pour y jouer, et l'historique de ses achats.
  */
 export class CollectionScene extends Phaser.Scene {
@@ -25,7 +25,7 @@ export class CollectionScene extends Phaser.Scene {
     this.dyn = [];
     this.add.image(0, 0, 'map_taverne').setOrigin(0);
     this.add.rectangle(0, 0, W, H, 0x0c0c18, 0.86).setOrigin(0);
-    txt(this, W / 2, 24, 'MES ARTICLES', 16, '#ffc533').setOrigin(0.5);
+    txt(this, W / 2, 24, 'MA COLLECTION', 16, '#ffc533').setOrigin(0.5);
     if (TEST_UNLOCK_ALL) txt(this, W / 2, 44, 'Mode test : tout est débloqué', 8, '#ff9ad0').setOrigin(0.5, 0);
     const tabs: [Tab, string][] = [['costumes', 'COSTUMES'], ['effets', 'EFFETS'], ['mondes', 'MONDES'], ['achats', 'ACHATS']];
     tabs.forEach(([tab, label], i) => {
