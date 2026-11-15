@@ -1,6 +1,7 @@
 # Journal du projet Bistro Donjon
 
 Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en haut à chaque session.
+Pour reprendre vite : lire d'abord [[REPRISE]] (`docs/memoire/REPRISE.md`).
 
 ## Où on en est (15/11/2026)
 
@@ -234,6 +235,7 @@ Détails :
 - **Texte flou malgré un écran haute définition** : Phaser dessine les textes à la finesse 1 par défaut, et un réglage « fluide » enregistré tout seul baissait tout le jeu -> forcer la finesse des textes (`main.ts`) et ne jamais baisser la qualité sans que le propriétaire le décide.
 - **Personnages qui avancent par à-coups** : positions arrondies au pixel (utile en pixel art) alors que la caméra zoome -> en 3D, positions libres (`px()` dans `constants.ts`).
 - **Sons découpés dans une vidéo** : on y entend la musique de la vidéo -> pour les coups répétés, fabriquer le bruit plutôt que de le découper.
+- **Long calcul en arrière-plan coupé** : l'agrandissement des maps (environ 10 min chacune) a été arrêté par la limite de 30 min par défaut -> donner un délai plus long, ou une map à la fois ; le script saute les maps déjà faites.
 - **Scène relancée à moitié pendant le test** : arrêter toutes les scènes et démarrer « Game » dans la même image laisse une scène sans caméra. Leçon : arrêter, attendre un instant, puis démarrer.
 
 ## Notes techniques
