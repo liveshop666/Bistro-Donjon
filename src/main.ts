@@ -20,6 +20,8 @@ import { STYLE_3D } from './core/constants';
 if (STYLE_3D) audio.useRealSounds();
 
 const parent = document.getElementById('game') as HTMLDivElement;
+// style 3D : le navigateur lisse l'image au lieu de l'agrandir en gros pixels
+if (STYLE_3D) document.head.insertAdjacentHTML('beforeend', '<style>canvas{image-rendering:auto!important}</style>');
 
 /**
  * Pixel Perfect : le canvas 360x640 est agrandi d'un facteur ENTIER en pixels physiques
@@ -43,8 +45,10 @@ Promise.all([document.fonts.load('8px "Press Start 2P"'), document.fonts.load('1
     width: W * RES, // rendu RES fois plus fin (voir core/layout.ts)
     height: H * RES,
     backgroundColor: '#000000',
-    pixelArt: true,
-    roundPixels: true,
+    // style 3D : images lissées (plus de gros pixels) ; style pixel : pixels nets
+    pixelArt: !STYLE_3D,
+    roundPixels: !STYLE_3D,
+    antialias: STYLE_3D,
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.NO_CENTER },
     input: { activePointers: 3 },
     audio: { noAudio: true }, // tout le son passe par src/audio/AudioManager (synthèse Web Audio)

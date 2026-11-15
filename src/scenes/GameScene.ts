@@ -3,8 +3,7 @@ import { landscapeHeight, landscapeWanted, landscapeWidth, pageCam, RES, setQual
 import { audio, Sfx, Tune } from '../audio/AudioManager';
 import {
   ARENA, BOSS_REWARD, ChefId, ENEMIES, FREE_WORLDS, ShopItem, WORLD_HP_STEP, worldRank, CHEFS, CHOP_TIME, COMBO_GOLD, COMBO_SIZE, conveyorsOf, worldDef, STYLE_3D, EnemyId, GameMode, H, IngredientId, INGREDIENTS, itemLabel, playerLevel, ORDER_PATIENCE,
-  POWER_LABEL, POWER_TIME, SHOP, Sabotage, SABOTAGE_LABEL, SABOTAGES, TIP_BONUS, UpgradeDef, W, WAVES, WORLD_ORDER, WorldDef, WorldId,
-} from '../core/constants';
+  POWER_LABEL, POWER_TIME, SHOP, Sabotage, SABOTAGE_LABEL, SABOTAGES, TIP_BONUS, UpgradeDef, W, WAVES, WORLD_ORDER, WorldDef, WorldId, uiScale } from '../core/constants';
 import { GameManager, Phase } from '../core/GameManager';
 import { RecipeManager } from '../core/RecipeManager';
 import { WaveManager } from '../core/WaveManager';
@@ -574,7 +573,7 @@ export class GameScene extends Phaser.Scene {
   private shoot(x: number, y: number, tx: number, ty: number): void {
     const d = Math.hypot(tx - x, ty - y) || 1;
     audio.sfx('feu');
-    this.shots.push({ img: this.add.image(x, y, 'boule_feu').setDepth(1600), vx: ((tx - x) / d) * 95, vy: ((ty - y) / d) * 95, life: 5 });
+    this.shots.push({ img: this.add.image(x, y, 'boule_feu').setDepth(1600).setScale(uiScale('boule_feu')), vx: ((tx - x) / d) * 95, vy: ((ty - y) / d) * 95, life: 5 });
   }
 
   private updateShots(dt: number): void {
@@ -728,7 +727,7 @@ export class GameScene extends Phaser.Scene {
         this.tick.barrel = 9;
         const x = this.bounds.left + 24 + Math.random() * (this.bounds.width - 48);
         const y = this.world.standLine + 60 + Math.random() * (this.bounds.bottom - this.world.standLine - 120);
-        this.barrels.push({ x, y, img: this.add.image(x, y, 'tonneau').setOrigin(0.5, 1).setDepth(y) });
+        this.barrels.push({ x, y, img: this.add.image(x, y, 'tonneau').setOrigin(0.5, 1).setDepth(y).setScale(uiScale('tonneau')) });
       }
       for (const b of this.barrels) {
         if (!this.enemies.some((e) => !e.dead && Math.hypot(e.x - b.x, e.y - b.y) < e.radius + 9)) continue;
@@ -874,7 +873,9 @@ export class GameScene extends Phaser.Scene {
     }
     // la map remplit tout l'écran et la caméra suit le chef ; interface et fenêtres par-dessus
     // style 3D : caméra un peu plus proche, personnages plus grands comme sur l'image de référence
-    if (wide) pageCam(main, 0, 0, gw, gh, 0, 0, STYLE_3D ? (land ? 0.95 : 1) : 1).setBounds(0, 0, ARENA.w, ARENA.h);
+    // caméra plus haute en style 3D (on voit presque toute la map), mais jamais au point de montrer un bord noir
+    const camZoom = STYLE_3D ? Math.max(land ? 0.78 : 0.82, gw / ARENA.w, gh / ARENA.h) : 1;
+    if (wide) pageCam(main, 0, 0, gw, gh, 0, 0, camZoom).setBounds(0, 0, ARENA.w, ARENA.h);
     else pageCam(main, 0, 0, gw, gh).setBounds(-2 * W, 0, 5 * W, H);
     this.hudCam = pageCam(this.cameras.add(), 0, 0, gw, gh);
     this.ovlCam = pageCam(this.cameras.add(), 0, 0, gw, gh);
@@ -1200,8 +1201,8 @@ export class GameScene extends Phaser.Scene {
     if (skin === 'skin_taureau') {
       // hachoir enflammé : colonne de flammes qui jaillit du sol
       for (let i = 0; i < 14; i++) {
-        const p = this.add.image(x + (Math.random() - 0.5) * r, y - 4, 'particule').setTint([0xff3b1e, 0xff8a1e, 0xffc533][i % 3]).setDepth(1701).setScale(2).setBlendMode(Phaser.BlendModes.ADD);
-        this.tweens.add({ targets: p, y: y - 30 - Math.random() * 30, alpha: 0, scale: 0.3, duration: 360 + Math.random() * 200, onComplete: () => p.destroy() });
+        const p = this.add.image(x + (Math.random() - 0.5) * r * 1.4, y - 2, 'flammeche').setTint([0xff3b1e, 0xff8a1e, 0xffc533][i % 3]).setDepth(1701).setScale(0.9 + Math.random() * 0.8).setBlendMode(Phaser.BlendModes.ADD).setOrigin(0.5, 1);
+        this.tweens.add({ targets: p, y: y - 24 - Math.random() * 26, scaleY: p.scaleY * 1.5, alpha: 0, duration: 380 + Math.random() * 220, ease: 'Sine.out', onComplete: () => p.destroy() });
       }
     } else if (skin === 'skin_ours') {
       // marteau de glace : éclats de glace qui jaillissent

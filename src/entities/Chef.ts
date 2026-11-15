@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { artScale, CHEF_FRAMES, ChefDef, is3d, PowerId } from '../core/constants';
+import { artScale, CHEF_FRAMES, ChefDef, is3d, PowerId, uiScale } from '../core/constants';
 import { emptyInventory, Inventory, Order } from '../core/RecipeManager';
 import anchors from '../core/spriteAnchors.json';
 
@@ -41,10 +41,11 @@ export class Chef {
     this.x = x;
     this.y = y;
     this.hp = this.maxHp = def.hp;
-    this.frames = skin ? { idle: [skin], walk: [skin], attack: [skin] } : CHEF_FRAMES[def.id];
+    // costume : une seule image ; en style 3D, sa pose d'attaque quand elle existe
+    this.frames = skin ? { idle: [skin], walk: [skin], attack: [is3d(skin) && scene.textures.exists(skin + '_atk') ? skin + '_atk' : skin] } : CHEF_FRAMES[def.id];
     this.shadow = scene.add.ellipse(x, y, 26, 8, 0x000000, 0.3);
     this.sprite = scene.add.image(x, y, this.frames.idle[0]).setOrigin(0.5, 1);
-    this.dishIcon = scene.add.image(x, y, 'plat').setVisible(false);
+    this.dishIcon = scene.add.image(x, y, 'plat').setVisible(false).setScale(uiScale('plat'));
     this.knife = scene.add.image(x, y, 'couteau').setVisible(false);
   }
 
@@ -113,7 +114,7 @@ export class Chef {
     this.lunge = Math.max(0, this.lunge - dt * 7);
     this.attackT = Math.max(0, this.attackT - dt);
     const key = this.frame(time);
-    const anchor = is3d(key) ? 0.5 : (ANCHORS[key] ?? 0.5);
+    const anchor = is3d(key) || key.endsWith('_atk') ? 0.5 : (ANCHORS[key] ?? 0.5);
     // image 3D : une seule image, le coup de poêle est animé par le code (le chef pivote vers sa cible)
     // style 3D (vidéo de Rudy) : le chef arme son coup en levant la poêle (penché en arrière), puis frappe d'un grand
     // mouvement vers l'avant et revient ; il s'étire en armant et s'écrase à l'impact

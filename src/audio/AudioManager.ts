@@ -207,7 +207,7 @@ class AudioManager {
       // style 3D : on adoucit les ondes carrées (filtre) et on ajoute un écho de grande salle
       const soft = ctx.createBiquadFilter();
       soft.type = 'lowpass';
-      soft.frequency.value = 2200;
+      soft.frequency.value = 5000;
       const rev = ctx.createConvolver();
       const len = Math.floor(ctx.sampleRate * 1.8);
       const ir = ctx.createBuffer(2, len, ctx.sampleRate);
@@ -259,6 +259,40 @@ class AudioManager {
     osc.stop(t + dur + 0.02);
   }
 
+  /**
+   * Voix « orchestre » du style 3D (au lieu des ondes carrées 8-bit) :
+   * cuivre = deux dents de scie légèrement désaccordées dont le filtre s'ouvre puis se referme ;
+   * cordes = nappe douce qui monte lentement.
+   */
+  private voice(kind: 'cuivre' | 'cordes', freq: number, dur: number, vol: number, at = 0): void {
+    const ctx = this.ctx!;
+    const t = ctx.currentTime + at;
+    const f = ctx.createBiquadFilter();
+    f.type = 'lowpass';
+    f.Q.value = kind === 'cuivre' ? 2 : 0.7;
+    const g = ctx.createGain();
+    const atk = kind === 'cuivre' ? 0.02 : Math.min(0.35, dur * 0.4);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(vol, t + atk);
+    g.gain.setValueAtTime(vol, t + Math.max(atk, dur * 0.7));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    if (kind === 'cuivre') {
+      f.frequency.setValueAtTime(freq * 1.5, t);
+      f.frequency.linearRampToValueAtTime(freq * 6, t + 0.05);
+      f.frequency.exponentialRampToValueAtTime(freq * 2, t + dur);
+    } else f.frequency.value = 1400;
+    for (const det of kind === 'cuivre' ? [-7, 7] : [-10, 0, 10]) {
+      const o = ctx.createOscillator();
+      o.type = 'sawtooth';
+      o.frequency.value = freq;
+      o.detune.value = det;
+      o.connect(f);
+      o.start(t);
+      o.stop(t + dur + 0.05);
+    }
+    f.connect(g).connect(this.musicBus);
+  }
+
   private noise(bus: GainNode, dur: number, vol: number, filter: BiquadFilterType, freq: number, at = 0, sweepTo = 0): void {
     const ctx = this.ctx!;
     const t = ctx.currentTime + at;
@@ -277,6 +311,44 @@ class AudioManager {
     src.stop(t + dur + 0.02);
   }
 
+  /**
+   * Bruitages fréquents refaits « 3D » (bruits sourds et ronds au lieu des bips 8-bit) quand aucun vrai son n'existe.
+   * Renvoie faux pour garder le bruitage d'origine.
+   */
+  private sfx3d(name: Sfx): boolean {
+    const b = this.sfxBus;
+    switch (name) {
+      case 'touche': // coup qui porte : choc sourd + petit claquement
+        this.tone(b, 160, 0.12, 'sine', 0.35, 0, 60);
+        this.noise(b, 0.08, 0.25, 'lowpass', 2200, 0, 400);
+        return true;
+      case 'aie': // le chef est touché : gros choc grave + souffle
+        this.tone(b, 120, 0.22, 'sine', 0.45, 0, 45);
+        this.noise(b, 0.18, 0.2, 'bandpass', 900, 0, 300);
+        return true;
+      case 'ramasse': // ingrédient ramassé : petit « plop » rond
+        this.tone(b, 420, 0.09, 'sine', 0.22, 0, 900);
+        this.noise(b, 0.05, 0.06, 'highpass', 4000);
+        return true;
+      case 'tranche': // couteau : souffle de lame
+        this.noise(b, 0.14, 0.22, 'bandpass', 3000, 0, 7000);
+        this.tone(b, 2400, 0.05, 'triangle', 0.06, 0.06);
+        return true;
+      case 'feu': // tir des monstres : souffle
+        this.noise(b, 0.16, 0.16, 'bandpass', 1200, 0, 3000);
+        return true;
+      case 'stand': // le stand prend un coup : bois qui craque
+        this.tone(b, 90, 0.2, 'sine', 0.4, 0, 50);
+        this.noise(b, 0.12, 0.22, 'bandpass', 600, 0.01, 200);
+        return true;
+      case 'clic': // bouton : clic doux
+        this.tone(b, 700, 0.05, 'sine', 0.15, 0, 500);
+        return true;
+      default:
+        return false;
+    }
+  }
+
   /** Suite de notes (jingle). */
   private arp(notes: number[], stepDur: number, type: OscillatorType, vol: number, hold = 1.6): void {
     notes.forEach((n, i) => n && this.tone(this.sfxBus, hz(n), stepDur * hold, type, vol, i * stepDur));
@@ -293,6 +365,7 @@ class AudioManager {
     const b = this.sfxBus;
     const real = this.realSounds ? SAMPLE_OF[name] : undefined;
     if (real && this.playSample(real)) return;
+    if (this.realSounds && this.sfx3d(name)) return;
 
     switch (name) {
       case 'clic': // bouton appuyé : « Bouton rétro » (choix de Rudy, 12/11)
@@ -532,6 +605,21 @@ class AudioManager {
       const i = this.step % def.lead.length;
       const lead = def.lead[i];
       const bass = def.bass[i % def.bass.length];
+      if (this.realSounds) {
+        // style 3D : cuivres pour la mélodie, contrebasse ronde, nappe de cordes à chaque mesure, timbales
+        if (lead) this.voice('cuivre', hz(lead), stepDur * 1.1, 0.07, at);
+        if (bass) this.tone(this.musicBus, hz(bass), stepDur * 0.95, 'sine', 0.32, at);
+        if (i % 8 === 0 && bass) for (const n of [12, 19, 24]) this.voice('cordes', hz(bass + n), stepDur * 8, 0.035, at);
+        if (def.drums) {
+          const beat = i % 8;
+          if (beat === 0 || beat === 4) this.tone(this.musicBus, 95, 0.32, 'sine', 0.5, at, 42); // timbale
+          if (beat === 2 || beat === 6) this.noise(this.musicBus, 0.22, 0.12, 'bandpass', 1500, at, 600); // caisse claire d'orchestre
+          if (beat % 2 === 1) this.noise(this.musicBus, 0.05, 0.03, 'highpass', 8000, at); // cymbale légère
+        }
+        this.step++;
+        this.nextTime += stepDur;
+        continue;
+      }
       if (lead) this.tone(this.musicBus, hz(lead), stepDur * 0.95, def.leadWave, def.leadWave === 'triangle' ? 0.2 : 0.075, at);
       if (bass) this.tone(this.musicBus, hz(bass), stepDur * 0.9, 'triangle', 0.26, at);
       if (def.drums) {

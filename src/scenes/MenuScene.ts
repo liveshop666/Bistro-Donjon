@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { landscapeMenu, MENU_SCALE, portraitMenu } from '../ui/landscapeMenu';
 import { applyQuality, landscapeWanted, RES } from '../core/layout';
 import { audio } from '../audio/AudioManager';
-import { CHEF_ORDER, CHEFS, ChefId, is3d, STYLE_3D, DAILY_GIFT, FREE_WORLDS, H, itemLabel, playerLevel, W, worldUnlocked, WORLD_ORDER, WorldId, WORLDS } from '../core/constants';
+import { CHEF_ORDER, CHEFS, ChefId, is3d, STYLE_3D, DAILY_GIFT, FREE_WORLDS, H, itemLabel, playerLevel, W, worldUnlocked, WORLD_ORDER, WorldId, WORLDS, uiScale } from '../core/constants';
 import { claimDailyGift, loadProfile, loadRun, saveProfile } from '../core/Storage';
 import { openModal } from '../ui/Modal';
 import { claimBonus, claimMission, dailyMissions, MISSION_BONUS, MISSIONS, missionsStatus } from '../core/Missions';
@@ -261,7 +261,7 @@ export class MenuScene extends Phaser.Scene {
     const th = add(this.add.image(px + 10, 66, 'map_' + this.world).setOrigin(0).setScale(68 / W));
     if (locked) {
       th.setTint(0x333344);
-      add(this.add.image(px + 44, 126, 'cadenas'));
+      add(this.add.image(px + 44, 126, 'cadenas').setScale(uiScale('cadenas')));
     }
     add(this.add.graphics()).lineStyle(2, locked ? 0x6b7391 : 0xffc533).strokeRect(px + 9, 65, 70, 123);
     add(txt(this, px + 88, 70, wd.name, 8, '#ffc533').setWordWrapWidth(144));
@@ -372,7 +372,7 @@ export class MenuScene extends Phaser.Scene {
       const img = add(this.add.image(x, 378, 'map_' + id).setScale(0.2));
       if (locked) {
         img.setTint(0x333344);
-        add(this.add.image(x, 378, 'cadenas'));
+        add(this.add.image(x, 378, 'cadenas').setScale(uiScale('cadenas')));
       }
       img.setInteractive({ useHandCursor: true }).on('pointerup', (p: Phaser.Input.Pointer) => {
         if (Math.abs(p.x - p.downX) / RES > 12) return; // c'était un glissement, pas un appui
