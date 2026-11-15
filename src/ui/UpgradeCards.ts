@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { audio } from '../audio/AudioManager';
-import { CARDS_TIME, H, UpgradeDef, STYLE_3D, W, uiScale } from '../core/constants';
+import { CARDS_TIME, H, UpgradeDef, STYLE_3D, W, fitUi } from '../core/constants';
 import { txt } from './text';
 
 const D = 3000;
@@ -55,7 +55,7 @@ export class UpgradeCards {
           .container(x, y + 40, [
             g,
             txt(this.scene, 0, -53, u.name).setOrigin(0.5),
-            this.scene.add.image(0, -16, u.icon).setScale(1.5 * uiScale(u.icon)),
+            fitUi(this.scene.add.image(0, -16, u.icon), 1.5),
             txt(this.scene, 0, 30, u.desc, 8, '#e8e8f0').setOrigin(0.5),
             txt(this.scene, 0, 60, `NIV. ${levelOf(u) + 1}`, 8, '#ffc533').setOrigin(0.5),
           ])

@@ -50,11 +50,11 @@ def heart(cx, cy, r, size):
     Image.fromarray(empty.astype("uint8")).save(os.path.join(OUT, "coeur_vide.png"))
 
 
-disc(1430, 770, 110, 168, "btn_attaque")   # bouton rouge à l'épée, avec son anneau sombre
-disc(1562, 635, 84, 128, "btn_feu")        # bouton orange aux flammes
-disc(232, 740, 57, 72, "joy_pommeau")      # pommeau gris du joystick
-disc(785, 62, 31, 40, "chrono")
-disc(1382, 62, 31, 40, "piece")
-rounded(1613, 61, 72, 72, 16, 52, "pause")
-heart(70, 60, 34, 40)
+disc(1430, 770, 110, 220, "btn_attaque")   # bouton rouge à l'épée, avec son anneau sombre
+disc(1562, 635, 84, 168, "btn_feu")        # bouton orange aux flammes
+disc(232, 740, 57, 114, "joy_pommeau")      # pommeau gris du joystick
+disc(785, 62, 31, 62, "chrono")
+disc(1382, 62, 31, 62, "piece")
+rounded(1613, 61, 72, 72, 16, 72, "pause")
+heart(70, 60, 34, 68)
 print("interface 3D découpée dans", OUT)

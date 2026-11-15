@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { COMBO_SIZE, IngredientId, INGREDIENTS, ORDER_PATIENCE, POWER_LABEL, PowerId, STYLE_3D, W, WAVES } from '../core/constants';
+import { COMBO_SIZE, IngredientId, INGREDIENTS, ORDER_PATIENCE, POWER_LABEL, PowerId, STYLE_3D, W, WAVES, fitUi } from '../core/constants';
 import { GameManager } from '../core/GameManager';
 import { RecipeManager } from '../core/RecipeManager';
 import { Chef } from '../entities/Chef';
@@ -90,7 +90,7 @@ export class Hud {
     scene.add.rectangle(invX, sh - 34, 186, 32, 0x14141f, 0.8).setOrigin(0).setDepth(D);
     INGREDIENTS.forEach((ing, i) => {
       const x = invX + 12 + i * 46;
-      scene.add.image(x, sh - 18, 'ing_' + ing).setDepth(D + 1);
+      fitUi(scene.add.image(x, sh - 18, 'ing_' + ing).setDepth(D + 1));
       this.invTexts[ing] = txt(scene, x + 11, sh - 29, '0').setDepth(D + 1);
       this.slicedTexts[ing] = txt(scene, x + 11, sh - 17, '', 8, '#8fe0ff').setDepth(D + 1);
     });
@@ -103,7 +103,7 @@ export class Hud {
     // bouton d'attaque (maintenir pour frapper)
     this.atkBtn = scene.add.graphics().setDepth(D + 1);
     this.atkIcon = STYLE_3D
-      ? scene.add.image(ATK.x, ATK.y, 'ui3d_btn_attaque').setDepth(D + 2).setScale(0.5)
+      ? scene.add.image(ATK.x, ATK.y, 'ui3d_btn_attaque').setDepth(D + 2).setDisplaySize(ATK.r * 2, ATK.r * 2)
       : scene.add.image(ATK.x, ATK.y, 'ico_hachoir').setDepth(D + 2).setScale(0.62).setAngle(-30);
     scene.add
       .zone(ATK.x, ATK.y, ATK.r * 2 + 8, ATK.r * 2 + 8)
@@ -141,19 +141,19 @@ export class Hud {
   private top3d(sw: number, onPause: () => void): void {
     const { scene } = this;
     for (let i = 0; i < 8; i++) {
-      this.hearts.push(scene.add.image(14 + i * 19, 14, 'ui3d_coeur_vide').setScale(0.45).setDepth(D + 1));
-      this.heartsFull.push(scene.add.image(14 + i * 19, 14, 'ui3d_coeur').setScale(0.45).setDepth(D + 2));
+      this.hearts.push(scene.add.image(14 + i * 19, 14, 'ui3d_coeur_vide').setDisplaySize(18, 18).setDepth(D + 1));
+      this.heartsFull.push(scene.add.image(14 + i * 19, 14, 'ui3d_coeur').setDisplaySize(18, 18).setDepth(D + 2));
     }
     scene.add.image(10, 31, 'ico_stand').setDepth(D + 1);
     this.bars = scene.add.graphics().setDepth(D + 1);
     const pill = (x: number, w: number) => scene.add.graphics().setDepth(D).fillStyle(0x0c0c18, 0.55).fillRoundedRect(x - w / 2, 3, w, 23, 11.5);
     pill(sw / 2, 116);
-    scene.add.image(sw / 2 - 44, 14.5, 'ui3d_chrono').setScale(0.45).setDepth(D + 1);
+    scene.add.image(sw / 2 - 44, 14.5, 'ui3d_chrono').setDisplaySize(18, 18).setDepth(D + 1);
     this.timer = scene.add.text(sw / 2 + 8, 14.5, '', { fontFamily: '"Lilita One"', fontSize: '16px', color: '#ffffff' }).setOrigin(0.5).setDepth(D + 1).setShadow(0, 1, '#000000', 2);
     pill(sw - 74, 76);
-    scene.add.image(sw - 98, 14.5, 'ui3d_piece').setScale(0.45).setDepth(D + 1);
+    scene.add.image(sw - 98, 14.5, 'ui3d_piece').setDisplaySize(18, 18).setDepth(D + 1);
     this.gold = scene.add.text(sw - 86, 14.5, '0', { fontFamily: '"Lilita One"', fontSize: '16px', color: '#ffffff' }).setOrigin(0, 0.5).setDepth(D + 1).setShadow(0, 1, '#000000', 2);
-    scene.add.image(sw - 17, 15, 'ui3d_pause').setScale(0.5).setDepth(D + 1);
+    scene.add.image(sw - 17, 15, 'ui3d_pause').setDisplaySize(26, 26).setDepth(D + 1);
     scene.add.zone(sw - 17, 15, 34, 30).setDepth(D + 3).setInteractive({ useHandCursor: true }).on('pointerdown', onPause);
   }
 
@@ -164,7 +164,7 @@ export class Hud {
     this.hearts.forEach((h, i) => h.setVisible(i < n));
     this.heartsFull.forEach((h, i) => {
       const v = Phaser.Math.Clamp(chef.hp - i * 2, 0, 2);
-      h.setVisible(i < n && v > 0).setCrop(0, 0, v === 1 ? 20 : 40, 40);
+      h.setVisible(i < n && v > 0).setCrop(0, 0, v === 1 ? h.width / 2 : h.width, h.height);
     });
     this.bars.clear();
     this.bars.fillStyle(0x000000, 0.6).fillRoundedRect(18, 28, 60, 6, 3);
@@ -245,7 +245,7 @@ export class Hud {
       const needs = Object.entries(o.recipe.needs) as [IngredientId, number][];
       needs.forEach(([ing, need], j) => {
         const ix = x + 87 - (needs.length * 52) / 2 + j * 52 + 10;
-        this.orderUi.push(this.scene.add.image(ix, y + (STYLE_3D ? 19 : 20), 'ing_' + ing).setScale(0.7).setDepth(D + 1));
+        this.orderUi.push(fitUi(this.scene.add.image(ix, y + (STYLE_3D ? 19 : 20), 'ing_' + ing).setDepth(D + 1), 0.7));
         const t = txt(this.scene, ix + 8, y + (STYLE_3D ? 13 : 16), '', 8).setDepth(D + 1);
         this.orderUi.push(t);
         this.orderCounts.push({ text: t, ing, need });
@@ -306,13 +306,13 @@ export class Hud {
     this.ultRing.lineStyle(5, 0x14141f, 0.9).strokeCircle(ULT.x, ULT.y, ULT.r + 2);
     this.ultRing.lineStyle(4, ready ? 0xffe27a : 0xff8a1e, 1).beginPath();
     this.ultRing.arc(ULT.x, ULT.y, ULT.r + 2, -Math.PI / 2, -Math.PI / 2 + (Math.PI * 2 * chef.ult) / 100).strokePath();
-    const s = (ULT.r * 2) / 128;
+    const s = (ULT.r * 2) / this.ultBtn.width;
     this.ultBtn.setAlpha(ready ? 1 : 0.6).setTint(ready ? 0xffffff : 0x8a8a9a).setScale(ready ? s * (1 + Math.sin(time / 120) * 0.05) : s * 0.92);
     if (STYLE_3D) {
       // bouton d'attaque de la référence : il s'enfonce et fonce un peu quand on appuie
       const held3d = this.attackHeld;
       this.atkBtn.clear();
-      this.atkIcon.setScale(held3d ? 0.46 : 0.5).setTint(held3d ? 0xd8d8d8 : 0xffffff).setY(ATK.y + (held3d ? 2 : 0));
+      this.atkIcon.setScale(((held3d ? 0.92 : 1) * ATK.r * 2) / this.atkIcon.width).setTint(held3d ? 0xd8d8d8 : 0xffffff).setY(ATK.y + (held3d ? 2 : 0));
       return;
     }
 

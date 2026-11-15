@@ -6,7 +6,6 @@ import { openKeyboard } from '../ui/Keyboard';
 import { openModal } from '../ui/Modal';
 import { BUILD_LABEL } from '../core/update';
 import { button, txt } from '../ui/text';
-import { applyQuality, RES, setQuality } from '../core/layout';
 
 export const APP_VERSION = '1.0.0';
 /** Adresse d'assistance montrée aux joueurs : à renseigner dans le fichier .env (VITE_SUPPORT_EMAIL). */
@@ -36,13 +35,8 @@ export class AccountScene extends Phaser.Scene {
       ['CONFIDENTIALITE', 0x4a4f66, () => this.privacy()],
       ['SUPPRIMER MES DONNEES', 0x9a3a2e, () => this.confirmDelete()],
     ];
-    // qualité d'affichage : « fluide » pour les téléphones qui rament, « haute » pour une image plus fine
-    items.unshift(['MES ARTICLES', 0xe8642a, () => this.scene.start('Collection')]);
-    items.splice(2, 0, [RES > 1 ? 'IMAGE : HAUTE QUALITE' : 'IMAGE : FLUIDE', 0x6a4a8f, () => {
-      setQuality(RES > 1 ? 'fluide' : 'haute');
-      applyQuality();
-    }]);
-    items.forEach(([label, color, cb], i) => button(this, W / 2, 252 + i * 35, 260, 30, label, color, cb));
+    items.unshift(['MA COLLECTION', 0xe8642a, () => this.scene.start('Collection')]);
+    items.forEach(([label, color, cb], i) => button(this, W / 2, 256 + i * 40, 260, 32, label, color, cb));
     txt(this, W / 2, 484, 'Ton compte est enregistré sur cet\nappareil. La sauvegarde en ligne\narrivera dans une prochaine version.', 8, '#6b7391').setOrigin(0.5, 0);
     txt(this, W / 2, 538, `BISTRO DONJON v${APP_VERSION}\nVersion du ${BUILD_LABEL}\nUn jeu SolveLab`, 8, '#6b7391').setOrigin(0.5, 0);
     button(this, W / 2, 606, 160, 32, 'RETOUR', 0x4a4f66, () => this.scene.start('Menu'));

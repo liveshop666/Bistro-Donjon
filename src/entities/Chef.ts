@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
-import { artScale, CHEF_FRAMES, ChefDef, is3d, PowerId, uiScale } from '../core/constants';
+import { audio } from '../audio/AudioManager';
+import { artScale, CHEF_FRAMES, ChefDef, is3d, PowerId, fitUi, px, STYLE_3D } from '../core/constants';
 import { emptyInventory, Inventory, Order } from '../core/RecipeManager';
 import anchors from '../core/spriteAnchors.json';
 
@@ -42,10 +43,10 @@ export class Chef {
     this.y = y;
     this.hp = this.maxHp = def.hp;
     // costume : une seule image ; en style 3D, sa pose d'attaque quand elle existe
-    this.frames = skin ? { idle: [skin], walk: [skin], attack: [is3d(skin) && scene.textures.exists(skin + '_atk') ? skin + '_atk' : skin] } : CHEF_FRAMES[def.id];
+    this.frames = skin ? { idle: [skin], walk: is3d(skin) && scene.textures.exists(skin + '_mar') ? [skin + '_mar', skin] : [skin], attack: [is3d(skin) && scene.textures.exists(skin + '_atk') ? skin + '_atk' : skin] } : CHEF_FRAMES[def.id];
     this.shadow = scene.add.ellipse(x, y, 26, 8, 0x000000, 0.3);
     this.sprite = scene.add.image(x, y, this.frames.idle[0]).setOrigin(0.5, 1);
-    this.dishIcon = scene.add.image(x, y, 'plat').setVisible(false).setScale(uiScale('plat'));
+    this.dishIcon = fitUi(scene.add.image(x, y, 'plat').setVisible(false));
     this.knife = scene.add.image(x, y, 'couteau').setVisible(false);
   }
 
@@ -60,7 +61,9 @@ export class Chef {
       if (stuck || !blocked(nx, this.y)) this.x = nx;
       if (stuck || !blocked(this.x, ny)) this.y = ny;
       if (Math.abs(dir.x) > 0.15) this.facing = dir.x > 0 ? 1 : -1;
+      const step = Math.floor(this.walkT);
       this.walkT += dt * (speed / 12);
+      if (STYLE_3D && Math.floor(this.walkT) !== step && step % 2 === 0) audio.sfx('pas'); // un bruit de pas tous les deux temps
     }
   }
 
@@ -180,15 +183,16 @@ export class Chef {
         sy = 1 - 0.1 * hitU;
       }
     }
-    const bob = this.moving ? Math.abs(Math.sin(this.walkT * Math.PI)) * 2 : Math.sin(time / 300) * 0.8;
+    // marche 3D : un léger balancement à chaque pas (plus de petits sauts), la pose de pas fait le reste
+    const bob = this.moving ? Math.abs(Math.sin(this.walkT * Math.PI)) * (STYLE_3D ? 0.8 : 2) : Math.sin(time / 300) * 0.8;
     const flip = this.ultActive > 0 ? Math.floor(time / 70) % 2 === 0 : this.facing < 0;
     this.sprite
       .setTexture(key)
       .setFlipX(flip)
       .setOrigin(flip ? 1 - anchor : anchor, 1)
-      .setPosition(Math.round(this.x + this.aim.x * this.lunge * 5 + lungeX), Math.round(this.y - bob - lift + this.aim.y * this.lunge * 5))
+      .setPosition(px(this.x + this.aim.x * this.lunge * 5 + lungeX), px(this.y - bob - lift + this.aim.y * this.lunge * 5))
       .setScale(artScale(key) * sx, artScale(key) * sy)
-      .setAngle(swing || ((this.skin || is3d(key)) && this.moving ? Math.sin(this.walkT * Math.PI) * 5 : 0))
+      .setAngle(swing || ((this.skin || is3d(key)) && this.moving ? Math.sin(this.walkT * Math.PI) * 2 : 0))
       .setAlpha(this.invuln > 0 && Math.floor(time / 80) % 2 === 0 ? 0.35 : 1)
       .setDepth(this.y);
     this.shadow.setPosition(this.x, this.y - 1).setDepth(this.y - 1);

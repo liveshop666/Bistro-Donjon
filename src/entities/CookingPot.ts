@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { COOK_TIME, uiScale } from '../core/constants';
+import { COOK_TIME, fitUi } from '../core/constants';
 import { Order } from '../core/RecipeManager';
 
 /** La marmite : cuisson automatique d'une commande, puis plat à récupérer. */
@@ -14,9 +14,9 @@ export class CookingPot {
 
   constructor(scene: Phaser.Scene, public x: number, public y: number) {
     scene.add.ellipse(x, y, 40, 10, 0x000000, 0.3).setDepth(y - 1);
-    this.sprite = scene.add.image(x, y + 2, 'marmite').setOrigin(0.5, 1).setDepth(y);
+    this.sprite = fitUi(scene.add.image(x, y + 2, 'marmite').setOrigin(0.5, 1).setDepth(y));
     this.bar = scene.add.graphics().setDepth(y + 1);
-    this.ready = scene.add.image(x, y - 50, 'plat').setDepth(y + 2).setVisible(false).setScale(uiScale('plat'));
+    this.ready = fitUi(scene.add.image(x, y - 50, 'plat').setDepth(y + 2).setVisible(false));
   }
 
   /** @param slicedFraction part d'ingrédients tranchés (cuisson jusqu'à 2x plus rapide) */

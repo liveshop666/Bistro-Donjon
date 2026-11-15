@@ -2,7 +2,20 @@
 
 Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en haut à chaque session.
 
-## Où on en est (14/11/2026)
+## Où on en est (15/11/2026)
+
+**15/11/2026 (7) : netteté partout, onglet des maps, vraie marche, nouveaux bruitages**
+- Flou corrigé partout. Deux causes : les textes étaient dessinés en basse définition (Phaser les fait par défaut à 1 : maintenant toujours à la finesse de l'écran + 1, dans `main.ts`), et le téléphone avait enregistré tout seul le mode « fluide ».
+- Réglage « IMAGE : FLUIDE / HAUTE QUALITE » supprimé (choix de Rudy) : la qualité est toujours au maximum dès le lancement (`RES` dans `layout.ts`, jusqu'à 4 fois la taille de l'écran). L'ancien choix enregistré est effacé au démarrage.
+- Images plus fines : personnages 3D enregistrés 6 fois plus grands, boutons et icônes de l'interface découpés à leur taille d'origine (`tools/extract_ui3d.py`), icônes et objets de cuisine en grand (`fitUi()` les remet à la bonne taille). Maps 3D agrandies 2 fois par une intelligence artificielle de « super-résolution » (`tools/upscale_maps.py`, 3360 x 1888) : la map HD du monde joué est chargée au début de la partie, une seule à la fois (pour la mémoire du téléphone).
+- Nouvel onglet **LES MAPS** (bouton « TOUTES LES MAPS » au menu, « LES MAPS » en paysage) : les 8 maps en grandes vignettes, cadenas et raison si elle est fermée ; on touche une map : JOUER SOLO, DUEL, ou CHOISIR ET REVENIR.
+- « MES ARTICLES » s'appelle maintenant **MA COLLECTION** (Mon compte, boutique, reçu d'achat).
+- Les personnages marchent vraiment (Rudy : « ils sursautent ») : 13 poses de marche 3D dessinées dans Canva (`reference/3d/marche-*.png`, découpées dans `public/assets/sprites3d/<nom>_mar.png`) ; pendant la marche, le jeu alterne pas en avant / pose debout. Petits sauts réduits (chefs et monstres), et plus d'arrondi au pixel près des positions (c'était ce qui faisait avancer par à-coups).
+- Bruitages refaits : chaque arme a son bruit fabriqué (souffle de l'arme + choc + matière) : poêle qui sonne « bong », rouleau en bois, double lame qui siffle, hachoir géant + feu qui crépite (Taureau), coup de poing + éclair (Gorille), wok + flamme bleue (Tigre), glace qui éclate (Ours). Les sons de la vidéo où l'on entendait la musique ne servent plus pour les coups (gardés : rugissement du boss, victoire, flamme de l'ultime, marmite). Bruit de pas, petit écho de pièce, compresseur pour que tout reste clair quand ça tape fort.
+- Musique : flûte qui double la mélodie, cordes pincées, cymbale à chaque grande phrase, en plus des cuivres, cordes et timbales.
+- Testé : tous les écrans en portrait et paysage, marche image par image (Chef Moustachu, Taureau), joystick au vrai toucher, coups du Taureau et du Gorille, cartes, robot dans 4 mondes, 6 mondes avec costumes ; aucune erreur. Sons pas écoutés ici (pas de haut-parleur) : à vérifier sur le téléphone.
+- Prochaine étape proposée par Rudy : des mouvements encore plus réalistes avec Blender (gratuit). Cela demande de vrais modèles 3D des personnages, avec un squelette pour les animer, puis de les rendre en images : gros chantier à faire après.
+- Toujours à remettre avant le Play Store : `TEST_UNLOCK_ALL` et `TEST_PAYMENTS` à `false`.
 
 **15/11/2026 (6) : plus aucun petit carré pixel**
 - Rudy voyait plein de « petits points carrés » sur les coups (le Taureau par exemple) : c'étaient les étincelles, des carrés de 4 pixels. Remplacées par des braises rondes et floues, et par de vraies petites flammes en goutte (`flammeche`) pour le Taureau.
@@ -218,11 +231,16 @@ Détails :
 - **Script de modification qui casse les retours à la ligne** : un script Python passé dans le terminal a transformé des `\n` en vrais retours à la ligne dans le code. Leçon : pour modifier du code qui contient `\n`, utiliser l'outil d'édition ou un fichier de script, pas un texte collé dans le terminal ; puis lancer `npx tsc --noEmit`.
 - **Fenêtre du téléphone dans le jeu** : `window.prompt` ouvre le clavier d'Android, qui change la taille de l'écran et laisse le jeu rétréci. Leçon : jamais de `prompt`, `alert`, `confirm` ni de page externe ; tout se fait avec les fenêtres du jeu (`Modal`, `Keyboard`).
 - **`npx tsc` lancé hors du dossier du projet** : npx a téléchargé un paquet sans rapport nommé « tsc ». Leçon : utiliser `npm run typecheck` depuis le dossier du jeu.
+- **Texte flou malgré un écran haute définition** : Phaser dessine les textes à la finesse 1 par défaut, et un réglage « fluide » enregistré tout seul baissait tout le jeu -> forcer la finesse des textes (`main.ts`) et ne jamais baisser la qualité sans que le propriétaire le décide.
+- **Personnages qui avancent par à-coups** : positions arrondies au pixel (utile en pixel art) alors que la caméra zoome -> en 3D, positions libres (`px()` dans `constants.ts`).
+- **Sons découpés dans une vidéo** : on y entend la musique de la vidéo -> pour les coups répétés, fabriquer le bruit plutôt que de le découper.
 - **Scène relancée à moitié pendant le test** : arrêter toutes les scènes et démarrer « Game » dans la même image laisse une scène sans caméra. Leçon : arrêter, attendre un instant, puis démarrer.
 
 ## Notes techniques
 - Récupérer une image Canva en taille réelle (trouvé le 14/11) : Canva ne donne que des aperçus de 200 px, mais on peut poser l'image sur une page d'un design puis exporter la page. Le design « Bistro Donjon - export 3D » (`DAHa7uXcGeY`, l'ancien `DAHa4Him79Y` a disparu) sert à ça : ouvrir une modification (`read-design` avec `open_transaction`), `add_page` 2720 x 1536, `insert_fill` avec l'identifiant de l'image, enregistrer, puis `export-design` en JPG largeur 1680 sur les pages voulues. Rudy n'a plus besoin de télécharger les maps à la main.
-- Qualité d'affichage : `RES` (`src/core/layout.ts`) vaut 2 (haute) ou 1 (fluide), décidé au chargement par `wantedRes()` ; choix gardé dans `bistro-donjon-qualite`. `GameScene.watchFps()` mesure les images par seconde, `applyQuality()` recharge la page au menu si la qualité voulue a changé.
+- Qualité d'affichage (depuis le 15/11) : `RES` (`src/core/layout.ts`) = finesse de l'écran x 1,25, entre 2 et 4, toujours ; plus de réglage ni de mesure des images par seconde. Textes : finesse `RES + 1` (patch de `add.text` dans `main.ts`).
+- Images 3D en haute définition : `uiScale()` / `fitUi()` (`constants.ts`) ramènent une image HD (`UI3D_HD`) à sa taille d'affichage. Maps HD : `public/assets/maps/hd3d_<monde>.jpg`, chargées par `GameScene.preload()` (clé `hdmap_<monde>`), sinon `wide3d`. Vignettes de l'onglet des maps : `thumb3d_<monde>.jpg`.
+- Marche 3D : `<nom>_mar.png` ; chefs : `walk3d()` dans `constants.ts` ; costumes : `Chef` alterne `[costume_mar, costume]`. Bruit de pas : `audio.sfx('pas')`. Bruitages d'armes : `AudioManager.weapon()`.
 - Mode test : `loadProfile()` (Storage) renvoie tout possédé quand `TEST_UNLOCK_ALL` est vrai, et `saveProfile()` n'enregistre jamais `owned` ni `unlocked` dans ce mode.
 - Tapis roulants : `conveyorsOf(monde)` dans `constants.ts` (bandes différentes pour petite et grande map).
 - Menu et boutique en paysage : dessinés exprès (`createLandscape()` dans `MenuScene` et `ShopScene`), canvas de 360 de haut via `landscapeMenu()` ; en portrait `portraitMenu()`. Les deux redémarrent l'écran quand on tourne le téléphone. Mon compte, Règles, Duel : `setupLandscapeMenu(this[, coupe])` (deux colonnes).

@@ -1,6 +1,7 @@
 /**
- * Son de Bistro Donjon, 100 % synthétisé (Web Audio) : aucun fichier audio à charger.
- * Style « puce 16-bits » : ondes carrées/triangle + bruit, pour coller au pixel art.
+ * Son de Bistro Donjon, synthétisé (Web Audio) : presque aucun fichier audio à charger.
+ * Style 3D : orchestre (cuivres, cordes, flûte, timbales) et bruitages d'armes fabriqués un par un ;
+ * l'ancien style « puce 16-bits » reste pour le mode pixel.
  *  - sfx(nom)   : bruitages courts
  *  - music(nom) : boucles chiptune (menu, boutique, duel, une musique de chasse par monde, cuisine, boss)
  */
@@ -10,7 +11,7 @@ export type Sfx =
   | 'marmite' | 'pret' | 'plat' | 'piece' | 'pouvoir' | 'aie' | 'stand' | 'ultime' | 'feu' | 'explosion'
   | 'coup_hache' | 'coup_elec' | 'coup_wok' | 'coup_glace' | 'splat' | 'fantome'
   | 'hache' | 'parti' | 'laser' | 'rugissement' | 'choc' | 'vague' | 'cloche' | 'cartes' | 'carte' | 'soin' | 'victoire' | 'defaite'
-  | 'legendaire' | 'cadeau' | 'niveau';
+  | 'legendaire' | 'cadeau' | 'niveau' | 'pas';
 
 export type Tune =
   | 'menu' | 'chasse' | 'chasse_marche' | 'chasse_taverne' | 'chasse_cantine'
@@ -126,9 +127,9 @@ const MUTE_KEY = 'bistro-donjon-muet';
  * (tools/extract_sons.sh -> public/assets/sons/). Les autres bruitages restent synthétisés.
  */
 const SAMPLE_OF: Partial<Record<Sfx, string>> = {
-  coup_poele: 'poele', coup_hachoir: 'wok', coup_wok: 'wok', coup_elec: 'wok',
-  coup_rouleau: 'lourd', coup_hache: 'lourd', coup_glace: 'lourd', choc: 'lourd',
-  splat: 'ecrase', pop: 'ecrase', ultime: 'flamme', rugissement: 'boss', victoire: 'final', marmite: 'marmite',
+  // 15/11 (2e passe) : les coups d'armes ne prennent plus les sons de la vidéo (on y entendait la musique) :
+  // chaque arme a son propre bruitage fabriqué (voir weapon() plus bas). On garde les grands moments.
+  ultime: 'flamme', rugissement: 'boss', victoire: 'final', marmite: 'marmite',
 };
 const SAMPLE_VOL: Record<string, number> = { poele: 0.55, wok: 0.5, lourd: 0.6, ecrase: 0.45, flamme: 0.7, boss: 0.8, final: 0.8, marmite: 0.4 };
 
@@ -225,6 +226,26 @@ class AudioManager {
     this.sfxBus = ctx.createGain();
     this.sfxBus.gain.value = 0.9;
     this.sfxBus.connect(this.master);
+    if (this.realSounds) {
+      // style 3D : un peu d'écho de pièce sur les bruitages, pour qu'ils sonnent « dans le donjon » et non plats
+      const room = ctx.createConvolver();
+      const len = Math.floor(ctx.sampleRate * 0.7);
+      const ir = ctx.createBuffer(2, len, ctx.sampleRate);
+      for (let c = 0; c < 2; c++) {
+        const d = ir.getChannelData(c);
+        for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 4);
+      }
+      room.buffer = ir;
+      const wet = ctx.createGain();
+      wet.gain.value = 0.16;
+      this.sfxBus.connect(room).connect(wet).connect(this.master);
+      // compresseur : les gros coups restent forts sans saturer quand tout tape en même temps
+      const comp = ctx.createDynamicsCompressor();
+      comp.threshold.value = -14;
+      comp.ratio.value = 4;
+      this.master.disconnect();
+      this.master.connect(comp).connect(ctx.destination);
+    }
     this.noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
     const data = this.noiseBuf.getChannelData(0);
     for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
@@ -311,6 +332,99 @@ class AudioManager {
     src.stop(t + dur + 0.02);
   }
 
+  /** Métal frappé (poêle, wok, hachoir) : partiels inharmoniques qui s'éteignent à des vitesses différentes. */
+  private metal(base: number, dur: number, vol: number, at = 0): void {
+    [[1, 1], [2.32, 0.6], [4.25, 0.4], [6.63, 0.25], [9.38, 0.12]].forEach(([r, v], i) =>
+      this.tone(this.sfxBus, base * r * (0.995 + Math.random() * 0.01), dur / (1 + i * 0.6), 'sine', vol * v, at));
+  }
+
+  /** Souffle de l'arme qui fend l'air. */
+  private whoosh(vol: number, low = 500, high = 2600, dur = 0.16): void {
+    this.noise(this.sfxBus, dur, vol, 'bandpass', low, 0, high);
+  }
+
+  /** Crépitement (feu, éclairs, glace) : petits claquements au hasard. */
+  private crackle(n: number, dur: number, vol: number, freq: number, at = 0): void {
+    for (let i = 0; i < n; i++) this.noise(this.sfxBus, 0.02 + Math.random() * 0.03, vol * (0.5 + Math.random() * 0.5), 'bandpass', freq * (0.7 + Math.random() * 0.6), at + Math.random() * dur);
+  }
+
+  /**
+   * Coups d'armes du style 3D (15/11, demande de Rudy : « les effets sonores des armes et des personnages ») :
+   * chaque arme a son geste sonore = souffle + impact + matière (métal, bois, glace, éclair, feu).
+   */
+  private weapon(name: Sfx): boolean {
+    const b = this.sfxBus;
+    switch (name) {
+      case 'coup_poele': // poêle de Chef Moustachu : grand « BONG » de fonte
+        this.whoosh(0.12);
+        this.tone(b, 150, 0.16, 'sine', 0.45, 0.03, 60);
+        this.metal(330, 0.9, 0.16, 0.03);
+        this.noise(b, 0.05, 0.25, 'highpass', 2500, 0.03);
+        return true;
+      case 'coup_rouleau': // rouleau de Maître Shiba : bois plein qui claque
+        this.whoosh(0.12, 400, 1800);
+        this.tone(b, 240, 0.12, 'triangle', 0.4, 0.03, 110);
+        this.tone(b, 680, 0.04, 'sine', 0.25, 0.03, 420);
+        this.noise(b, 0.08, 0.28, 'bandpass', 1100, 0.03, 500);
+        return true;
+      case 'coup_hachoir': // hachoirs de Mlle Noisette : deux lames qui sifflent puis tranchent
+        this.noise(b, 0.12, 0.16, 'highpass', 3000, 0, 8000);
+        this.metal(1500, 0.3, 0.07, 0.04);
+        this.tone(b, 180, 0.1, 'sine', 0.35, 0.05, 70);
+        this.noise(b, 0.1, 0.12, 'highpass', 4000, 0.09, 9000);
+        this.metal(1750, 0.25, 0.05, 0.12);
+        return true;
+      case 'coup_hache': // hachoir géant enflammé du Taureau : souffle lourd, choc qui fait trembler, feu qui crépite
+        this.whoosh(0.2, 250, 1400, 0.25);
+        this.tone(b, 95, 0.55, 'sine', 0.6, 0.08, 32);
+        this.metal(220, 0.6, 0.1, 0.08);
+        this.noise(b, 0.4, 0.18, 'lowpass', 1500, 0.08, 200);
+        this.crackle(7, 0.45, 0.14, 2600, 0.1);
+        return true;
+      case 'coup_elec': // poêles-gants du Gorille : coup de poing métallique + arc électrique
+        this.tone(b, 130, 0.14, 'sine', 0.45, 0, 55);
+        this.metal(420, 0.5, 0.1);
+        this.tone(b, 1400, 0.18, 'sawtooth', 0.06, 0.01, 180);
+        this.tone(b, 60, 0.25, 'square', 0.05, 0.01);
+        this.crackle(8, 0.25, 0.12, 5000, 0.01);
+        return true;
+      case 'coup_wok': // woks du Tigre : métal grave + flamme bleue qui souffle
+        this.whoosh(0.14, 300, 2200, 0.2);
+        this.metal(260, 0.75, 0.13, 0.05);
+        this.tone(b, 120, 0.15, 'sine', 0.35, 0.05, 55);
+        this.noise(b, 0.35, 0.16, 'bandpass', 500, 0.05, 2600);
+        this.crackle(4, 0.3, 0.08, 3000, 0.1);
+        return true;
+      case 'coup_glace': // marteau de l'Ours : choc sourd puis la glace qui éclate en cristaux
+        this.whoosh(0.16, 300, 1500, 0.22);
+        this.tone(b, 110, 0.35, 'sine', 0.55, 0.06, 40);
+        this.noise(b, 0.12, 0.25, 'highpass', 3500, 0.06);
+        [2100, 3150, 4420, 5600].forEach((f, i) => this.tone(b, f, 0.35 - i * 0.05, 'sine', 0.05, 0.08 + i * 0.03));
+        this.crackle(6, 0.2, 0.1, 6000, 0.08);
+        return true;
+      case 'choc': // gros choc au sol
+        this.tone(b, 85, 0.5, 'sine', 0.6, 0, 30);
+        this.noise(b, 0.35, 0.22, 'lowpass', 900, 0, 120);
+        return true;
+      case 'splat': // monstre mou écrasé : « sploutch » humide
+        this.noise(b, 0.22, 0.3, 'lowpass', 1600, 0, 180);
+        this.tone(b, 320, 0.16, 'sine', 0.3, 0, 70);
+        this.crackle(3, 0.12, 0.08, 900, 0.03);
+        return true;
+      case 'pop': // monstre vaincu : « pouf » rond et un petit éclat
+        this.tone(b, 260, 0.12, 'sine', 0.35, 0, 90);
+        this.noise(b, 0.18, 0.18, 'bandpass', 1400, 0, 400);
+        this.tone(b, 1300, 0.12, 'sine', 0.06, 0.05, 2000);
+        return true;
+      case 'pas': // pas du chef : petit bruit feutré
+        this.noise(b, 0.05, 0.05, 'lowpass', 420);
+        this.tone(b, 95, 0.05, 'sine', 0.05, 0, 70);
+        return true;
+      default:
+        return false;
+    }
+  }
+
   /**
    * Bruitages fréquents refaits « 3D » (bruits sourds et ronds au lieu des bips 8-bit) quand aucun vrai son n'existe.
    * Renvoie faux pour garder le bruitage d'origine.
@@ -365,7 +479,8 @@ class AudioManager {
     const b = this.sfxBus;
     const real = this.realSounds ? SAMPLE_OF[name] : undefined;
     if (real && this.playSample(real)) return;
-    if (this.realSounds && this.sfx3d(name)) return;
+    if (this.realSounds && (this.weapon(name) || this.sfx3d(name))) return;
+    if (name === 'pas') return; // les pas n'existent qu'en 3D
 
     switch (name) {
       case 'clic': // bouton appuyé : « Bouton rétro » (choix de Rudy, 12/11)
@@ -610,6 +725,9 @@ class AudioManager {
         if (lead) this.voice('cuivre', hz(lead), stepDur * 1.1, 0.07, at);
         if (bass) this.tone(this.musicBus, hz(bass), stepDur * 0.95, 'sine', 0.32, at);
         if (i % 8 === 0 && bass) for (const n of [12, 19, 24]) this.voice('cordes', hz(bass + n), stepDur * 8, 0.035, at);
+        if (lead) this.tone(this.musicBus, hz(lead + 12), stepDur * 0.9, 'sine', 0.025, at); // flûte qui double la mélodie
+        if (i % 2 === 1 && bass) this.tone(this.musicBus, hz(bass + (i % 4 === 1 ? 12 : 19)), stepDur * 0.5, 'triangle', 0.07, at); // cordes pincées
+        if (this.step % 32 === 0) this.noise(this.musicBus, 1.4, 0.05, 'highpass', 6000, at); // cymbale à chaque grande phrase
         if (def.drums) {
           const beat = i % 8;
           if (beat === 0 || beat === 4) this.tone(this.musicBus, 95, 0.32, 'sine', 0.5, at, 42); // timbale

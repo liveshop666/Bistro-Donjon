@@ -37,8 +37,9 @@ export class TouchController {
   constructor(scene: Phaser.Scene, private isUi: (x: number, y: number) => boolean) {
     scene.input.addPointer(2);
     // textures dessinées 2 fois plus grandes (nettes avec le rendu fin) : affichées à moitié
-    this.base = scene.add.image(0, 0, STYLE_3D ? 'joy_base3d' : 'joy_base').setDepth(2500).setVisible(false).setAlpha(0.85).setScale(0.5);
-    this.thumb = scene.add.image(0, 0, STYLE_3D ? 'ui3d_joy_pommeau' : 'joy_thumb').setDepth(2501).setVisible(false).setAlpha(0.95).setScale(0.5);
+    this.base = scene.add.image(0, 0, STYLE_3D ? 'joy_base3d' : 'joy_base').setDepth(2500).setVisible(false).setAlpha(0.85).setScale(STYLE_3D ? 0.25 : 0.5);
+    this.thumb = scene.add.image(0, 0, STYLE_3D ? 'ui3d_joy_pommeau' : 'joy_thumb').setDepth(2501).setVisible(false).setAlpha(0.95);
+    this.thumb.setScale(STYLE_3D ? 36 / this.thumb.width : 0.5);
     this.scene = scene;
     this.rest();
     this.trail = scene.add.graphics().setDepth(1900);

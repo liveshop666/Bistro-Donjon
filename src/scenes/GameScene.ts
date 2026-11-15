@@ -1,9 +1,9 @@
 import Phaser from 'phaser';
-import { landscapeHeight, landscapeWanted, landscapeWidth, pageCam, RES, setQuality, storedQuality } from '../core/layout';
+import { landscapeHeight, landscapeWanted, landscapeWidth, pageCam, RES } from '../core/layout';
 import { audio, Sfx, Tune } from '../audio/AudioManager';
 import {
-  ARENA, BOSS_REWARD, ChefId, ENEMIES, FREE_WORLDS, ShopItem, WORLD_HP_STEP, worldRank, CHEFS, CHOP_TIME, COMBO_GOLD, COMBO_SIZE, conveyorsOf, worldDef, STYLE_3D, EnemyId, GameMode, H, IngredientId, INGREDIENTS, itemLabel, playerLevel, ORDER_PATIENCE,
-  POWER_LABEL, POWER_TIME, SHOP, Sabotage, SABOTAGE_LABEL, SABOTAGES, TIP_BONUS, UpgradeDef, W, WAVES, WORLD_ORDER, WorldDef, WorldId, uiScale } from '../core/constants';
+  ARENA, BOSS_REWARD, ChefId, ENEMIES, FREE_WORLDS, ShopItem, WORLD_HP_STEP, worldRank, CHEFS, CHOP_TIME, COMBO_GOLD, COMBO_SIZE, conveyorsOf, worldDef, STYLE_3D, WORLD_3D, EnemyId, GameMode, H, IngredientId, INGREDIENTS, itemLabel, playerLevel, ORDER_PATIENCE,
+  POWER_LABEL, POWER_TIME, SHOP, Sabotage, SABOTAGE_LABEL, SABOTAGES, TIP_BONUS, UpgradeDef, W, WAVES, WORLD_ORDER, WorldDef, WorldId, fitUi } from '../core/constants';
 import { GameManager, Phase } from '../core/GameManager';
 import { RecipeManager } from '../core/RecipeManager';
 import { WaveManager } from '../core/WaveManager';
@@ -114,6 +114,13 @@ export class GameScene extends Phaser.Scene {
     this.link = data.link ?? null;
   }
 
+  /** Map en haute définition (2 fois plus fine) du monde joué : chargée juste avant la partie, une seule à la fois. */
+  preload(): void {
+    if (!STYLE_3D || !WORLD_3D[this.worldId]) return;
+    for (const k of this.textures.getTextureKeys()) if (k.startsWith('hdmap_') && k !== 'hdmap_' + this.worldId) this.textures.remove(k);
+    if (!this.textures.exists('hdmap_' + this.worldId)) this.load.image('hdmap_' + this.worldId, `assets/maps/hd3d_${this.worldId}.jpg`);
+  }
+
   create(): void {
     this.enemies = [];
     this.ingredients = [];
@@ -136,7 +143,7 @@ export class GameScene extends Phaser.Scene {
     ARENA.h = wide?.h ?? H;
     if (wide) {
       // grande map paysage : tout le terrain est dessiné, la caméra suit le chef (portrait comme paysage)
-      this.add.image(0, 0, 'wide_' + this.worldId).setOrigin(0).setDisplaySize(wide.w, wide.h).setDepth(-100);
+      this.add.image(0, 0, this.textures.exists('hdmap_' + this.worldId) ? 'hdmap_' + this.worldId : 'wide_' + this.worldId).setOrigin(0).setDisplaySize(wide.w, wide.h).setDepth(-100);
     } else {
       // monde sans grande map (il n'y en a plus depuis le 14/11) : une seule map, jamais de copies en miroir
       this.add.image(0, 0, 'map_' + this.worldId).setOrigin(0).setDepth(-100);
@@ -160,10 +167,10 @@ export class GameScene extends Phaser.Scene {
       this.recipes.refill(this.gm.wave);
     }
     const board = this.world.board;
-    this.add.image(board.x, board.y, 'planche').setOrigin(0.5, 1).setDepth(board.y - 12);
+    fitUi(this.add.image(board.x, board.y, 'planche').setOrigin(0.5, 1).setDepth(board.y - 12));
     txt(this, board.x, board.y + 4, 'PLANCHE', 8, '#ffe9b0').setOrigin(0.5, 0).setDepth(-10);
     this.pot = new CookingPot(this, pot.x, pot.y);
-    this.add.image(counter.x, counter.y, 'comptoir').setOrigin(0.5, 1).setDepth(counter.y);
+    fitUi(this.add.image(counter.x, counter.y, 'comptoir').setOrigin(0.5, 1).setDepth(counter.y));
     txt(this, pot.x, pot.y + 4, 'MARMITE', 8, '#ffe9b0').setOrigin(0.5, 0).setDepth(-10);
     txt(this, counter.x, counter.y + 4, 'SERVICE', 8, '#ffe9b0').setOrigin(0.5, 0).setDepth(-10);
     // halo au sol sous chaque poste de cuisine, pour les repérer d'un coup d'œil sur les grandes maps
@@ -270,7 +277,6 @@ export class GameScene extends Phaser.Scene {
     if (this.stopUntil > time) return;
     const dt = Math.min(delta, 50) / 1000;
     this.touch.update(dt);
-    this.watchFps(delta);
     if (this.hudCam) this.followChef(Math.min(1, dt * 6));
     const { gm, chef } = this;
     // en duel en ligne le temps ne s'arrête pas : le menu pause s'affiche par-dessus
@@ -573,7 +579,7 @@ export class GameScene extends Phaser.Scene {
   private shoot(x: number, y: number, tx: number, ty: number): void {
     const d = Math.hypot(tx - x, ty - y) || 1;
     audio.sfx('feu');
-    this.shots.push({ img: this.add.image(x, y, 'boule_feu').setDepth(1600).setScale(uiScale('boule_feu')), vx: ((tx - x) / d) * 95, vy: ((ty - y) / d) * 95, life: 5 });
+    this.shots.push({ img: fitUi(this.add.image(x, y, 'boule_feu').setDepth(1600)), vx: ((tx - x) / d) * 95, vy: ((ty - y) / d) * 95, life: 5 });
   }
 
   private updateShots(dt: number): void {
@@ -727,7 +733,7 @@ export class GameScene extends Phaser.Scene {
         this.tick.barrel = 9;
         const x = this.bounds.left + 24 + Math.random() * (this.bounds.width - 48);
         const y = this.world.standLine + 60 + Math.random() * (this.bounds.bottom - this.world.standLine - 120);
-        this.barrels.push({ x, y, img: this.add.image(x, y, 'tonneau').setOrigin(0.5, 1).setDepth(y).setScale(uiScale('tonneau')) });
+        this.barrels.push({ x, y, img: fitUi(this.add.image(x, y, 'tonneau').setOrigin(0.5, 1).setDepth(y)) });
       }
       for (const b of this.barrels) {
         if (!this.enemies.some((e) => !e.dead && Math.hypot(e.x - b.x, e.y - b.y) < e.radius + 9)) continue;
@@ -880,21 +886,6 @@ export class GameScene extends Phaser.Scene {
     this.hudCam = pageCam(this.cameras.add(), 0, 0, gw, gh);
     this.ovlCam = pageCam(this.cameras.add(), 0, 0, gw, gh);
     this.followChef(1);
-  }
-
-  /**
-   * Le téléphone n'arrive pas à suivre en qualité haute (moins de 40 images par seconde sur 8 s de jeu) :
-   * on retient « fluide », appliqué au retour au menu. Un choix fait par le joueur dans Mon compte n'est jamais changé.
-   */
-  private fpsT = 0;
-  private fpsN = 0;
-  private watchFps(delta: number): void {
-    if (RES < 2 || storedQuality() || this.paused || delta > 500) return;
-    this.fpsT += delta;
-    this.fpsN++;
-    if (this.fpsT < 8000) return;
-    if ((this.fpsN * 1000) / this.fpsT < 40) setQuality('fluide');
-    this.fpsT = this.fpsN = 0;
   }
 
   /** Style 3D (vidéo de Rudy) : le boss surgit, la caméra va le voir et zoome, rugissement et secousse, puis revient. */

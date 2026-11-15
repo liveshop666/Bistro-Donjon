@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { IngredientId } from '../core/constants';
+import { IngredientId, fitUi } from '../core/constants';
 
 const LIFETIME = 30;
 
@@ -16,8 +16,8 @@ export class Ingredient {
 
   constructor(private scene: Phaser.Scene, public type: IngredientId, public x: number, public y: number) {
     const key = 'ing_' + type;
-    this.left = scene.add.image(x, y, key);
-    this.right = scene.add.image(x, y, key);
+    this.left = fitUi(scene.add.image(x, y, key));
+    this.right = fitUi(scene.add.image(x, y, key));
     const w = this.left.width;
     const h = this.left.height;
     this.left.setCrop(0, 0, Math.floor(w / 2), h);

@@ -23,46 +23,11 @@ export function landscapeHeight(): number {
 
 /**
  * Finesse du rendu : le canvas a RES fois plus de pixels que la page (360 x 640 en portrait) et chaque caméra
- * est zoomée RES fois. Toutes les positions du jeu restent les mêmes ; les pixels sont plus réguliers à l'écran
- * et les dessins haute définition gardent leurs détails.
+ * est zoomée RES fois. Toutes les positions du jeu restent les mêmes.
+ * Qualité maximale tout le temps (décision de Rudy, 15/11 : « on ne choisit pas la qualité ») : RES suit la finesse
+ * de l'écran (pixels réels du téléphone), de 2 à 4. Il n'y a plus de réglage « fluide ».
  */
-/**
- * Qualité d'affichage. « haute » : rendu 2 fois plus fin (4 fois plus de pixels à dessiner), trop lourd pour
- * certains téléphones. « fluide » : rendu simple, beaucoup plus léger. Sans choix du joueur, le jeu décide :
- * fluide sur un téléphone modeste, et il y passe tout seul si une partie rame (voir GameScene).
- */
-export type Quality = 'haute' | 'fluide';
-const QUALITY_KEY = 'bistro-donjon-qualite';
-export function storedQuality(): Quality | null {
-  try {
-    const q = localStorage.getItem(QUALITY_KEY);
-    return q === 'haute' || q === 'fluide' ? q : null;
-  } catch {
-    return null;
-  }
-}
-export function setQuality(q: Quality): void {
-  try {
-    localStorage.setItem(QUALITY_KEY, q);
-  } catch {
-    /* stockage indisponible */
-  }
-}
-export function wantedRes(): number {
-  const q = storedQuality();
-  const nav = navigator as Navigator & { deviceMemory?: number };
-  const mem = nav.deviceMemory ?? 8;
-  const cores = nav.hardwareConcurrency ?? 8;
-  // haute définition : sur un téléphone puissant à écran très fin, rendu 3 fois plus fin (autant de pixels que l'écran)
-  const ultra = mem >= 6 && cores >= 6 && (window.devicePixelRatio || 1) >= 2.5 ? 3 : 2;
-  if (q) return q === 'haute' ? ultra : 1;
-  return mem <= 3 || cores <= 4 ? 1 : ultra;
-}
-export const RES = wantedRes();
-/** Si la qualité voulue n'est plus celle du jeu chargé, on recharge la page (jamais pendant une partie). */
-export function applyQuality(): void {
-  if (wantedRes() !== RES) window.location.reload();
-}
+export const RES = Math.min(4, Math.max(2, Math.round((window.devicePixelRatio || 1) * 1.25)));
 
 /**
  * Règle une caméra : elle occupe le rectangle (vx, vy, vw, vh) de l'écran (en coordonnées de page)
