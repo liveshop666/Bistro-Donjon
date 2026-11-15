@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { ART_3D, CHEF_ORDER, INGREDIENTS, is3d, SHOP, SPRITE_FILES, STYLE_3D, UPGRADES, WORLD_3D, WORLD_ORDER, WORLDS } from '../core/constants';
+import { ART_3D, CHEF_ORDER, INGREDIENTS, is3d, SHOP, SPRITE_FILES, STYLE_3D, UPGRADES, WORLD_3D, WORLD_ORDER, WORLDS, UI3D_2X } from '../core/constants';
 
 /** Charge les sprites et génère les petites textures procédurales (joystick, plat, effets). */
 export class BootScene extends Phaser.Scene {
@@ -35,7 +35,9 @@ export class BootScene extends Phaser.Scene {
     // grandes maps paysage (le terrain de la partie) ; les petites restent pour les menus
     for (const w of WORLD_ORDER) if (WORLDS[w].wide) this.load.image('wide_' + w, STYLE_3D && WORLD_3D[w] ? `maps/wide3d_${w}.jpg` : `maps/wide_${w}.jpg`);
     if (!STYLE_3D) for (const i of INGREDIENTS) this.load.image('ing_' + i, `ui/ing_${i}.png`);
-    for (const u of UPGRADES) this.load.image(u.icon, `ui/${u.icon}.png`);
+    for (const u of UPGRADES) this.load.image(u.icon, STYLE_3D && UI3D_2X.includes(u.icon) ? `ui3d/${u.icon}.png` : `ui/${u.icon}.png`);
+    // plat, tonneau explosif, boule de feu, cadenas : version 3D (les dessins pixel ne sont alors pas fabriqués)
+    if (STYLE_3D) for (const k of ['plat', 'tonneau', 'boule_feu', 'cadenas']) this.load.image(k, `ui3d/${k}.png`);
     this.load.image('logo', '../logo.png');
     // interface façon image de référence (découpée par tools/extract_ui3d.py)
     if (STYLE_3D) for (const k of ['btn_attaque', 'btn_feu', 'joy_pommeau', 'chrono', 'piece', 'pause', 'coeur', 'coeur_vide']) this.load.image('ui3d_' + k, `ui3d/${k}.png`);
@@ -47,7 +49,7 @@ export class BootScene extends Phaser.Scene {
   create(): void {
     // les dessins HD sont réduits à l'affichage : lissage pour garder tous les détails
     for (const c of CHEF_ORDER) for (const k of ['hd_' + c, 'hdp_' + c]) this.textures.get(k).setFilter(Phaser.Textures.FilterMode.LINEAR);
-    for (const k of this.textures.getTextureKeys()) if (k.startsWith('ui3d_') || (STYLE_3D && (k.startsWith('ing_') || ['marmite', 'planche', 'comptoir'].includes(k)))) this.textures.get(k).setFilter(Phaser.Textures.FilterMode.LINEAR);
+    for (const k of this.textures.getTextureKeys()) if (k.startsWith('ui3d_') || (STYLE_3D && (k.startsWith('ing_') || UI3D_2X.includes(k) || ['marmite', 'planche', 'comptoir'].includes(k)))) this.textures.get(k).setFilter(Phaser.Textures.FilterMode.LINEAR);
     // images 3D : lissées (pas de gros pixels)
     for (const k of Object.keys(ART_3D)) if (is3d(k) && this.textures.exists(k)) this.textures.get(k).setFilter(Phaser.Textures.FilterMode.LINEAR);
     const g = this.make.graphics({ x: 0, y: 0 }, false);
@@ -111,6 +113,40 @@ export class BootScene extends Phaser.Scene {
       flame(64, 100, 20, 38, 0xfff3b0);
       g.fillStyle(0xffffff, 0.3).fillEllipse(48, 30, 40, 16);
     });
+    if (STYLE_3D) {
+      // style 3D : petits éléments redessinés lisses (formes rondes, dégradés), à la place des dessins pixel
+      tex('etincelle', 24, 24, () => {
+        g.fillStyle(0xffffff, 0.35).fillCircle(12, 12, 7);
+        g.fillStyle(0xffffff, 1);
+        g.fillTriangle(12, 0, 14.5, 12, 9.5, 12).fillTriangle(12, 24, 14.5, 12, 9.5, 12);
+        g.fillTriangle(0, 12, 12, 9.5, 12, 14.5).fillTriangle(24, 12, 12, 9.5, 12, 14.5);
+        g.fillCircle(12, 12, 3);
+      });
+      tex('couteau', 8, 20, () => {
+        g.fillStyle(0xdfe7f0, 1).fillRoundedRect(1.5, 0.5, 5, 12, { tl: 2.5, tr: 2.5, bl: 0, br: 0 });
+        g.fillStyle(0xffffff, 0.9).fillRect(2, 1.5, 1.5, 10);
+        g.fillStyle(0x7a4a26, 1).fillRoundedRect(2.5, 12, 3, 7.5, 1.5);
+      });
+      tex('tourelle', 20, 18, () => {
+        g.fillStyle(0x5a6274, 1).fillRoundedRect(2, 7, 16, 11, 4);
+        g.fillStyle(0x9aa6bc, 1).fillRoundedRect(3, 8, 14, 6, 3);
+        g.fillStyle(0x6a7284, 1).fillRoundedRect(8, 0, 4, 9, 2);
+        g.fillStyle(0xff5a3c, 1).fillCircle(10, 12, 2.5);
+      });
+      tex('fumee', 64, 64, () => {
+        for (let r = 30; r > 4; r -= 3) g.fillStyle(0x2a2a33, 0.12).fillCircle(32, 32, r);
+      });
+      tex('fleche_tapis', 24, 12, () => {
+        g.lineStyle(3, 0x4ff3ff, 0.9);
+        g.beginPath().moveTo(4, 2).lineTo(10, 6).lineTo(4, 10).strokePath();
+        g.beginPath().moveTo(14, 2).lineTo(20, 6).lineTo(14, 10).strokePath();
+      });
+      tex('ico_stand', 12, 10, () => {
+        g.fillStyle(0xe8483a, 1).fillRoundedRect(0.5, 0.5, 11, 4.5, { tl: 2, tr: 2, bl: 0, br: 0 });
+        g.fillStyle(0xffffff, 1).fillRect(3, 0.5, 2, 4.5).fillRect(7, 0.5, 2, 4.5);
+        g.fillStyle(0xa9713d, 1).fillRoundedRect(1, 5, 10, 4.5, 1.5);
+      });
+    }
     // plat prêt à servir
     tex('plat', 18, 14, () => {
       g.fillStyle(0x1b1b2b).fillEllipse(9, 8, 18, 12);
@@ -180,7 +216,19 @@ export class BootScene extends Phaser.Scene {
       g.fillStyle(0xffc533).fillRect(1, 8, 14, 9);
       g.fillStyle(0x1b1b2b).fillRect(7, 11, 2, 4);
     });
-    tex('particule', 4, 4, () => g.fillStyle(0xffffff).fillRect(0, 0, 4, 4));
+    if (STYLE_3D) {
+      // style 3D : plus de petits carrés (Rudy, 15/11) ; braise ronde et douce (lumineuse au centre, floue au bord)
+      tex('particule', 8, 8, () => {
+        for (let r = 4; r >= 1; r -= 0.5) g.fillStyle(0xffffff, 0.16 + (4 - r) * 0.2).fillCircle(4, 4, r);
+      });
+      // petite flamme en goutte (blanche, teintée à l'usage) : jaillit vers le haut
+      tex('flammeche', 12, 20, () => {
+        for (const [w, a] of [[6, 0.35], [4.5, 0.7], [3, 1]] as const) {
+          g.fillStyle(0xffffff, a).fillCircle(6, 14, w);
+          g.fillTriangle(6 - w, 14, 6 + w, 14, 6, 14 - w * 2.6);
+        }
+      });
+    } else tex('particule', 4, 4, () => g.fillStyle(0xffffff).fillRect(0, 0, 4, 4));
     tex('ico_stand', 12, 10, () => {
       g.fillStyle(0x1b1b2b).fillRect(0, 0, 12, 10);
       g.fillStyle(0xe8483a).fillRect(1, 1, 10, 4);

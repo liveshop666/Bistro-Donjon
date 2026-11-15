@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { artScale, CHEF_FRAMES, ChefDef, is3d, PowerId } from '../core/constants';
+import { artScale, CHEF_FRAMES, ChefDef, is3d, PowerId, uiScale } from '../core/constants';
 import { emptyInventory, Inventory, Order } from '../core/RecipeManager';
 import anchors from '../core/spriteAnchors.json';
 
@@ -45,7 +45,7 @@ export class Chef {
     this.frames = skin ? { idle: [skin], walk: [skin], attack: [is3d(skin) && scene.textures.exists(skin + '_atk') ? skin + '_atk' : skin] } : CHEF_FRAMES[def.id];
     this.shadow = scene.add.ellipse(x, y, 26, 8, 0x000000, 0.3);
     this.sprite = scene.add.image(x, y, this.frames.idle[0]).setOrigin(0.5, 1);
-    this.dishIcon = scene.add.image(x, y, 'plat').setVisible(false);
+    this.dishIcon = scene.add.image(x, y, 'plat').setVisible(false).setScale(uiScale('plat'));
     this.knife = scene.add.image(x, y, 'couteau').setVisible(false);
   }
 

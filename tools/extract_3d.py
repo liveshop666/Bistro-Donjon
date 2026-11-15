@@ -127,3 +127,27 @@ for sheet, order in SHEETS.items():
         crop = crop.resize((max(1, round(crop.width * th / crop.height)), th), Image.LANCZOS)
         crop.save(os.path.join(OUT, name + ".png"))
         print(sheet, name, crop.size)
+
+# ---------- icônes (planche de 2 rangées de 6) : même cadre que les dessins pixel, enregistrées 2 fois plus grandes
+ICONES = [["ico_couteaux", "ico_etoile", "ico_engrenage", "ico_sac", "ico_tornade", "ico_epees"],
+          ["ico_coeur", "ico_bouclier", "plat", "tonneau", "boule_feu", "cadenas"]]
+CADRE = {"plat": (18, 14), "tonneau": (18, 22), "boule_feu": (10, 10), "cadenas": (16, 18)}
+im = Image.open(os.path.join(ROOT, "reference", "3d", "icones-3d.png")).convert("RGBA")
+a = np.array(im)[:, :, 3] > 40
+ys = np.nonzero(a.any(axis=1))[0]
+mid = (ys[0] + ys[-1]) // 2
+for r, row in enumerate(ICONES):
+    band = a[ys[0]:mid] if r == 0 else a[mid:ys[-1] + 1]
+    y0 = ys[0] if r == 0 else mid
+    xs = np.nonzero(band.any(axis=0))[0]
+    w = (xs[-1] - xs[0] + 1) / 6
+    for c, name in enumerate(row):
+        x0, x1 = int(xs[0] + c * w), int(xs[0] + (c + 1) * w)
+        sub = band[:, x0:x1]
+        yy, xx = np.nonzero(sub)
+        crop = im.crop((x0 + xx.min(), y0 + yy.min(), x0 + xx.max() + 1, y0 + yy.max() + 1))
+        bw, bh = CADRE.get(name, (24, 24))
+        k = min(bw * 2 / crop.width, bh * 2 / crop.height)
+        crop = crop.resize((max(1, round(crop.width * k)), max(1, round(crop.height * k))), Image.LANCZOS)
+        crop.save(os.path.join(ROOT, "public", "assets", "ui3d", name + ".png"))
+        print(name, crop.size)

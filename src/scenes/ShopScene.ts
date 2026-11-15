@@ -3,7 +3,7 @@ import { landscapeMenu, MENU_SCALE, portraitMenu } from '../ui/landscapeMenu';
 import { landscapeWanted } from '../core/layout';
 import { audio } from '../audio/AudioManager';
 import { billing } from '../core/Billing';
-import { CHEFS, H, itemLabel, RARITY, SHOP, ShopItem, STYLE_3D, TEST_PAYMENTS, W } from '../core/constants';
+import { CHEFS, H, itemLabel, RARITY, SHOP, ShopItem, STYLE_3D, TEST_PAYMENTS, W, uiScale } from '../core/constants';
 import { addCoins, loadProfile, nextMilestone, recordPurchase, saveProfile } from '../core/Storage';
 import { openModal } from '../ui/Modal';
 import { button, txt } from '../ui/text';
@@ -178,7 +178,7 @@ export class ShopScene extends Phaser.Scene {
       txt(this, 0, 46, status, 8, color).setOrigin(0.5),
       txt(this, 0, 60, detail, 8, detailColor).setOrigin(0.5),
     ];
-    if (!owned && it.coins === undefined) parts.push(this.add.image(36, -30, 'cadenas'));
+    if (!owned && it.coins === undefined) parts.push(this.add.image(36, -30, 'cadenas').setScale(uiScale('cadenas')));
     const c = this.add.container(x, y, parts).setSize(108, 148).setInteractive({ useHandCursor: true });
     c.on('pointerup', () => {
       if (!this.land) return this.open(it);

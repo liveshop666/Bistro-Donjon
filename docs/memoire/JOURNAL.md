@@ -4,6 +4,13 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
 
 ## Où on en est (14/11/2026)
 
+**15/11/2026 (6) : plus aucun petit carré pixel**
+- Rudy voyait plein de « petits points carrés » sur les coups (le Taureau par exemple) : c'étaient les étincelles, des carrés de 4 pixels. Remplacées par des braises rondes et floues, et par de vraies petites flammes en goutte (`flammeche`) pour le Taureau.
+- Le jeu n'est plus en mode « gros pixels » quand le style 3D est actif (`pixelArt`, `roundPixels` coupés, lissage activé, `image-rendering:auto`).
+- Redessinés lisses : étincelle d'impact, couteaux volants, tourelle, fumée, flèches des tapis roulants, icône du stand.
+- 12 icônes en 3D dessinées dans Canva (`reference/3d/icones-3d.png`, découpées par `tools/extract_3d.py` dans `public/assets/ui3d/`) : les 8 cartes d'amélioration, le plat, le tonneau explosif, la boule de feu des monstres, le cadenas. Cartes d'amélioration arrondies et bombées.
+- Testé : coups du Taureau et du Gorille image par image, 6 mondes, tous les écrans, cartes d'amélioration, objets en partie, robot, joystick ; aucune erreur.
+
 **15/11/2026 (5) : vrais gestes d'attaque, caméra plus haute, musique « orchestre », bruits ronds**
 - Rudy veut voir le vrai geste de chaque arme (« un coup de poêle, un coup de hache... »). 13 poses d'attaque 3D dessinées dans Canva (arme en plein geste) : les 3 chefs, les 4 combattants, les 6 costumes (`reference/3d/attaques-*.png`, découpées par `python3 tools/extract_3d.py`, colonnes coupées à la main dans `CUTS` car les personnages se touchent). Le chef passe sur sa pose d'attaque à chaque coup, avec le mouvement par arme d'avant.
 - Caméra plus haute (on voit presque toute la map) : 0,78 en paysage, 0,82 en portrait, jamais au point de montrer un bord noir ; personnages 1,7 fois les anciens dessins.

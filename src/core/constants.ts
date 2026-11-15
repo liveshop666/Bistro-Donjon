@@ -357,6 +357,10 @@ export const ART_3D: Record<string, string> = {
 };
 /** Vrai si ce sprite est dessiné en 3D (image plus grande, réduite à l'affichage : nette). */
 export const is3d = (key: string): boolean => STYLE_3D && key in ART_3D;
+/** Petites images redessinées en 3D (public/assets/ui3d/), enregistrées 2 fois plus grandes : affichées à moitié. */
+export const UI3D_2X = ['ico_couteaux', 'ico_etoile', 'ico_engrenage', 'ico_sac', 'ico_tornade', 'ico_epees', 'ico_coeur', 'ico_bouclier', 'plat', 'tonneau', 'boule_feu', 'cadenas'];
+/** Facteur d'affichage d'une petite image : 0,5 si elle est en 3D (2 fois plus grande), 1 sinon. */
+export const uiScale = (key: string): number => (STYLE_3D && UI3D_2X.includes(key) ? 0.5 : 1);
 /** Taille d'affichage d'un sprite : 0,5 pour les images 3D (dessinées 2 fois plus grandes), 1 sinon. */
 /** Images 3D des personnages : 4 fois la taille des anciens dessins pixel (tools/extract_3d.py), pour rester nettes. */
 export const ART_RES = 4;

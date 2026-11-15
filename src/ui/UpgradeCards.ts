@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { audio } from '../audio/AudioManager';
-import { CARDS_TIME, H, UpgradeDef, W } from '../core/constants';
+import { CARDS_TIME, H, UpgradeDef, STYLE_3D, W, uiScale } from '../core/constants';
 import { txt } from './text';
 
 const D = 3000;
@@ -36,15 +36,26 @@ export class UpgradeCards {
       const x = W / 2 + (i - (cards.length - 1) / 2) * 116;
       const y = 320;
       const g = this.scene.add.graphics();
+      const col = [0xb5532e, 0x8a6a3a, 0x3d5c8f][i % 3];
+      if (STYLE_3D) {
+        // carte arrondie et bombée : ombre, bord clair, corps coloré, reflet en haut
+        g.fillStyle(0x000000, 0.45).fillRoundedRect(-54, -74, 108, 156, 14);
+        g.fillStyle(0xffe9b0, 1).fillRoundedRect(-54, -78, 108, 156, 14);
+        g.fillStyle(col, 1).fillRoundedRect(-51, -75, 102, 150, 12);
+        g.fillStyle(0xffffff, 0.18).fillRoundedRect(-48, -72, 96, 30, { tl: 10, tr: 10, bl: 4, br: 4 });
+        g.fillStyle(0x14141f, 0.45).fillRoundedRect(-44, 4, 88, 64, 9);
+        g.fillStyle(0xffffff, 0.12).fillCircle(0, -16, 24);
+      } else {
       g.fillStyle(0x1b1b2b).fillRect(-54, -78, 108, 156);
-      g.fillStyle([0xb5532e, 0x8a6a3a, 0x3d5c8f][i % 3]).fillRect(-52, -76, 104, 152);
+      g.fillStyle(col).fillRect(-52, -76, 104, 152);
       g.fillStyle(0x14141f, 0.55).fillRect(-46, -70, 92, 34).fillRect(-46, 4, 92, 66);
+      }
       const c = add(
         this.scene.add
           .container(x, y + 40, [
             g,
             txt(this.scene, 0, -53, u.name).setOrigin(0.5),
-            this.scene.add.image(0, -16, u.icon).setScale(1.5),
+            this.scene.add.image(0, -16, u.icon).setScale(1.5 * uiScale(u.icon)),
             txt(this.scene, 0, 30, u.desc, 8, '#e8e8f0').setOrigin(0.5),
             txt(this.scene, 0, 60, `NIV. ${levelOf(u) + 1}`, 8, '#ffc533').setOrigin(0.5),
           ])
