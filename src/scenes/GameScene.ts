@@ -874,7 +874,9 @@ export class GameScene extends Phaser.Scene {
     }
     // la map remplit tout l'écran et la caméra suit le chef ; interface et fenêtres par-dessus
     // style 3D : caméra un peu plus proche, personnages plus grands comme sur l'image de référence
-    if (wide) pageCam(main, 0, 0, gw, gh, 0, 0, STYLE_3D ? (land ? 0.95 : 1) : 1).setBounds(0, 0, ARENA.w, ARENA.h);
+    // caméra plus haute en style 3D (on voit presque toute la map), mais jamais au point de montrer un bord noir
+    const camZoom = STYLE_3D ? Math.max(land ? 0.78 : 0.82, gw / ARENA.w, gh / ARENA.h) : 1;
+    if (wide) pageCam(main, 0, 0, gw, gh, 0, 0, camZoom).setBounds(0, 0, ARENA.w, ARENA.h);
     else pageCam(main, 0, 0, gw, gh).setBounds(-2 * W, 0, 5 * W, H);
     this.hudCam = pageCam(this.cameras.add(), 0, 0, gw, gh);
     this.ovlCam = pageCam(this.cameras.add(), 0, 0, gw, gh);

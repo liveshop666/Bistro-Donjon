@@ -4,6 +4,14 @@ Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en 
 
 ## Où on en est (14/11/2026)
 
+**15/11/2026 (5) : vrais gestes d'attaque, caméra plus haute, musique « orchestre », bruits ronds**
+- Rudy veut voir le vrai geste de chaque arme (« un coup de poêle, un coup de hache... »). 13 poses d'attaque 3D dessinées dans Canva (arme en plein geste) : les 3 chefs, les 4 combattants, les 6 costumes (`reference/3d/attaques-*.png`, découpées par `python3 tools/extract_3d.py`, colonnes coupées à la main dans `CUTS` car les personnages se touchent). Le chef passe sur sa pose d'attaque à chaque coup, avec le mouvement par arme d'avant.
+- Caméra plus haute (on voit presque toute la map) : 0,78 en paysage, 0,82 en portrait, jamais au point de montrer un bord noir ; personnages 1,7 fois les anciens dessins.
+- Musique en style 3D : plus d'ondes carrées ; cuivres (deux dents de scie désaccordées, filtre qui s'ouvre), nappe de cordes à chaque mesure, contrebasse ronde, timbales et caisse claire d'orchestre, écho de grande salle (`voice()` dans `AudioManager`). Mêmes mélodies que celles choisies par Rudy.
+- Bruits fréquents sans vrai son refaits ronds et sourds (coup qui porte, chef touché, ramassage, couteau, tirs, stand, boutons) : `sfx3d()`.
+- Playlist gratuite proposée à Rudy (Pixabay Music, Incompetech, OpenGameArt) : s'il dépose des fichiers MP3, ils peuvent remplacer les musiques synthétisées.
+- Testé : parties dans 6 mondes en portrait et paysage, joystick au vrai toucher, robot dans 4 mondes, tous les écrans ; aucune erreur. Musique et bruits pas écoutés ici (pas de haut-parleur).
+
 **15/11/2026 (4) : joystick en vertical, champ de vision, mouvements par arme, lisibilité, netteté**
 - Bug corrigé : en vertical, le joystick ne marchait plus du tout. Cause : la zone du bouton PAUSE du bas, vidée en style 3D (taille 0), faisait planter le toucher (« hitAreaCallback is not a function »). Leçon ajoutée.
 - Champ de vision plus grand (Rudy : « je vois pas toute la map ») : caméra 0,95 en paysage, 1 en portrait, et personnages 3D affichés 1,4 fois la taille des anciens dessins (`ART_SIZE`).

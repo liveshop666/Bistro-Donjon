@@ -338,13 +338,16 @@ export const SPRITE_FILES = {
  */
 export const STYLE_3D = true;
 /** Clé d'un sprite du jeu -> fichier 3D qui le remplace (toutes les images d'animation d'un personnage prennent la même). */
-const chef3d = (id: ChefId) => [...CHEF_FRAMES[id].idle, ...CHEF_FRAMES[id].walk, ...CHEF_FRAMES[id].attack].map((k) => [k, id]);
+// les images d'attaque montrent la vraie pose d'attaque 3D (arme en plein geste) : <chef>_atk
+const chef3d = (id: ChefId) => [...[...CHEF_FRAMES[id].idle, ...CHEF_FRAMES[id].walk].map((k) => [k, id]), ...CHEF_FRAMES[id].attack.map((k) => [k, id + '_atk'])];
 export const ART_3D: Record<string, string> = {
   ...Object.fromEntries([...chef3d('moustachu'), ...chef3d('shiba'), ...chef3d('noisette')]),
   // chefs combattants des packs
   skin_taureau: 'skin_taureau', skin_ours: 'skin_ours', skin_gorille: 'skin_gorille', skin_tigre: 'skin_tigre',
   // costumes de la boutique
   ...Object.fromEntries(['skin_patissier', 'skin_chevalier', 'skin_samourai', 'skin_shiba_samourai', 'skin_cyber', 'skin_astronaute'].map((k) => [k, k])),
+  // poses d'attaque 3D de tous les costumes et combattants (chargées à part, voir BootScene)
+  ...Object.fromEntries(['skin_patissier', 'skin_chevalier', 'skin_samourai', 'skin_shiba_samourai', 'skin_cyber', 'skin_astronaute', 'skin_taureau', 'skin_ours', 'skin_gorille', 'skin_tigre'].map((k) => [k + '_atk', k + '_atk'])),
   // monstres des mondes 5 à 8 et Roi Fromage
   ail: 'ail', aubergine: 'aubergine', mais: 'mais', oignon: 'oignon', citrouille: 'citrouille', hotdog: 'hotdog', cube_fromage: 'cube_fromage', roi_fromage: 'roi_fromage',
   tomate: 'tomate', tomate_ko: 'tomate',
@@ -357,8 +360,8 @@ export const is3d = (key: string): boolean => STYLE_3D && key in ART_3D;
 /** Taille d'affichage d'un sprite : 0,5 pour les images 3D (dessinées 2 fois plus grandes), 1 sinon. */
 /** Images 3D des personnages : 4 fois la taille des anciens dessins pixel (tools/extract_3d.py), pour rester nettes. */
 export const ART_RES = 4;
-/** Taille d'affichage des personnages 3D par rapport aux anciens dessins : 1,4 (Rudy, 15/11 : « ça fait un peu petit »). */
-export const ART_SIZE = 1.4;
+/** Taille d'affichage des personnages 3D par rapport aux anciens dessins : 1,7 (caméra plus haute, Rudy 15/11). */
+export const ART_SIZE = 1.7;
 export const artScale = (key: string): number => (is3d(key) ? ART_SIZE / ART_RES : 1);
 /** Mondes redessinés en 3D : leur grande map (public/assets/maps/wide3d_<id>.jpg) et la cuisine replacée dessus
  * (vide quand la map 3D garde la disposition de la grande map pixel). */

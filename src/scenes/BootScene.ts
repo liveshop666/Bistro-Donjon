@@ -27,6 +27,8 @@ export class BootScene extends Phaser.Scene {
     const art = (k: string, pixel: string) => (is3d(k) ? `sprites3d/${ART_3D[k]}.png` : pixel);
     for (const f of SPRITE_FILES.chefs) this.load.image(f, art(f, `sprites/chefs/${f}.png`));
     for (const it of SHOP) if (it.sprite) this.load.image(it.sprite, art(it.sprite, `sprites/skins/${it.sprite}.png`));
+    // poses d'attaque 3D des costumes
+    if (STYLE_3D) for (const it of SHOP) if (it.sprite && it.kind === 'skin') this.load.image(it.sprite + '_atk', `sprites3d/${it.sprite}_atk.png`);
     for (const e of SPRITE_FILES.enemies) this.load.image(e, art(e, `sprites/enemies/${e}.png`));
     // style 3D : les fonds des menus (et les vignettes des mondes) sont tirés des maps 3D
     for (const w of WORLD_ORDER) this.load.image('map_' + w, STYLE_3D ? `maps/port3d_${w}.jpg` : `maps/${w}.png`);
