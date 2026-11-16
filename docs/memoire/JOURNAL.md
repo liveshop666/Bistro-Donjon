@@ -3,7 +3,14 @@
 Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en haut à chaque session.
 Pour reprendre vite : lire d'abord [[REPRISE]] (`docs/memoire/REPRISE.md`).
 
-## Où on en est (15/11/2026)
+## Où on en est (16/11/2026)
+
+**16/11/2026 : le jeu sur GitHub Pages (adresse ouverte)**
+- Rudy ne pouvait pas entrer sur Vercel (porte « Version de test privée », autorisation oubliée par l'appareil). Il a mis le dépôt GitHub en public pour avoir une adresse à lui.
+- Ajouté : `.github/workflows/pages.yml` construit le jeu et le publie sur https://liveshop666.github.io/Bistro-Donjon/ à chaque envoi sur `main`. Pas de nom de domaine à acheter. Réglage GitHub à faire une fois : Settings > Pages > Source = « GitHub Actions » (pas « Deploy from a branch », qui publierait le code brut et donnerait une page blanche).
+- Cette adresse est OUVERTE À TOUS (pas de porte, contrairement à Vercel) : choix de Rudy. Le dépôt public ne contient aucun secret (vérifié).
+- `manifest.webmanifest` : `start_url` et `scope` passés à `./` pour que l'installation sur l'écran d'accueil marche aussi sous `/Bistro-Donjon/`.
+- Testé : construction, et le jeu chargé sous `/Bistro-Donjon/` dans le navigateur, aucune erreur.
 
 **15/11/2026 (7) : netteté partout, onglet des maps, vraie marche, nouveaux bruitages**
 - Flou corrigé partout. Deux causes : les textes étaient dessinés en basse définition (Phaser les fait par défaut à 1 : maintenant toujours à la finesse de l'écran + 1, dans `main.ts`), et le téléphone avait enregistré tout seul le mode « fluide ».
