@@ -223,6 +223,7 @@ Détails :
 - Connexion par compte : avec quel service (Google Play Jeux, e-mail via Supabase…).
 
 ## Erreurs commises et leçons
+- **GitHub Pages bloqué à « Chargement... 0 % »** (16/11) : la source de Pages était restée sur « Deploy from a branch », donc GitHub republiait le code brut juste après le jeu construit. Leçon : Settings > Pages > Source = « GitHub Actions », puis relancer « Jeu en ligne (GitHub Pages) ».
 - **Zone tactile de taille zéro** : une zone `setInteractive()` vide (bouton PAUSE déplacé hors écran avec w = h = 0) a cassé tout le toucher en vertical -> ne jamais créer de zone tactile vide ; ne pas créer le bouton du tout. Tester le joystick avec de vrais touchers (CDP `Input.dispatchTouchEvent`), pas seulement la souris.
 - **Image envoyée dans la discussion crue disponible comme fichier** : une image collée dans la conversation n'est pas un fichier du projet, Claude la voit mais ne peut pas l'enregistrer -> demander à Rudy de la déposer dans `reference/` (ou dans Canva).
 - Tests qui comptent sur la mission du jour (`test_v8`) : la mission change chaque jour, un échec « 3 missions accomplies » peut venir du tirage (ex. « finis 3x les vagues ») -> vérifier le libellé des missions avant de chercher un bug.
