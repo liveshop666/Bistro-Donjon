@@ -21,7 +21,7 @@ Mise à jour : 17/11/2026 (soir) : jeu net sur PC ; Clairière en 3D Blender ; c
 
 ## 2. Ce qu'on reprend (dans l'ordre)
 
-0. **Blender (cartes et personnages 3D, demande de Rudy du 17/11)** : voir l'entrée « cartes et personnage en vraie 3D » du [[JOURNAL]]. Suite : resserrer le visage du chat, refaire les autres chefs et monstres avec `tools/blender/chef.py`, puis les 7 autres cartes avec `tools/blender/clairiere.py` comme modèle ; textures de sol réalistes quand les deux domaines (`dl.polyhaven.org`, `acg-download.struffelproductions.com`) seront autorisés.
+0. **Blender (cartes et personnages 3D, demande de Rudy du 17/11)** : lire d'abord [[ATELIER-BLENDER]] (méthode, outils, erreurs à ne pas refaire), puis l'entrée « cartes et personnage en vraie 3D » du [[JOURNAL]]. Suite : resserrer le visage du chat, refaire les autres chefs et monstres avec `tools/blender/chef.py`, puis les 7 autres cartes avec `tools/blender/clairiere.py` comme modèle ; textures de sol réalistes quand les deux domaines (`dl.polyhaven.org`, `acg-download.struffelproductions.com`) seront autorisés.
 
 1. **Sons et musique professionnels** (demande de Rudy) :
    - Rudy télécharge de vrais sons gratuits et les dépose dans `reference/sons/`.
