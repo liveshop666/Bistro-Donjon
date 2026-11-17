@@ -262,11 +262,17 @@ dm2.blend_type = "MULTIPLY"
 dm2.inputs[0].default_value = 1.0
 nt.links.new(dm.outputs[2], dm2.inputs[6])
 nt.links.new(dirt_big.outputs["Color"], dm2.inputs[7])
+trk_dark = nt.nodes.new("ShaderNodeMix")
+trk_dark.data_type = "RGBA"
+trk_dark.blend_type = "MULTIPLY"
+nt.links.new(tracks.outputs["Color"], trk_dark.inputs[0])
+trk_dark.inputs[7].default_value = (0.42, 0.34, 0.30, 1)
+nt.links.new(dm2.outputs[2], trk_dark.inputs[6])
 fin = nt.nodes.new("ShaderNodeMix")
 fin.data_type = "RGBA"
 nt.links.new(cut.outputs["Result"], fin.inputs[0])
 nt.links.new(grass_col.outputs["Color"], fin.inputs[6])
-nt.links.new(dm2.outputs[2], fin.inputs[7])
+nt.links.new(trk_dark.outputs[2], fin.inputs[7])
 nt.links.new(fin.outputs[2], bsdf.inputs["Base Color"])
 # relief : grain de terre + traces de roues
 gb = nt.nodes.new("ShaderNodeTexNoise")
@@ -390,28 +396,79 @@ def oak(px, py, s=1.0, seed=0, trunk=1.6):
         lump(o, 0.32 * s, 0.7, seed * 10 + k)
 
 
+def bark_mat():
+    """Écorce peinte du pack (couleur + carte de relief), répétée le long du tronc."""
+    m = bpy.data.materials.new("ecorce_pack")
+    m.use_nodes = True
+    nt2 = m.node_tree
+    bsdf2 = nt2.nodes["Principled BSDF"]
+    bsdf2.inputs["Roughness"].default_value = 0.9
+    uv = nt2.nodes.new("ShaderNodeTexCoord")
+    mpg = nt2.nodes.new("ShaderNodeMapping")
+    mpg.inputs["Scale"].default_value = (2.0, 2.2, 1)
+    nt2.links.new(uv.outputs["UV"], mpg.inputs["Vector"])
+    col = nt2.nodes.new("ShaderNodeTexImage")
+    col.image = bpy.data.images.load(os.path.join(Q.TEX, "NormalTree_Bark.png"))
+    col.extension = "REPEAT"
+    nm = nt2.nodes.new("ShaderNodeTexImage")
+    nm.image = bpy.data.images.load(os.path.join(Q.TEX, "NormalTree_Bark_Normal.png"))
+    nm.image.colorspace_settings.name = "Non-Color"
+    nm.extension = "REPEAT"
+    nmap = nt2.nodes.new("ShaderNodeNormalMap")
+    nmap.inputs["Strength"].default_value = 1.6
+    for t in (col, nm):
+        nt2.links.new(mpg.outputs["Vector"], t.inputs["Vector"])
+    dark = nt2.nodes.new("ShaderNodeMix")
+    dark.data_type = "RGBA"
+    dark.blend_type = "MULTIPLY"
+    dark.inputs[0].default_value = 1.0
+    dark.inputs[7].default_value = (0.75, 0.68, 0.62, 1)
+    nt2.links.new(col.outputs["Color"], dark.inputs[6])
+    nt2.links.new(dark.outputs[2], bsdf2.inputs["Base Color"])
+    nt2.links.new(nm.outputs["Color"], nmap.inputs["Color"])
+    nt2.links.new(nmap.outputs["Normal"], bsdf2.inputs["Normal"])
+    return m
+
+
+BARK_PACK = bark_mat()
+
+
 def log(px, py, length=3.0, rot_deg=0.0, r=0.34):
     x, y, _ = P(px, py)
-    z = r
-    o = cyl((x, y, z), r, length, BARK, rot=(0, math.radians(90), math.radians(rot_deg)), verts=24)
-    # bouts : disque clair avec cernes
+    z = r * 0.92
+    rr = random.Random(int(px + py))
+    o = cyl((x, y, z), r, length, BARK_PACK, rot=(0, math.radians(90), math.radians(rot_deg)), verts=40)
+    # tronc un peu irrégulier : bosses, bout abîmé
+    lump(o, 0.045, 0.5, 900 + int(px))
+    dirx, diry = math.cos(math.radians(rot_deg)), math.sin(math.radians(rot_deg))
+    # bouts : disque de bois clair avec cernes et bord d'écorce
     for sgn in (-1, 1):
-        ex = x + sgn * math.cos(math.radians(rot_deg)) * length / 2
-        ey = y + sgn * math.sin(math.radians(rot_deg)) * length / 2
+        ex, ey = x + sgn * dirx * length / 2, y + sgn * diry * length / 2
         cm = mat("cerne", (0.62, 0.42, 0.22), 0.8)
         nt2 = cm.node_tree
         wv = nt2.nodes.new("ShaderNodeTexWave")
         wv.wave_type = "RINGS"
-        wv.inputs["Scale"].default_value = 3.5
-        wv.inputs["Distortion"].default_value = 1.5
+        wv.inputs["Scale"].default_value = 3.2
+        wv.inputs["Distortion"].default_value = 2.5
+        wv.inputs["Detail"].default_value = 3
         tcc = nt2.nodes.new("ShaderNodeTexCoord")
         nt2.links.new(tcc.outputs["Object"], wv.inputs["Vector"])
         rp = nt2.nodes.new("ShaderNodeValToRGB")
-        rp.color_ramp.elements[0].color = (0.78, 0.55, 0.30, 1)
-        rp.color_ramp.elements[1].color = (0.48, 0.28, 0.12, 1)
+        rp.color_ramp.elements[0].color = (0.82, 0.60, 0.34, 1)
+        rp.color_ramp.elements[1].color = (0.45, 0.25, 0.10, 1)
         nt2.links.new(wv.outputs["Fac"], rp.inputs["Fac"])
         nt2.links.new(rp.outputs["Color"], nt2.nodes["Principled BSDF"].inputs["Base Color"])
-        cyl((ex, ey, z), r * 0.97, 0.03, cm, rot=(0, math.radians(90), math.radians(rot_deg)), verts=24)
+        cyl((ex, ey, z), r * 0.93, 0.05, cm, rot=(0, math.radians(90), math.radians(rot_deg)), verts=40)
+    # moignons de branches coupées et mousse sur le dessus
+    for k in range(3):
+        t = rr.uniform(-0.38, 0.38) * length
+        ang = rr.uniform(-60, 60)
+        bx, by = x + dirx * t, y + diry * t
+        cyl((bx, by, z + r * 0.85), 0.055, 0.22, BARK_PACK, rot=(math.radians(ang), math.radians(rr.uniform(-25, 25)), 0), r2=0.04, verts=10)
+    for k in range(5):
+        t = rr.uniform(-0.45, 0.45) * length
+        Q.place("Plant_1" if k % 2 else "Plant_2", x + dirx * t + rr.uniform(-0.1, 0.1), y + diry * t + rr.uniform(-0.1, 0.1),
+                z=r * 1.1, height=rr.uniform(0.18, 0.3), rot=rr.uniform(0, 6.28))
 
 
 def rock(px, py, s=0.45, seed=0):
@@ -542,14 +599,24 @@ for (px, py, s) in [(1090, 190, 0.7), (1118, 165, 0.55)]:
     for e in (-1, 1):
         box((x + e * s * 0.46, y, s / 2), (0.05, s * 1.02, s * 1.02), WOOD)
 
-# ------------------------------------------------------------------ cailloux sur la terre
+# ------------------------------------------------------------------ détails du sol (modèles du pack)
 pr = random.Random(11)
-for k in range(45):
+for k in range(70):  # petits cailloux sur la terre
     ppx, ppy = pr.uniform(220, 1500), pr.uniform(260, 880)
     if dirt_at(ppx, ppy) > 0.9:
         x, y, _ = P(ppx, ppy)
-        o = sphere((x, y, 0.02), pr.uniform(0.04, 0.11), DIRT_STONE, scale=(1.3, 1.0, 0.5), seg=8)
-        lump(o, 0.03, 0.3, 700 + k)
+        Q.place("Rock_%d" % (1 + k % 5), x, y, z=-0.01, height=pr.uniform(0.05, 0.13), rot=pr.uniform(0, 6.28))
+for k in range(260):  # herbe haute et petites plantes sur la bande de bord de la clairière
+    ppx, ppy = pr.uniform(120, 1560), pr.uniform(180, 920)
+    d = dirt_at(ppx, ppy)
+    if 0.0 <= d < 0.12 and any(dirt_at(ppx + dx, ppy + dy) > 0.9 for dx, dy in ((40, 0), (-40, 0), (0, 40), (0, -40))):
+        x, y, _ = P(ppx, ppy)
+        Q.place(["Grass_Large", "Grass_Small", "Plant_1", "Plant_2"][k % 4], x, y, height=pr.uniform(0.2, 0.42), rot=pr.uniform(0, 6.28))
+for k in range(30):  # pétales et feuilles au sol
+    ppx, ppy = pr.uniform(120, 1560), pr.uniform(180, 920)
+    if dirt_at(ppx, ppy) < 0.3:
+        x, y, _ = P(ppx, ppy)
+        Q.place("Petals_%d" % (1 + k % 4), x, y, z=0.01, height=0.08, scale=1.0, rot=pr.uniform(0, 6.28))
 
 # ------------------------------------------------------------------ troncs, rochers, fleurs
 log(315, 212, 3.0, -17)
