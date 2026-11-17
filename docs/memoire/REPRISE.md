@@ -2,7 +2,7 @@
 
 Fiche courte pour reprendre le projet dans un nouvel espace de travail, sans refaire ce qui est déjà fait ni répéter les erreurs passées.
 À lire en premier, avant le [[JOURNAL]] (le journal garde l'historique complet, cette fiche ne garde que l'essentiel).
-Mise à jour : 17/11/2026 (jeu sur PC : net, toute la map, équipement ; images de personnages doublées).
+Mise à jour : 17/11/2026 (soir) : jeu net sur PC ; Clairière en 3D Blender ; chat chef 3D animé sur squelette, 5 angles.
 
 ## 1. Où on en est
 
@@ -20,6 +20,8 @@ Mise à jour : 17/11/2026 (jeu sur PC : net, toute la map, équipement ; images 
 - Pas vérifié : **les sons n'ont jamais été écoutés** (pas de haut-parleur dans l'environnement cloud). C'est à Rudy de les écouter sur son téléphone.
 
 ## 2. Ce qu'on reprend (dans l'ordre)
+
+0. **Blender (cartes et personnages 3D, demande de Rudy du 17/11)** : voir l'entrée « cartes et personnage en vraie 3D » du [[JOURNAL]]. Suite : resserrer le visage du chat, refaire les autres chefs et monstres avec `tools/blender/chef.py`, puis les 7 autres cartes avec `tools/blender/clairiere.py` comme modèle ; textures de sol réalistes quand les deux domaines (`dl.polyhaven.org`, `acg-download.struffelproductions.com`) seront autorisés.
 
 1. **Sons et musique professionnels** (demande de Rudy) :
    - Rudy télécharge de vrais sons gratuits et les dépose dans `reference/sons/`.

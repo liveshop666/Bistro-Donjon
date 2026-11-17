@@ -5,6 +5,16 @@ Pour reprendre vite : lire d'abord [[REPRISE]] (`docs/memoire/REPRISE.md`).
 
 ## Où on en est (17/11/2026)
 
+**17/11/2026 (soir) : cartes et personnage en vraie 3D avec Blender (première étape jouable)**
+- Rudy veut des cartes en 3D réaliste et des personnages **identiques à ses dessins**, avec un vrai squelette, qui marchent et courent comme un humain, dans toutes les directions.
+- **Blender tourne dans le cloud** (module Python `bpy`, installé dans un dossier temporaire, rien sur le PC de Rudy, rien dans le dépôt). Scripts : `tools/blender/` (`clairiere.py` la carte, `chef.py` le personnage, `pack_anim.py` les planches du jeu, `install_map.py` la carte dans le jeu, `compose_video.py` la vidéo de démonstration, `quaternius.py` le chargeur de modèles).
+- **Carte Clairière en 3D** : rendu Blender 3360 x 1888 (sol terre et herbe, arbres, buissons, fleurs et herbe du pack libre « Ultimate Stylized Nature » de Quaternius, troncs, cuisine de camp, étal). Elle remplace l'ancienne image peinte dans le jeu (`hd3d_`, `wide3d_`, `port3d_`, `thumb3d_clairiere`). La forme de la clairière vient de la peinture d'origine (`make_masks.py`), les positions de la marmite, de la planche et du service n'ont pas changé.
+- **Chat chef Moustachu en 3D** : squelette de 53 os et 46 animations de capture de mouvement (« Universal Animation Library » de Quaternius, CC0), raccourci aux proportions du personnage. Corps fabriqué par code. Rendu sous 5 angles (face, trois-quarts, profil, trois-quarts dos, dos ; le jeu retourne l'image pour la gauche) : repos, marche, course (sprint), attaque. Planches dans `public/assets/anim3d/` ; mesures dans `src/core/anim3d.json` ; `Chef.ts` (`applyRig`) choisit l'angle selon la direction d'avancée ou de frappe, la cadence des pas suit la vitesse. Seul le chef sans costume en profite (les costumes gardent leurs images fixes).
+- **Ressemblance** : proportions, couleurs, toque, foulard, tablier, queue, poêle sont bons ; le visage reste plus simple que le dessin d'origine (pas identique). À resserrer.
+- **Pas fait** : les autres chefs, les combattants, les monstres, les 7 autres cartes ; les textures de sol réalistes (Poly Haven, ambientCG : leurs domaines de téléchargement `dl.polyhaven.org` et `acg-download.struffelproductions.com` ne sont pas autorisés dans l'environnement cloud) ; l'angle d'attaque (il tourne le dos par moments).
+- **Licences** : les modèles Quaternius sont libres pour un jeu commercial sans citer l'auteur ; on ne peut pas redistribuer les modèles eux-mêmes. Ils ne sont donc PAS dans le dépôt (seuls les rendus le sont). Dossier lu par défaut : `/home/user/walterpalladino/godot-quaternius-ultimate-stylized-nature/...` (dépôt GitHub public cloné avec `add_repo`) et `/home/user/j-ponzo/gltf-universal-animation-library`.
+- **Obsidian** : Claude ne peut pas lire le disque du PC de Rudy depuis le cloud (aucun dossier partagé par Remote Control). Le journal du projet voyage par GitHub (`git pull` sur le PC).
+
 **17/11/2026 : jeu sur ordinateur (PC) : net, toute la map, équipement clair**
 - Rudy joue sur PC : « tout est flou », « équiper ne marche pas », « le personnage se met sur un autre personnage », « on ne voit plus toute la map ».
 - Flou, cause 1 : sur un écran d'ordinateur le jeu était dessiné en 1280 x 720 puis étiré sur 1920 x 1080. Maintenant (`wantedRes()` dans `layout.ts`) la finesse suit la vraie taille de l'écran sur ordinateur (de 2 à 5 ; téléphone inchangé : 2 à 4). Si la fenêtre est agrandie après le lancement (F11), la page se recharge toute seule depuis un menu (jamais en partie).
@@ -233,6 +243,9 @@ Détails :
 - Connexion par compte : avec quel service (Google Play Jeux, e-mail via Supabase…).
 
 ## Erreurs commises et leçons
+- **Attendre la fin d'un travail avec `grep -q fini`** (17/11) : le mot « fini » apparaît déjà dans « glTF import finished » : l'attente s'arrêtait tout de suite. Leçon : attendre un marqueur unique (`CHEF OK`, `TERMINE`), et utiliser `timeout 5 tail -f /dev/null` (le `sleep` seul est bloqué).
+- **Personnage 3D fabriqué par code ≠ personnage dessiné** (17/11) : un mannequin humain avec une tête de chat n'a rien à voir avec le chat d'origine. Leçon : partir des proportions du dessin (grosse tête, jambes courtes) et comparer côte à côte à chaque essai ; Rudy veut un résultat identique.
+- **Vue de la caméra des personnages** : à 50 degrés au-dessus de l'horizon, la toque cache le visage ; à 30 degrés le chat reste lisible (la carte, elle, reste à 60 degrés).
 - **Jeu flou sur PC** (17/11) : tout avait été réglé pour téléphone (finesse 2 à 4 selon l'écran, 1280 px de large en paysage) ; sur un écran d'ordinateur de 1920 px le navigateur étirait une petite image. Leçon : tester aussi à 1920 x 1080 (et 1366 x 768, 2560 x 1440), pas seulement en 360 x 640, et ne jamais compter sur des images sources minuscules : vérifier leur taille réelle.
 - **Costume équipé sans effet visible** (17/11) : un costume est lié à un chef précis. Leçon : toute action « équiper » doit aussi montrer le résultat (chef sélectionné, message).
 - **GitHub Pages bloqué à « Chargement... 0 % »** (16/11) : la source de Pages était restée sur « Deploy from a branch », donc GitHub republiait le code brut juste après le jeu construit. Leçon : Settings > Pages > Source = « GitHub Actions », puis relancer « Jeu en ligne (GitHub Pages) ».

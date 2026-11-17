@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import ANIM3D from '../core/anim3d.json';
 import { ART_3D, CHEF_ORDER, INGREDIENTS, is3d, SHOP, SPRITE_FILES, STYLE_3D, UPGRADES, WORLD_3D, WORLD_ORDER, WORLDS, UI3D_2X, UI3D_HD } from '../core/constants';
 
 /** Charge les sprites et génère les petites textures procédurales (joystick, plat, effets). */
@@ -42,6 +43,8 @@ export class BootScene extends Phaser.Scene {
     for (const u of UPGRADES) this.load.image(u.icon, STYLE_3D && UI3D_2X.includes(u.icon) ? `ui3d/${u.icon}.png` : `ui/${u.icon}.png`);
     // plat, tonneau explosif, boule de feu, cadenas : version 3D (les dessins pixel ne sont alors pas fabriqués)
     if (STYLE_3D) for (const k of ['plat', 'tonneau', 'boule_feu', 'cadenas']) this.load.image(k, `ui3d/${k}.png`);
+    // animations 3D (Blender, squelette + mouvements enregistrés) : une planche d'images par animation et par chef
+    if (STYLE_3D) for (const [id, m] of Object.entries(ANIM3D)) for (const a of Object.keys(m.anims)) for (const d of m.dirs) this.load.spritesheet(`rig_${id}_${a}_${d}`, `anim3d/${id}_${a}_${d}.webp`, { frameWidth: m.w, frameHeight: m.h });
     this.load.image('logo', '../logo.png');
     // interface façon image de référence (découpée par tools/extract_ui3d.py)
     if (STYLE_3D) for (const k of ['btn_attaque', 'btn_feu', 'joy_pommeau', 'chrono', 'piece', 'pause', 'coeur', 'coeur_vide']) this.load.image('ui3d_' + k, `ui3d/${k}.png`);
@@ -56,6 +59,7 @@ export class BootScene extends Phaser.Scene {
     for (const k of this.textures.getTextureKeys()) if (k.startsWith('ui3d_') || (STYLE_3D && UI3D_HD.includes(k))) this.textures.get(k).setFilter(Phaser.Textures.FilterMode.LINEAR);
     // images 3D : lissées (pas de gros pixels)
     for (const k of Object.keys(ART_3D)) if (is3d(k) && this.textures.exists(k)) this.textures.get(k).setFilter(Phaser.Textures.FilterMode.LINEAR);
+    for (const k of this.textures.getTextureKeys()) if (k.startsWith('rig_')) this.textures.get(k).setFilter(Phaser.Textures.FilterMode.LINEAR);
     const g = this.make.graphics({ x: 0, y: 0 }, false);
     const tex = (key: string, w: number, h: number, draw: () => void) => {
       if (this.textures.exists(key)) return; // déjà chargé (image 3D)
