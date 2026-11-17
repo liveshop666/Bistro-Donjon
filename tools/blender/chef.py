@@ -30,7 +30,7 @@ CHAR_SCALE = 0.31   # taille du personnage par rapport à la carte : environ 56 
 ANIMS = {"idle": "Idle_Loop", "marche": "Walk_Loop", "course": "Jog_Fwd_Loop", "attaque": "Sword_Attack", "touche": "Hit_Chest", "mort": "Death01"}
 
 SPECS = {
-    "moustachu": dict(fur=(0.53, 0.10, 0.002), light=(0.77, 0.37, 0.13), apron=(0.93, 0.82, 0.62), scarf=(0.80, 0.10, 0.08),
+    "moustachu": dict(fur=(0.50, 0.09, 0.001), light=(0.77, 0.37, 0.13), apron=(0.93, 0.82, 0.62), scarf=(0.80, 0.10, 0.08),
                       hat=(0.96, 0.83, 0.62), ear_in=(0.95, 0.55, 0.60), eye=(0.55, 0.28, 0.05), tail_tip=(0.85, 0.37, 0.06),
                       paint=dict(img="moustachu_tete.png", px=(207.5, 60, 0, 295, 330), chin_z=0.76, top_z=1.93, row_chin=330,
                                  torso=dict(img="moustachu_plastron.png", px=(207.5, 112, 332, 196, 153)))),
@@ -51,8 +51,10 @@ def mat(name, color, rough=0.7, bump=0.0):
         b.inputs["Sheen Roughness"].default_value = 0.35
         b.inputs["Subsurface Weight"].default_value = 0.05
         b.inputs["Subsurface Radius"].default_value = (0.6, 0.25, 0.1)
-        b.inputs["Emission Color"].default_value = (*color, 1)   # même éclat que la tête peinte : la tête et le corps ont la même couleur
-        b.inputs["Emission Strength"].default_value = 0.5
+        # même mode d'éclairage que la tête peinte (émission 0,78 + 30 % de la lumière de la scène) : la tête et le corps ont la même couleur
+        b.inputs["Base Color"].default_value = (color[0] * 0.3, color[1] * 0.3, color[2] * 0.3, 1)
+        b.inputs["Emission Color"].default_value = (*color, 1)
+        b.inputs["Emission Strength"].default_value = 0.78
         n = nt.nodes.new("ShaderNodeTexNoise")
         n.inputs["Scale"].default_value = 260
         n.inputs["Detail"].default_value = 4
@@ -318,12 +320,12 @@ def painted_material(name, imgfile, box, back, k, chin_z, row_chin, clip=False):
     full.data_type = "RGBA"
     nt.links.new(sm.outputs[0], full.inputs[0])
     nt.links.new(dim.outputs[2], full.inputs[6])
-    full.inputs[7].default_value = (*back, 1)
+    full.inputs[7].default_value = (back[0] * 0.3, back[1] * 0.3, back[2] * 0.3, 1)
     nt.links.new(full.outputs[2], b.inputs["Base Color"])
     nt.links.new(mix.outputs[2], b.inputs["Emission Color"])
     emk = nt.nodes.new("ShaderNodeMapRange")                # émission : 0,78 sur la peinture, 0,35 sur la couleur unie
     emk.inputs["To Min"].default_value = 0.78
-    emk.inputs["To Max"].default_value = 0.35
+    emk.inputs["To Max"].default_value = 0.78
     nt.links.new(sm.outputs[0], emk.inputs["Value"])
     nt.links.new(emk.outputs["Result"], b.inputs["Emission Strength"])
     b.inputs["Roughness"].default_value = 0.9
@@ -348,7 +350,7 @@ def painted_head():
     bpy.context.collection.objects.link(ref)
     ref.location = (0, 0, 0)
     REF[0] = ref
-    PH = painted_material("tete_peinte", P["img"], P["px"], (0.53, 0.10, 0.002), k, P["chin_z"], P["row_chin"])
+    PH = painted_material("tete_peinte", P["img"], P["px"], SPEC["fur"], k, P["chin_z"], P["row_chin"])
     PT = painted_material("toque_peinte", P["img"], P["px"], SPEC["hat"], k, P["chin_z"], P["row_chin"])
     z = 1.07
     objs = [ball((0, 0, z), 0.5, PH, scale=(0.82, 0.72, 0.64), seg=40),

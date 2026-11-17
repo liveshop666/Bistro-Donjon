@@ -42,7 +42,7 @@ Dans le jeu : `BootScene` charge `rig_<chef>_<anim>_<direction>` ; `Chef.ts` (`a
 - Un personnage fabriqué « à la main » par code ne ressemble PAS au dessin (essais 1 et 2 : mannequin à tête de chat, puis chat à proportions de dessin animé : reconnaissable mais pas identique).
 - Ce qui donne l'identique : **projeter la peinture d'origine de face** (tête, toque, foulard, tablier) sur des volumes 3D accrochés aux os, repère qui suit l'os (`painted_material` dans `chef.py`). De face = le dessin ; sur les côtés/dessus/dos = couleur unie éclairée (la projection s'étire sinon).
 - Ne PAS découper par la transparence de la peinture : vu de côté, la tête devient fantôme. Étaler les couleurs au-delà du contour (`scipy.ndimage.distance_transform_edt`) et ajuster les volumes à la silhouette.
-- **La tête et le corps doivent avoir la même couleur** (faute de Rudy du 17/11 soir : tête vive, corps terne). Mesurer les pixels sur un rendu (zones tête / torse / jambes) et comparer. Les matières « fourrure » ont la même émission que la tête peinte.
+- **La tête et le corps doivent avoir la même couleur** (Rudy l'a signalé deux fois le 17/11 : tête vive, corps terne, puis encore une différence visible). Même formule d'éclairage partout (émission dominante) ; mesurer les pixels (tête / torse / jambes) ET regarder l'image zoomée.
 - Pour un nouveau personnage : entrée dans `SPECS`, recadrer tête et plastron dans la peinture (`tools/blender/_work/`), couleurs mesurées sur la peinture, lancer `chef.py ... apercu/angles`, comparer, puis `jeu`.
 
 ## 5. Réglages qui comptent
@@ -68,6 +68,7 @@ Dans le jeu : `BootScene` charge `rig_<chef>_<anim>_<direction>` ; `Chef.ts` (`a
 8. **Découpe par transparence sur des volumes arrondis** : tête fantôme de côté. → pas d'alpha, couleurs étalées, couleur unie selon la normale.
 9. **Tester un seul angle** : le dos et le profil étaient mauvais. → toujours le mode `angles`.
 10. **Domaines réseau saisis sur une seule ligne** : refusé. → une adresse par ligne, case « gestionnaires de paquet » cochée.
+12. **Couleur tête / corps « corrigée » mais pas vraiment (17/11 nuit)** : la moyenne des pixels était proche, mais la tête (peinture, émission) et le corps (éclairé par la scène, plus clair et bleuté) ne se ressemblaient pas à l'œil. → toute la matière du personnage suit la MÊME formule que la peinture : couleur de base × 0,3 + émission 0,78 de la couleur (`mat()` fourrure et `painted_material`), couleur de fourrure mesurée sur les joues peintes. Ne pas se fier à la seule moyenne : regarder les images zoomées, comparer la teinte ET la luminosité, et montrer à Rudy avant de fusionner.
 11. **Dire « fusionné » sans l'être** (et inversement) : vérifier avec l'état du dépôt avant de répondre.
 
 ## 8. Pour aller 10 fois plus vite
