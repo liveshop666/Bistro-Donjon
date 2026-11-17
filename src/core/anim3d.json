@@ -1,25 +1,32 @@
 {
  "moustachu": {
-  "w": 185,
-  "h": 185,
-  "ox": 95.0,
-  "oy": 157.0,
-  "scale": 0.5298,
+  "w": 197,
+  "h": 216,
+  "ox": 100.0,
+  "oy": 181.0,
+  "scale": 0.47337,
+  "dirs": [
+   "E",
+   "N",
+   "NE",
+   "S",
+   "SE"
+  ],
   "anims": {
    "attaque": {
-    "frames": 18,
+    "frames": 16,
     "cols": 4
    },
    "course": {
-    "frames": 20,
+    "frames": 16,
     "cols": 4
    },
    "idle": {
-    "frames": 19,
+    "frames": 12,
     "cols": 4
    },
    "marche": {
-    "frames": 20,
+    "frames": 16,
     "cols": 4
    }
   }

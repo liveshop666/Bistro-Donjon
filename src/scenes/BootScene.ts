@@ -44,7 +44,7 @@ export class BootScene extends Phaser.Scene {
     // plat, tonneau explosif, boule de feu, cadenas : version 3D (les dessins pixel ne sont alors pas fabriqués)
     if (STYLE_3D) for (const k of ['plat', 'tonneau', 'boule_feu', 'cadenas']) this.load.image(k, `ui3d/${k}.png`);
     // animations 3D (Blender, squelette + mouvements enregistrés) : une planche d'images par animation et par chef
-    if (STYLE_3D) for (const [id, m] of Object.entries(ANIM3D)) for (const a of Object.keys(m.anims)) this.load.spritesheet(`rig_${id}_${a}`, `anim3d/${id}_${a}.webp`, { frameWidth: m.w, frameHeight: m.h });
+    if (STYLE_3D) for (const [id, m] of Object.entries(ANIM3D)) for (const a of Object.keys(m.anims)) for (const d of m.dirs) this.load.spritesheet(`rig_${id}_${a}_${d}`, `anim3d/${id}_${a}_${d}.webp`, { frameWidth: m.w, frameHeight: m.h });
     this.load.image('logo', '../logo.png');
     // interface façon image de référence (découpée par tools/extract_ui3d.py)
     if (STYLE_3D) for (const k of ['btn_attaque', 'btn_feu', 'joy_pommeau', 'chrono', 'piece', 'pause', 'coeur', 'coeur_vide']) this.load.image('ui3d_' + k, `ui3d/${k}.png`);

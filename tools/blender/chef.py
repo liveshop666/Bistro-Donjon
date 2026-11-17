@@ -297,7 +297,7 @@ attach(pan, rig, "DEF-hand.R")
 sc = bpy.context.scene
 sc.render.engine = "CYCLES"
 sc.cycles.device = "CPU"
-sc.cycles.samples = 20 if MODE in ("apercu", "video") else 40
+sc.cycles.samples = 20 if MODE in ("apercu", "video", "jeu") else 40
 sc.cycles.use_denoising = True
 sc.render.film_transparent = True
 sc.render.resolution_x = sc.render.resolution_y = SIZE
@@ -338,6 +338,26 @@ cam.location = (0, -30 * math.sin(a), TARGET_Z + 30 * math.cos(a))
 cam.data.clip_end = 100
 sc.camera = cam
 bpy.context.view_layer.update()
+
+# --- mode « jeu » : toutes les animations sous 5 angles (le jeu retourne l'image pour les 3 autres directions)
+GAME_DIRS = [("E", 90), ("SE", 45), ("S", 0), ("NE", 135), ("N", 180)]   # angle dont le personnage est tourné (S = face à la caméra, E = vers la droite)
+GAME_FRAMES = {"idle": 12, "marche": 16, "course": 16, "attaque": 16}
+if MODE == "jeu":
+    for dname, yaw in GAME_DIRS:
+        pivot.rotation_euler = (0, 0, math.radians(yaw))
+        for key, n in GAME_FRAMES.items():
+            act = bpy.data.actions[ANIMS[key]]
+            rig.animation_data.action = act
+            f0, f1 = act.frame_range
+            for i in range(n):
+                t = i / n if key != "attaque" else i / (n - 1)
+                fr = f0 + t * (f1 - f0)
+                sc.frame_set(int(fr), subframe=fr - int(fr))
+                sc.render.filepath = os.path.join(OUT, f"{WHO}_{dname}_{key}_{i:02d}.png")
+                bpy.ops.render.render(write_still=True)
+        print("DIR", dname, flush=True)
+    print("CHEF OK", WHO)
+    sys.exit(0)
 
 FPS = 30   # images par seconde de la vidéo (les mouvements enregistrés sont à 24 : Blender calcule les images intermédiaires)
 # (clé, action, nombre de cycles) pour la vidéo ; la course utilise le sprint (cycle court = rapide)

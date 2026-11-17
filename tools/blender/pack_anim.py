@@ -25,10 +25,10 @@ FEET = (320, 388)      # point des pieds dans l'image rendue de 640 x 640 (cible
 os.makedirs(OUT, exist_ok=True)
 
 files = sorted(glob.glob(os.path.join(SRC, f"{WHO}_*_[0-9][0-9]*.png")))
-anims = {}
+anims = {}   # (animation, direction) -> images ; sans direction (anciens rendus) : "E"
 for f in files:
-    m = re.match(rf"{WHO}_(\w+)_(\d+)\.png", os.path.basename(f))
-    anims.setdefault(m.group(1), []).append(f)
+    m = re.match(rf"{WHO}_(?:([A-Z]{{1,2}})_)?(\w+)_(\d+)\.png", os.path.basename(f))
+    anims.setdefault((m.group(2), m.group(1) or "E"), []).append(f)
 # boîte commune : union des zones non transparentes de toutes les images
 x0 = y0 = 10**9
 x1 = y1 = 0
@@ -42,7 +42,7 @@ x0, y0, x1, y1 = max(0, x0 - pad), max(0, y0 - pad), min(640, x1 + pad), min(640
 cw, ch = x1 - x0, y1 - y0
 fw, fh = round(cw * SHRINK), round(ch * SHRINK)
 info = {}
-for name, fs in anims.items():
+for (name, dname), fs in anims.items():
     n = len(fs)
     cols = 4 if n > 4 else n
     rows = math.ceil(n / cols)
@@ -50,13 +50,13 @@ for name, fs in anims.items():
     for i, f in enumerate(fs):
         im = Image.open(f).convert("RGBA").crop((x0, y0, x1, y1)).resize((fw, fh), Image.LANCZOS)
         sheet.alpha_composite(im, ((i % cols) * fw, (i // cols) * fh))
-    sheet.save(os.path.join(OUT, f"{WHO}_{name}.webp"), quality=92, method=6)
+    sheet.save(os.path.join(OUT, f"{WHO}_{name}_{dname}.webp"), quality=92, method=6)
     info[name] = {"frames": n, "cols": cols}
 # hauteur utile du personnage (de la pointe de la toque aux pieds) pour régler l'échelle d'affichage
-idle_top = min((Image.open(f).convert("RGBA").getchannel("A").point(lambda v: 255 if v > 8 else 0).getbbox() or (0, 10**9, 0, 0))[1] for f in anims.get("idle", [])) if "idle" in anims else y0
+idle_top = min((Image.open(f).convert("RGBA").getchannel("A").point(lambda v: 255 if v > 8 else 0).getbbox() or (0, 10**9, 0, 0))[1] for k, fl in anims.items() if k[0] == "idle" for f in fl) if any(k[0] == "idle" for k in anims) else y0
 body_h = (FEET[1] - idle_top) * SHRINK   # hauteur du personnage debout (pieds -> pointe de la toque)
 meta = {"w": fw, "h": fh, "ox": round((FEET[0] - x0) * SHRINK, 1), "oy": round((FEET[1] - y0) * SHRINK, 1),
-        "scale": round(DISPLAY_H / body_h, 5), "anims": info}
+        "scale": round(DISPLAY_H / body_h, 5), "dirs": sorted({d for (_, d) in anims}), "anims": info}
 data = json.load(open(OUT_TS)) if os.path.exists(OUT_TS) else {}
 data[WHO] = meta
 json.dump(data, open(OUT_TS, "w"), indent=1)
