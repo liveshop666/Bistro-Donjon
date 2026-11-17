@@ -2,11 +2,31 @@
 
 Fiche courte pour reprendre le projet dans un nouvel espace de travail, sans refaire ce qui est déjà fait ni répéter les erreurs passées.
 À lire en premier, avant le [[JOURNAL]] (le journal garde l'historique complet, cette fiche ne garde que l'essentiel).
-Mise à jour : 17/11/2026 (soir) : jeu net sur PC ; Clairière en 3D Blender ; chat chef 3D animé sur squelette, 5 angles.
+Mise à jour : 17/11/2026, FIN DE JOURNÉE (Rudy a dit « on arrête là pour aujourd'hui ») : jeu net sur PC ; Clairière en 3D Blender ; chat chef 3D animé sur squelette, 5 angles, tête et corps de la même couleur. Tout est fusionné sur `main`.
 
-## 1. Où on en est
+## 0. REPRISE RAPIDE (état exact au 17/11/2026, fin de journée)
 
-- Tout est **fusionné sur `main`** et **en ligne sur Vercel** (dernière fusion : liveshop666/Bistro-Donjon#13).
+**Ce qui est en ligne** (https://liveshop666.github.io/Bistro-Donjon/ : GitHub Pages, ouvert à tous ; Vercel reste protégé par sa porte d'entrée) :
+- jeu net sur ordinateur (finesse adaptée à l'écran, toute la carte visible, « équiper » un costume sélectionne son chef) ;
+- **La Clairière en vraie 3D** (rendu Blender, `scripts tools/blender/clairiere.py`) ;
+- **Chat chef Moustachu en 3D animé** sur squelette (mouvements enregistrés), 5 angles retournés pour la gauche, repos / marche / course / attaque ; tête, foulard, tablier et toque = la peinture d'origine projetée de face ; tête et corps de la même couleur. Seul le chef **sans costume** en profite.
+
+**Ce que Rudy veut (toujours)** : cartes et personnages IDENTIQUES à ses dessins, vraie 3D réaliste, vrai squelette, mouvements d'humain dans toutes les directions, vue en hauteur, taille des personnages cohérente avec la carte, rien installé sur son PC. Il compare avec l'original et voit chaque écart. **Montrer une image comparée AVANT de fusionner** (règle dans `CLAUDE.md`).
+
+**Ce qui n'est PAS identique / pas fait** (à dire franchement à Rudy) : profil et dos de la tête du chat (couleur unie) ; poêle ; poils peints sur les côtés ; les autres personnages (Maître Shiba, Mlle Noisette, 4 combattants, 6 costumes, monstres, boss) ; les 7 autres cartes ; textures de sol réalistes (Poly Haven / ambientCG : `dl.polyhaven.org` et `acg-download.struffelproductions.com` encore bloqués, Rudy doit les autoriser une adresse par ligne puis on relance la session) ; sons jamais écoutés.
+
+**Comment reprendre (dans l'ordre)** :
+1. `git pull`, lire cette fiche, puis **`ATELIER-BLENDER.md`** (outils, commandes, 12 erreurs à ne pas refaire, check-list).
+2. Remettre Blender en route (5 minutes, section 2 de `ATELIER-BLENDER.md`) et recloner les packs libres avec `add_repo` (Quaternius nature, bibliothèque d'animations, village médiéval). Ils ne sont pas dans le dépôt.
+3. Proposer à Rudy le prochain chantier (il a laissé le choix) : **Maître Shiba** (même méthode que le chat : entrée `SPECS`, recadrer tête et plastron dans `public/assets/sprites3d/shiba.png`, mode `angles` pour comparer, puis `jeu`, `pack_anim.py`) ; ou la **carte suivante** (copier `clairiere.py`) ; ou resserrer le chat.
+4. Après chaque étape : comparaison côte à côte (5 angles) + mesure de couleur + partie de test + image à Rudy, puis seulement fusionner.
+5. Fin de session : journal, cette fiche, note Obsidian `projets/bistro-donjon.md` (ligne datée), push.
+
+**Liens avec Obsidian** : le coffre est `liveshop666/obsidian-solvelab` (note du projet `projets/bistro-donjon.md`, guide `guides/blender-3d.md`). Règles de Rudy : `git pull --rebase` avant chaque push, jamais de secret, ne rien supprimer, ne pas toucher à `_prive/`. Le dépôt du jeu est aussi rangé dans le coffre sur son PC (`projets/bistro-donjon/`).
+
+## 1. Où on en est (état d'avant le chantier 3D du 17/11, toujours valable pour le reste)
+
+- Tout est **fusionné sur `main`** et en ligne (GitHub Pages et Vercel) ; dernière fusion le 17/11 : liveshop666/Bistro-Donjon#21.
 - Le jeu est entièrement en **style 3D** (`STYLE_3D = true` dans `src/core/constants.ts`) : maps, personnages, monstres, interface, boutique.
 - Fait et testé, sans erreur :
   - netteté partout (textes haute définition, qualité toujours au maximum, plus de réglage « fluide ») ;

@@ -5,6 +5,12 @@ Pour reprendre vite : lire d'abord [[REPRISE]] (`docs/memoire/REPRISE.md`).
 
 ## Où on en est (17/11/2026)
 
+**17/11/2026, FIN DE JOURNÉE : résumé pour reprendre**
+- Rudy s'arrête là pour aujourd'hui. Tout est fusionné sur `main`. Où on en est et comment reprendre : voir [[REPRISE]] (section 0) et [[ATELIER-BLENDER]] (méthode, outils, 12 erreurs commises avec leur leçon, check-list avant fusion).
+- Fait aujourd'hui, dans l'ordre : jeu net sur PC et clics vérifiés ; « équiper » corrigé ; jeu publié sur GitHub Pages (Vercel restait fermé) ; Clairière en vraie 3D (Blender) ; chat chef 3D sur squelette, mouvements enregistrés, 5 angles ; visage, foulard, tablier et toque repris de la peinture ; dos, queue, pattes ; couleur tête/corps corrigée deux fois ; fichiers de mémoire ; note et guide dans Obsidian.
+- Erreurs de la journée (toutes dans `ATELIER-BLENDER.md` section 7) : attendre avec un mot déjà présent dans le journal du calcul ; remplacement de texte trop large (code effacé) ; annoncer « fait » sans comparer à l'original ; fusionner avant l'avis de Rudy ; couleur tête/corps jugée bonne sur une moyenne alors qu'elle se voyait ; tester un seul angle ; caméra trop plongeante.
+- Réglage de méthode demandé par Rudy : garder une mémoire technique pour ne pas refaire les erreurs et aller plus vite, chercher et noter les outils gratuits.
+
 **17/11/2026 (soir) : cartes et personnage en vraie 3D avec Blender (première étape jouable)**
 - Rudy veut des cartes en 3D réaliste et des personnages **identiques à ses dessins**, avec un vrai squelette, qui marchent et courent comme un humain, dans toutes les directions.
 - **Blender tourne dans le cloud** (module Python `bpy`, installé dans un dossier temporaire, rien sur le PC de Rudy, rien dans le dépôt). Scripts : `tools/blender/` (`clairiere.py` la carte, `chef.py` le personnage, `pack_anim.py` les planches du jeu, `install_map.py` la carte dans le jeu, `compose_video.py` la vidéo de démonstration, `quaternius.py` le chargeur de modèles).
