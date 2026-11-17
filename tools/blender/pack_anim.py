@@ -20,11 +20,11 @@ SRC, WHO = sys.argv[1], sys.argv[2]
 DISPLAY_H = float(sys.argv[3]) if len(sys.argv) > 3 else 44.0   # hauteur du personnage à l'écran, en unités du jeu
 OUT = os.path.join(ROOT, "public", "assets", "anim3d")
 OUT_TS = os.path.join(ROOT, "src", "core", "anim3d.json")
-SHRINK = 0.62          # 512 px rendus -> taille livrée (poids du jeu) ; reste très net : le personnage fait ~220 px de haut
-FEET = (256, 393)      # point des pieds dans l'image rendue (cible de la caméra : voir chef.py)
+SHRINK = 1.0           # images rendues à 3 px par pixel de carte : pas de réduction (le personnage fait ~150 px de haut)
+FEET = (320, 388)      # point des pieds dans l'image rendue de 640 x 640 (cible de la caméra : voir chef.py)
 os.makedirs(OUT, exist_ok=True)
 
-files = sorted(glob.glob(os.path.join(SRC, f"{WHO}_*_[0-9][0-9].png")))
+files = sorted(glob.glob(os.path.join(SRC, f"{WHO}_*_[0-9][0-9]*.png")))
 anims = {}
 for f in files:
     m = re.match(rf"{WHO}_(\w+)_(\d+)\.png", os.path.basename(f))
@@ -38,7 +38,7 @@ for fs in anims.values():
         if bb:
             x0, y0, x1, y1 = min(x0, bb[0]), min(y0, bb[1]), max(x1, bb[2]), max(y1, bb[3])
 pad = 6
-x0, y0, x1, y1 = max(0, x0 - pad), max(0, y0 - pad), min(512, x1 + pad), min(512, y1 + pad)
+x0, y0, x1, y1 = max(0, x0 - pad), max(0, y0 - pad), min(640, x1 + pad), min(640, y1 + pad)
 cw, ch = x1 - x0, y1 - y0
 fw, fh = round(cw * SHRINK), round(ch * SHRINK)
 info = {}
@@ -53,7 +53,8 @@ for name, fs in anims.items():
     sheet.save(os.path.join(OUT, f"{WHO}_{name}.webp"), quality=92, method=6)
     info[name] = {"frames": n, "cols": cols}
 # hauteur utile du personnage (de la pointe de la toque aux pieds) pour régler l'échelle d'affichage
-body_h = (FEET[1] - y0) * SHRINK
+idle_top = min((Image.open(f).convert("RGBA").getchannel("A").point(lambda v: 255 if v > 8 else 0).getbbox() or (0, 10**9, 0, 0))[1] for f in anims.get("idle", [])) if "idle" in anims else y0
+body_h = (FEET[1] - idle_top) * SHRINK   # hauteur du personnage debout (pieds -> pointe de la toque)
 meta = {"w": fw, "h": fh, "ox": round((FEET[0] - x0) * SHRINK, 1), "oy": round((FEET[1] - y0) * SHRINK, 1),
         "scale": round(DISPLAY_H / body_h, 5), "anims": info}
 data = json.load(open(OUT_TS)) if os.path.exists(OUT_TS) else {}

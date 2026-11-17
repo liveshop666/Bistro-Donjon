@@ -1,0 +1,27 @@
+{
+ "moustachu": {
+  "w": 185,
+  "h": 185,
+  "ox": 95.0,
+  "oy": 157.0,
+  "scale": 0.5298,
+  "anims": {
+   "attaque": {
+    "frames": 18,
+    "cols": 4
+   },
+   "course": {
+    "frames": 20,
+    "cols": 4
+   },
+   "idle": {
+    "frames": 19,
+    "cols": 4
+   },
+   "marche": {
+    "frames": 20,
+    "cols": 4
+   }
+  }
+ }
+}

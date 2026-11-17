@@ -1,11 +1,15 @@
 import Phaser from 'phaser';
 import { audio } from '../audio/AudioManager';
+import ANIM3D from '../core/anim3d.json';
 import { artScale, CHEF_FRAMES, ChefDef, is3d, PowerId, fitUi, px, STYLE_3D } from '../core/constants';
 import { emptyInventory, Inventory, Order } from '../core/RecipeManager';
 import anchors from '../core/spriteAnchors.json';
 
 const ANCHORS = anchors as Record<string, number>;
 const ATTACK_ANIM = 0.28;
+/** Distance parcourue (unités du jeu) pour un cycle complet de pas : la cadence des pas suit la vitesse, les pieds ne glissent pas. */
+const RIG_STRIDE = 56;
+interface RigMeta { w: number; h: number; ox: number; oy: number; scale: number; anims: Record<string, { frames: number; cols: number }> }
 
 /** Le chef jouable : déplacement, vie, inventaire, pouvoirs temporaires, animations. */
 export class Chef {
@@ -36,6 +40,10 @@ export class Chef {
   private lunge = 0;
   private attackT = 0;
   private frames: { idle: string[]; walk: string[]; attack: string[] };
+  /** Animations 3D du chef (Blender) si elles sont chargées et qu'aucun costume n'est équipé. */
+  private rig: RigMeta | null = null;
+  private rigPhase = 0;
+  private moveSpeed = 0;
 
   /** @param skin costume de boutique : une seule image, animée par code */
   constructor(scene: Phaser.Scene, public def: ChefDef, x: number, y: number, private skin: string | null = null) {
@@ -44,6 +52,7 @@ export class Chef {
     this.hp = this.maxHp = def.hp;
     // costume : une seule image ; en style 3D, sa pose d'attaque quand elle existe
     this.frames = skin ? { idle: [skin], walk: is3d(skin) && scene.textures.exists(skin + '_mar') ? [skin + '_mar', skin] : [skin], attack: [is3d(skin) && scene.textures.exists(skin + '_atk') ? skin + '_atk' : skin] } : CHEF_FRAMES[def.id];
+    this.rig = !skin && STYLE_3D && scene.textures.exists(`rig_${def.id}_idle`) ? ((ANIM3D as Record<string, RigMeta>)[def.id] ?? null) : null;
     this.shadow = scene.add.ellipse(x, y, 26, 8, 0x000000, 0.3);
     this.sprite = scene.add.image(x, y, this.frames.idle[0]).setOrigin(0.5, 1);
     this.dishIcon = fitUi(scene.add.image(x, y, 'plat').setVisible(false));
@@ -61,6 +70,8 @@ export class Chef {
       if (stuck || !blocked(nx, this.y)) this.x = nx;
       if (stuck || !blocked(this.x, ny)) this.y = ny;
       if (Math.abs(dir.x) > 0.15) this.facing = dir.x > 0 ? 1 : -1;
+      this.moveSpeed = speed;
+      this.rigPhase += (dt * speed) / RIG_STRIDE;
       const step = Math.floor(this.walkT);
       this.walkT += dt * (speed / 12);
       if (STYLE_3D && Math.floor(this.walkT) !== step && step % 2 === 0) audio.sfx('pas'); // un bruit de pas tous les deux temps
@@ -101,6 +112,28 @@ export class Chef {
     if (this.chopping) return f.attack[Math.floor(time / 130) % 2];
     if (this.moving) return f.walk[Math.floor(this.walkT) % f.walk.length];
     return f.idle[0];
+  }
+
+  /** Animation 3D : choisit la planche (repos, marche, course, attaque) et l'image selon l'état du chef. */
+  private applyRig(time: number): void {
+    const r = this.rig!;
+    let anim = 'idle';
+    let t = (time / 2600) % 1;
+    if (this.attackT > 0 || this.ultActive > 0 || this.chopping) {
+      anim = 'attaque';
+      t = this.ultActive > 0 || this.chopping ? (time / 380) % 1 : 1 - this.attackT / ATTACK_ANIM;
+    } else if (this.moving) {
+      anim = this.moveSpeed < 70 ? 'marche' : 'course';
+      t = this.rigPhase % 1;
+    }
+    const n = r.anims[anim].frames;
+    const flip = this.ultActive > 0 ? Math.floor(time / 70) % 2 === 0 : this.facing < 0;
+    this.sprite
+      .setTexture(`rig_${this.def.id}_${anim}`, Math.min(n - 1, Math.floor(t * n)))
+      .setFlipX(flip)
+      .setOrigin(flip ? 1 - r.ox / r.w : r.ox / r.w, r.oy / r.h)
+      .setScale(r.scale)
+      .setAngle(0);
   }
 
   /**
@@ -195,6 +228,7 @@ export class Chef {
       .setAngle(swing || ((this.skin || is3d(key)) && this.moving ? Math.sin(this.walkT * Math.PI) * 2 : 0))
       .setAlpha(this.invuln > 0 && Math.floor(time / 80) % 2 === 0 ? 0.35 : 1)
       .setDepth(this.y);
+    if (this.rig) this.applyRig(time);
     this.shadow.setPosition(this.x, this.y - 1).setDepth(this.y - 1);
     this.dishIcon
       .setVisible(this.dish !== null)

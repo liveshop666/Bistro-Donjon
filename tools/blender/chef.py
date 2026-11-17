@@ -342,8 +342,11 @@ bpy.context.view_layer.update()
 FPS = 30   # images par seconde de la vidéo (les mouvements enregistrés sont à 24 : Blender calcule les images intermédiaires)
 # (clé, action, nombre de cycles) pour la vidéo ; la course utilise le sprint (cycle court = rapide)
 VIDEO = [("marche", "Walk_Loop", 2), ("course", "Sprint_Loop", 4), ("attaque", "Sword_Attack", 1)]
+STEP = int(os.environ.get("FRAME_STEP", "1"))   # ne rendre qu'une image sur STEP (pour les planches du jeu)
 if MODE == "apercu":
     todo = [("marche", "Walk_Loop", 1)]
+elif MODE == "repos":
+    todo = [("idle", "Idle_Loop", 1)]
 elif MODE == "video":
     todo = VIDEO
 else:
@@ -357,7 +360,7 @@ for key, act_name, cycles in todo:
     n = per_cycle * cycles
     if MODE == "apercu":
         n = 1
-    for i in range(n):
+    for i in range(0, n, STEP if MODE == "repos" else 1):
         fr = f0 + ((i % per_cycle) / per_cycle) * (f1 - f0) if key in ("marche", "course", "idle") else f0 + (i / max(1, per_cycle - 1)) * (f1 - f0)
         if key not in ("marche", "course", "idle"):
             fr = f0 + min(1.0, (i % per_cycle) / max(1, per_cycle - 1)) * (f1 - f0)
