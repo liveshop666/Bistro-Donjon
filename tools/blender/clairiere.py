@@ -16,6 +16,9 @@ import sys
 
 import bpy
 import numpy as np
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import quaternius as Q
 from mathutils import Vector
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -428,16 +431,39 @@ def flowers(px, py, n=7, col=(0.95, 0.55, 0.65)):
 
 
 # ------------------------------------------------------------------ arbres du pourtour (positions de la peinture)
-for i, (px, py, h) in enumerate([(55, 135, 4.4), (215, 85, 4.0), (10, 330, 3.8), (70, 690, 3.9), (120, 805, 4.2), (250, 935, 3.4),
-                                 (470, 935, 3.0), (1270, 930, 2.9), (1640, 640, 4.0), (1655, 480, 3.6), (1610, 60, 4.0),
-                                 (25, 470, 3.5), (1650, 830, 3.3), (700, 960, 2.8), (60, 25, 3.6)]):
-    pine(px, py, h=h, r=0.85, seed=i + 1)
-# arbres feuillus du pourtour (petits) et grands troncs de la forêt du haut (feuillage hors cadre)
-for i, (px, py, s_) in enumerate([(1215, 150, 0.62), (1615, 255, 0.66), (25, 585, 0.6), (1555, 885, 0.6), (95, 285, 0.36), (118, 372, 0.32),
-                                  (1480, 795, 0.34)]):
-    oak(px, py, s=s_, seed=i + 20)
-for i, (px, py) in enumerate([(430, 70), (590, 55), (1075, 40), (1385, 85), (1525, 120), (300, 40), (850, 20)]):
-    oak(px, py, s=0.85, seed=i + 40, trunk=4.6)
+# arbres du pourtour : modèles 3D du pack (Quaternius), mêmes emplacements que la peinture
+qr = random.Random(5)
+PINES = ["PineTree_1", "PineTree_2", "PineTree_3"]
+LEAFY = ["NormalTree_2", "NormalTree_3", "NormalTree_4", "NormalTree_5", "BirchTree_1", "BirchTree_3"]
+for i, (px, py, h) in enumerate([(55, 135, 5.2), (215, 85, 4.8), (10, 330, 4.6), (70, 690, 4.8), (120, 805, 5.2), (250, 935, 4.0),
+                                 (470, 935, 3.6), (1270, 930, 3.6), (1640, 640, 4.8), (1655, 480, 4.4), (1610, 60, 4.8),
+                                 (25, 470, 4.2), (1650, 830, 4.0), (700, 960, 3.4), (60, 25, 4.4), (1500, 150, 4.4)]):
+    x, y, _ = P(px, py)
+    Q.place(PINES[i % 3], x, y, height=h, rot=qr.uniform(0, 6.28))
+for i, (px, py, h) in enumerate([(1215, 135, 4.6), (1612, 250, 4.8), (28, 585, 4.6), (1555, 880, 4.4), (1120, 25, 5.2)]):
+    x, y, _ = P(px, py)
+    Q.place(LEAFY[i % len(LEAFY)], x, y, height=h, rot=qr.uniform(0, 6.28))
+# grands troncs de la forêt du haut (le feuillage sort du cadre)
+for i, (px, py) in enumerate([(430, 75), (1385, 90), (1525, 125), (300, 45)]):
+    x, y, _ = P(px, py)
+    Q.place(LEAFY[(i + 2) % len(LEAFY)], x, y, height=7.5, rot=qr.uniform(0, 6.28))
+# buissons, fleurs, herbe haute, rochers autour de la clairière
+for i, (px, py) in enumerate([(100, 290), (125, 375), (1480, 800), (215, 600), (1560, 440), (330, 905), (1190, 905), (1000, 20), (1100, 20)]):
+    x, y, _ = P(px, py)
+    Q.place(["Bush_Large", "Bush_Flowers", "Bush", "Bush_Small", "Bush_Large_Flowers"][i % 5], x, y, height=0.75 + 0.15 * (i % 3), rot=qr.uniform(0, 6.28))
+for i in range(160):  # touffes d'herbe haute sur l'herbe
+    ppx, ppy = qr.uniform(-20, IW + 20), qr.uniform(-20, IH + 20)
+    if dirt_at(ppx, ppy) < 0.15:
+        x, y, _ = P(ppx, ppy)
+        Q.place(["Grass_Large", "Grass_Small"][i % 2], x, y, height=qr.uniform(0.3, 0.55), rot=qr.uniform(0, 6.28))
+for i, (px, py) in enumerate([(165, 722), (1420, 805), (820, 275), (390, 320), (1380, 870), (300, 700)]):
+    x, y, _ = P(px, py)
+    Q.place("Rock_%d" % (1 + i % 5), x, y, height=[0.55, 0.6, 0.18, 0.2, 0.35, 0.3][i], rot=qr.uniform(0, 6.28))
+for i, (px, py) in enumerate([(175, 235), (218, 297), (300, 268), (1392, 178), (1530, 372), (215, 760), (525, 880), (1590, 575),
+                              (1320, 885), (1520, 730), (1360, 840), (240, 250), (1100, 940), (900, 960)]):
+    x, y, _ = P(px, py)
+    for k in range(3):
+        Q.place("Flower_%d_Clump" % (1 + (i + k) % 5), x + qr.uniform(-0.3, 0.3), y + qr.uniform(-0.2, 0.2), height=qr.uniform(0.35, 0.6), rot=qr.uniform(0, 6.28))
 
 # ------------------------------------------------------------------ cuisine de camp : trépied, marmite, feu, tabouret
 for (px, py) in [(552, 175), (668, 175)]:
@@ -530,15 +556,6 @@ log(315, 212, 3.0, -17)
 log(1462, 268, 2.9, 38)
 log(295, 828, 2.7, 22)
 log(1125, 910, 2.8, -6)
-rock(165, 722, 0.38, 1)
-rock(1420, 805, 0.42, 2)
-rock(820, 275, 0.13, 3)
-rock(390, 320, 0.15, 4)
-for (px, py, c) in [(175, 235, (0.95, 0.55, 0.65)), (218, 297, (0.95, 0.6, 0.7)), (300, 268, (0.98, 0.75, 0.8)), (1392, 178, (0.95, 0.6, 0.7)),
-                    (1530, 372, (0.95, 0.5, 0.6)), (215, 760, (0.98, 0.85, 0.35)), (525, 880, (0.95, 0.55, 0.65)), (1590, 575, (0.95, 0.9, 0.9)),
-                    (1320, 885, (0.98, 0.9, 0.9)), (1520, 730, (0.95, 0.55, 0.65)), (1360, 840, (0.98, 0.85, 0.4))]:
-    flowers(px, py, 7, c)
-
 sc.render.filepath = OUT
 sc.render.image_settings.file_format = "PNG"
 bpy.ops.render.render(write_still=True)
