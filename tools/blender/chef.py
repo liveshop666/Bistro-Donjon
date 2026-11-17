@@ -20,11 +20,13 @@ argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 OUT = argv[0] if argv else "/tmp/chef_out"
 WHO = argv[1] if len(argv) > 1 else "moustachu"
 MODE = argv[2] if len(argv) > 2 else "apercu"
-SIZE = int(argv[3]) if len(argv) > 3 else 512
+SIZE = int(argv[3]) if len(argv) > 3 else 640
 os.makedirs(OUT, exist_ok=True)
 
-TILT = 22   # hauteur de la caméra au-dessus de l'horizon : le personnage est vu presque de face, comme dans les dessins
+TILT = 30   # hauteur de la caméra au-dessus de l'horizon : plus basse que la carte (60 degrés) pour que le visage reste lisible
 YAW = 30    # il regarde vers la droite de l'image, un peu vers nous
+DENS = 3        # pixels rendus par pixel de la carte (la carte : 100 px par unité) : le personnage reste net même zoomé
+CHAR_SCALE = 0.31   # taille du personnage par rapport à la carte : environ 56 px de haut sur la carte de 1680 px (comme dans le jeu)
 ANIMS = {"idle": "Idle_Loop", "marche": "Walk_Loop", "course": "Jog_Fwd_Loop", "attaque": "Sword_Attack", "touche": "Hit_Chest", "mort": "Death01"}
 
 SPECS = {
@@ -42,7 +44,11 @@ def mat(name, color, rough=0.7, bump=0.0):
     b = nt.nodes["Principled BSDF"]
     b.inputs["Base Color"].default_value = (*color, 1)
     b.inputs["Roughness"].default_value = rough
-    if bump:
+    if bump:  # fourrure : reflet duveteux, lumière qui traverse un peu le poil, grain fin
+        b.inputs["Sheen Weight"].default_value = 0.7
+        b.inputs["Sheen Roughness"].default_value = 0.35
+        b.inputs["Subsurface Weight"].default_value = 0.18
+        b.inputs["Subsurface Radius"].default_value = (0.6, 0.25, 0.1)
         n = nt.nodes.new("ShaderNodeTexNoise")
         n.inputs["Scale"].default_value = 260
         n.inputs["Detail"].default_value = 4
@@ -213,38 +219,60 @@ attach(tail, rig, "DEF-hips")
 
 # ------------------------------------------------------------------ tête : grande, ronde, joues touffues, grandes oreilles, grands yeux
 HC = Vector((0, 0.0, 1.07))
-head = [ball(HC, 0.40, FUR, scale=(1.18, 0.92, 0.86), seg=36)]
+head = [ball(HC, 0.40, FUR, scale=(1.18, 0.92, 0.86), seg=40)]
 head.append(ball(HC + Vector((0, -0.25, -0.12)), 0.20, LIGHT, scale=(1.25, 0.8, 0.8)))     # museau et menton clairs
-head.append(ball(HC + Vector((0, -0.335, -0.075)), 0.042, mat("nez", (0.45, 0.22, 0.12), 0.4), scale=(1.2, 0.7, 0.8), seg=14))
-head.append(ball(HC + Vector((0, -0.31, -0.16)), 0.05, mat("langue", (0.95, 0.45, 0.50), 0.5), scale=(1.2, 0.6, 0.8), seg=14))
+for sx in (-1, 1):
+    head.append(ball(HC + Vector((sx * 0.085, -0.285, -0.105)), 0.085, LIGHT, scale=(1.0, 0.75, 0.85)))   # coussinets des moustaches
+head.append(ball(HC + Vector((0, -0.335, -0.075)), 0.045, mat("nez", (0.55, 0.24, 0.14), 0.35), scale=(1.25, 0.7, 0.8), seg=16))
+head.append(ball(HC + Vector((0, -0.322, -0.115)), 0.03, mat("nez_bas", (0.20, 0.09, 0.06), 0.4), scale=(0.5, 0.5, 1.4), seg=10))
+# bouche ouverte : ligne sombre en cœur, langue rose
+head.append(ball(HC + Vector((0, -0.318, -0.185)), 0.065, mat("bouche", (0.28, 0.07, 0.07), 0.5), scale=(1.5, 0.55, 0.8), seg=16))
+head.append(ball(HC + Vector((0, -0.340, -0.205)), 0.048, mat("langue", (0.97, 0.45, 0.52), 0.45), scale=(1.2, 0.55, 0.75), seg=14))
 WHITE = mat("blanc", (0.97, 0.95, 0.90), 0.2)
 IRIS = mat("iris", SPEC["eye"], 0.2)
 GLINT = mat("reflet", (1, 1, 1), 0.1)
-WHISK = mat("moustache", (0.98, 0.95, 0.88), 0.6)
+WHISK = mat("moustache", (0.99, 0.96, 0.90), 0.6)
+STRIPE = mat("rayure", [c * 0.45 for c in SPEC["fur"]], 0.9)
 for sx in (-1, 1):
-    # joues touffues : trois pointes vers l'extérieur
-    for k, (dz, ang) in enumerate(((0.0, 60), (-0.07, 90), (-0.14, 120))):
-        head.append(cone(HC + Vector((sx * 0.43, -0.08, -0.04 + dz)), 0.07, 0.0, 0.16, FUR, rot=(0, math.radians(sx * ang), 0), verts=14))
-    # oreilles : grandes et pointues, intérieur rose
+    # joues touffues : deux rangs de houppes vers l'extérieur et vers le bas
+    for k, (dz, ang, ln) in enumerate(((0.04, 45, 0.20), (-0.02, 65, 0.22), (-0.09, 85, 0.20), (-0.02, 55, 0.17), (-0.06, 60, 0.18))):
+        head.append(cone(HC + Vector((sx * (0.45 - 0.03 * (k == 4)), -0.07 - 0.04 * (k == 4), -0.02 + dz)), 0.075, 0.0, ln, FUR, rot=(0, math.radians(sx * ang), 0), verts=14))
+    # oreilles : grandes et pointues, intérieur rose, houppes de poils
     head.append(cone(HC + Vector((sx * 0.36, 0.02, 0.27)), 0.19, 0.02, 0.36, FUR, rot=(0, math.radians(sx * 28), 0), verts=28))
-    head.append(cone(HC + Vector((sx * 0.355, -0.07, 0.25)), 0.12, 0.015, 0.28, PINK, rot=(math.radians(-8), math.radians(sx * 28), 0), verts=24))
-    # yeux : grands, ambrés, sourcils froncés
-    head.append(ball(HC + Vector((sx * 0.17, -0.31, 0.06)), 0.115, WHITE, scale=(1.0, 0.45, 1.05)))
-    head.append(ball(HC + Vector((sx * 0.165, -0.345, 0.05)), 0.085, IRIS, scale=(1.0, 0.45, 1.1)))
-    head.append(ball(HC + Vector((sx * 0.165, -0.375, 0.05)), 0.045, DARK, scale=(1.0, 0.4, 1.1)))
-    head.append(ball(HC + Vector((sx * 0.145, -0.39, 0.085)), 0.02, GLINT, seg=10))
-    bpy.ops.mesh.primitive_cube_add(size=1, location=HC + Vector((sx * 0.17, -0.34, 0.2)), rotation=(0, math.radians(-sx * 24), 0))
-    br = bpy.context.object
-    br.scale = (0.17, 0.05, 0.045)
-    br.data.materials.append(BROW)
-    head.append(smooth(br))
-    for k, ang in enumerate((-14, 0, 14)):  # moustaches
-        bpy.ops.mesh.primitive_cylinder_add(vertices=6, radius=0.006, depth=0.26, location=HC + Vector((sx * 0.30, -0.32, -0.10 + k * 0.025)),
-                                            rotation=(math.radians(ang), math.radians(90), math.radians(sx * -10)))
+    head.append(cone(HC + Vector((sx * 0.355, -0.07, 0.25)), 0.125, 0.015, 0.29, PINK, rot=(math.radians(-8), math.radians(sx * 28), 0), verts=24))
+    for k in range(3):
+        head.append(cone(HC + Vector((sx * (0.31 + 0.025 * k), -0.09, 0.15 + 0.045 * k)), 0.022, 0.0, 0.10, LIGHT, rot=(math.radians(-70), math.radians(sx * (20 + 8 * k)), 0), verts=8))
+    # yeux : grands, ambrés, avec reflets, paupières du haut baissées (regard décidé), sourcils épais froncés
+    head.append(ball(HC + Vector((sx * 0.17, -0.31, 0.06)), 0.12, WHITE, scale=(1.0, 0.45, 1.05)))
+    head.append(ball(HC + Vector((sx * 0.165, -0.348, 0.05)), 0.09, IRIS, scale=(1.0, 0.45, 1.1)))
+    head.append(ball(HC + Vector((sx * 0.165, -0.38, 0.05)), 0.048, DARK, scale=(1.0, 0.4, 1.1)))
+    head.append(ball(HC + Vector((sx * 0.14, -0.395, 0.09)), 0.022, GLINT, seg=10))
+    head.append(ball(HC + Vector((sx * 0.19, -0.395, 0.02)), 0.011, GLINT, seg=8))
+    bpy.ops.mesh.primitive_uv_sphere_add(radius=0.125, location=HC + Vector((sx * 0.17, -0.322, 0.145)), segments=24, ring_count=12)
+    lid = bpy.context.object                      # paupière : coque de fourrure sur le haut de l'œil, inclinée vers le nez
+    lid.scale = (1.0, 0.40, 0.36)
+    lid.rotation_euler = (0, math.radians(-sx * 18), 0)
+    lid.data.materials.append(FUR)
+    head.append(smooth(lid))
+    for k in range(3):                            # sourcil : trois poils épais inclinés
+        bpy.ops.mesh.primitive_cube_add(size=1, location=HC + Vector((sx * (0.12 + 0.05 * k), -0.335, 0.20 - 0.012 * k * -sx * 0 + 0.018 * k)), rotation=(0, math.radians(-sx * (30 - 6 * k)), 0))
+        br = bpy.context.object
+        br.scale = (0.11, 0.045, 0.04)
+        br.data.materials.append(BROW)
+        head.append(smooth(br))
+    for k, ang in enumerate((-16, 0, 16)):        # moustaches fines et longues
+        bpy.ops.mesh.primitive_cylinder_add(vertices=6, radius=0.0055, depth=0.30, location=HC + Vector((sx * 0.30, -0.31, -0.10 + k * 0.03)),
+                                            rotation=(math.radians(ang), math.radians(90), math.radians(sx * -12)))
         w_ = bpy.context.object
         w_.data.materials.append(WHISK)
         head.append(w_)
-# toque : bandeau et gros dôme gonflé
+# rayures du front (tabby) visibles sous la toque
+for k, dx in enumerate((-0.10, 0, 0.10)):
+    head.append(ball(HC + Vector((dx, -0.30, 0.25)), 0.03, STRIPE, scale=(0.5, 0.4, 2.0), seg=10))
+# houppe de poils crème sous le foulard (poitrail)
+for k in range(5):
+    head.append(cone(HC + Vector((-0.12 + 0.06 * k, -0.28, -0.36)), 0.05, 0.0, 0.14, LIGHT, rot=(math.radians(160), 0, 0), verts=8))
+# toque : bandeau plissé et gros dôme gonflé
 head.append(cone(HC + Vector((0, 0.0, 0.34)), 0.27, 0.26, 0.20, HAT, verts=36))
 for (dx, dy, dz, r) in ((0, 0, 0.62, 0.26), (0.15, 0.04, 0.60, 0.18), (-0.15, 0.04, 0.60, 0.18), (0, 0.1, 0.62, 0.16), (0, -0.07, 0.64, 0.18)):
     head.append(ball(HC + Vector((dx, dy, dz)), r, HAT, seg=24))
@@ -269,7 +297,7 @@ attach(pan, rig, "DEF-hand.R")
 sc = bpy.context.scene
 sc.render.engine = "CYCLES"
 sc.cycles.device = "CPU"
-sc.cycles.samples = 24 if MODE in ("apercu", "video") else 40
+sc.cycles.samples = 20 if MODE in ("apercu", "video") else 40
 sc.cycles.use_denoising = True
 sc.render.film_transparent = True
 sc.render.resolution_x = sc.render.resolution_y = SIZE
@@ -298,26 +326,43 @@ for o in bpy.data.objects:
     if o.parent is None and o.type == "MESH":
         o.parent = pivot
 pivot.rotation_euler = (0, 0, math.radians(YAW))
+pivot.scale = (CHAR_SCALE, CHAR_SCALE, CHAR_SCALE)
 a = math.radians(90 - TILT)
 bpy.ops.object.camera_add()
 cam = bpy.context.object
 cam.data.type = "ORTHO"
-cam.data.ortho_scale = 2.5
+cam.data.ortho_scale = SIZE * 0.01 / DENS
 cam.rotation_euler = (a, 0, 0)
-cam.location = (0, -30 * math.sin(a), 0.85 + 30 * math.cos(a))
+TARGET_Z = 0.26
+cam.location = (0, -30 * math.sin(a), TARGET_Z + 30 * math.cos(a))
 cam.data.clip_end = 100
 sc.camera = cam
 bpy.context.view_layer.update()
 
-todo = {"marche": ANIMS["marche"]} if MODE == "apercu" else ({k: ANIMS[k] for k in ("marche", "course", "attaque")} if MODE == "video" else ANIMS)
-for key, act_name in todo.items():
+FPS = 30   # images par seconde de la vidéo (les mouvements enregistrés sont à 24 : Blender calcule les images intermédiaires)
+# (clé, action, nombre de cycles) pour la vidéo ; la course utilise le sprint (cycle court = rapide)
+VIDEO = [("marche", "Walk_Loop", 2), ("course", "Sprint_Loop", 4), ("attaque", "Sword_Attack", 1)]
+if MODE == "apercu":
+    todo = [("marche", "Walk_Loop", 1)]
+elif MODE == "video":
+    todo = VIDEO
+else:
+    todo = [(k, ANIMS[k], 1) for k in ANIMS]
+print("PIEDS", SIZE / 2, SIZE / 2 + TARGET_Z * math.cos(math.radians(TILT)) / (0.01 / DENS), flush=True)
+for key, act_name, cycles in todo:
     act = bpy.data.actions[act_name]
     rig.animation_data.action = act
-    f0, f1 = int(act.frame_range[0]), int(act.frame_range[1])
-    frames = [f0 + (f1 - f0) // 3] if MODE == "apercu" else list(range(f0, f1 + (0 if key in ("idle", "marche", "course") else 1)))
-    for i, fr in enumerate(frames):
-        sc.frame_set(fr)
-        sc.render.filepath = os.path.join(OUT, f"{WHO}_{key}_{i:02d}.png")
+    f0, f1 = act.frame_range
+    per_cycle = max(1, round((f1 - f0) / 24 * FPS))       # images vidéo pour un cycle
+    n = per_cycle * cycles
+    if MODE == "apercu":
+        n = 1
+    for i in range(n):
+        fr = f0 + ((i % per_cycle) / per_cycle) * (f1 - f0) if key in ("marche", "course", "idle") else f0 + (i / max(1, per_cycle - 1)) * (f1 - f0)
+        if key not in ("marche", "course", "idle"):
+            fr = f0 + min(1.0, (i % per_cycle) / max(1, per_cycle - 1)) * (f1 - f0)
+        sc.frame_set(int(fr), subframe=fr - int(fr))
+        sc.render.filepath = os.path.join(OUT, f"{WHO}_{key}_{i:03d}.png")
         bpy.ops.render.render(write_still=True)
-    print("ANIM", key, act_name, f0, f1, len(frames), flush=True)
+    print("ANIM", key, act_name, round(f0), round(f1), n, flush=True)
 print("CHEF OK", WHO)
