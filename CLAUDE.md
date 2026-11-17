@@ -3,7 +3,7 @@
 Jeu mobile (Android d'abord) de SolveLab : action-survie roguelike + cuisine, pixel art, portrait 360 × 640, une main. Paysage géré depuis le 12/11/2026 (partie en plein écran, menu et boutique dessinés pour le paysage).
 Stack : Phaser 3 + TypeScript + Vite, Capacitor pour Android. Tout le texte du jeu est en français.
 
-**Avant de travailler, lire `docs/memoire/REPRISE.md`** (fiche de reprise : où on en est, quoi régénérer ou non, erreurs à éviter), puis **`docs/memoire/JOURNAL.md`** (où on en est, erreurs à ne pas refaire) et le mettre à jour en fin de session.
+**Avant de travailler, lire `docs/memoire/REPRISE.md`** (et, pour tout ce qui touche à la 3D / Blender / personnages / cartes, **`docs/memoire/ATELIER-BLENDER.md`** : méthode, pièges déjà vécus, check-list avant fusion) (fiche de reprise : où on en est, quoi régénérer ou non, erreurs à éviter), puis **`docs/memoire/JOURNAL.md`** (où on en est, erreurs à ne pas refaire) et le mettre à jour en fin de session.
 Ces fichiers sont du Markdown simple : le dossier `docs/` s'ouvre tel quel comme coffre Obsidian.
 
 ## Commandes
@@ -42,6 +42,7 @@ Mettre à jour `docs/memoire/JOURNAL.md` : « Où on en est » (fait / pas fait 
 Ce journal est recopié automatiquement dans le cerveau Obsidian du propriétaire et lu par son assistante vocale Alma : il doit rester clair pour un non-développeur.
 
 ## Règles de travail
+- **Avant de fusionner du travail visuel (cartes, personnages) : montrer à Rudy une image comparée à l'original et attendre son accord**, sauf s'il dit clairement « fusionne ». Dire franchement ce qui n'est PAS identique.
 - Ne jamais écrire en dur une adresse e-mail ou une donnée personnelle du propriétaire : passer par `.env` (`VITE_SUPPORT_EMAIL`).
 - Les textes EN MAJUSCULES s'écrivent sans accents (la police Press Start 2P les rend mal) ; les minuscules gardent leurs accents.
 - Texte du jeu en taille 8 ou 16 uniquement, 44 caractères maximum par ligne en taille 8.

@@ -30,7 +30,7 @@ CHAR_SCALE = 0.31   # taille du personnage par rapport à la carte : environ 56 
 ANIMS = {"idle": "Idle_Loop", "marche": "Walk_Loop", "course": "Jog_Fwd_Loop", "attaque": "Sword_Attack", "touche": "Hit_Chest", "mort": "Death01"}
 
 SPECS = {
-    "moustachu": dict(fur=(0.40, 0.085, 0.003), light=(0.75, 0.34, 0.10), apron=(0.93, 0.82, 0.62), scarf=(0.80, 0.10, 0.08),
+    "moustachu": dict(fur=(0.53, 0.10, 0.002), light=(0.77, 0.37, 0.13), apron=(0.93, 0.82, 0.62), scarf=(0.80, 0.10, 0.08),
                       hat=(0.96, 0.83, 0.62), ear_in=(0.95, 0.55, 0.60), eye=(0.55, 0.28, 0.05), tail_tip=(0.85, 0.37, 0.06),
                       paint=dict(img="moustachu_tete.png", px=(207.5, 60, 0, 295, 330), chin_z=0.76, top_z=1.93, row_chin=330,
                                  torso=dict(img="moustachu_plastron.png", px=(207.5, 112, 332, 196, 153)))),
@@ -47,10 +47,12 @@ def mat(name, color, rough=0.7, bump=0.0):
     b.inputs["Base Color"].default_value = (*color, 1)
     b.inputs["Roughness"].default_value = rough
     if bump:  # fourrure : reflet duveteux, lumière qui traverse un peu le poil, grain fin
-        b.inputs["Sheen Weight"].default_value = 0.7
+        b.inputs["Sheen Weight"].default_value = 0.12        # peu de reflet duveteux : il blanchit la couleur
         b.inputs["Sheen Roughness"].default_value = 0.35
-        b.inputs["Subsurface Weight"].default_value = 0.18
+        b.inputs["Subsurface Weight"].default_value = 0.05
         b.inputs["Subsurface Radius"].default_value = (0.6, 0.25, 0.1)
+        b.inputs["Emission Color"].default_value = (*color, 1)   # même éclat que la tête peinte : la tête et le corps ont la même couleur
+        b.inputs["Emission Strength"].default_value = 0.5
         n = nt.nodes.new("ShaderNodeTexNoise")
         n.inputs["Scale"].default_value = 260
         n.inputs["Detail"].default_value = 4
