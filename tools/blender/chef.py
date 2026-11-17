@@ -23,7 +23,7 @@ MODE = argv[2] if len(argv) > 2 else "apercu"
 SIZE = int(argv[3]) if len(argv) > 3 else 640
 os.makedirs(OUT, exist_ok=True)
 
-TILT = 30   # hauteur de la caméra au-dessus de l'horizon : plus basse que la carte (60 degrés) pour que le visage reste lisible
+TILT = 18   # hauteur de la caméra au-dessus de l'horizon : presque de face comme la peinture d'origine (la carte, elle, est à 60 degrés)
 YAW = 30    # il regarde vers la droite de l'image, un peu vers nous
 DENS = 3        # pixels rendus par pixel de la carte (la carte : 100 px par unité) : le personnage reste net même zoomé
 CHAR_SCALE = 0.31   # taille du personnage par rapport à la carte : environ 56 px de haut sur la carte de 1680 px (comme dans le jeu)
@@ -31,7 +31,9 @@ ANIMS = {"idle": "Idle_Loop", "marche": "Walk_Loop", "course": "Jog_Fwd_Loop", "
 
 SPECS = {
     "moustachu": dict(fur=(0.80, 0.30, 0.04), light=(0.95, 0.66, 0.38), apron=(0.93, 0.82, 0.62), scarf=(0.80, 0.10, 0.08),
-                      hat=(0.97, 0.92, 0.80), ear_in=(0.95, 0.55, 0.60), eye=(0.55, 0.28, 0.05), tail_tip=(0.98, 0.92, 0.80)),
+                      hat=(0.97, 0.92, 0.80), ear_in=(0.95, 0.55, 0.60), eye=(0.55, 0.28, 0.05), tail_tip=(0.98, 0.92, 0.80),
+                      paint=dict(img="moustachu_tete.png", px=(207.5, 60, 0, 295, 330), chin_z=0.76, top_z=1.93, row_chin=330,
+                                 torso=dict(img="moustachu_plastron.png", px=(207.5, 112, 332, 196, 153)))),
 }
 SPEC = SPECS[WHO]
 
@@ -171,11 +173,15 @@ BROW = mat("sourcil", [c * 0.55 for c in SPEC["fur"]], 0.8)
 attach([ball((0, 0, 0.40), 0.23, FUR, scale=(1.05, 0.95, 0.85))], rig, "DEF-hips")
 torso = [ball((0, 0, 0.56), 0.28, FUR, scale=(1.0, 0.85, 1.0)), ball((0, -0.12, 0.52), 0.21, LIGHT, scale=(1.0, 0.7, 1.05))]
 attach(torso, rig, "DEF-spine.002")
-# tablier : plaque arrondie devant le ventre, bord bas festonné
+# tablier : plaque arrondie devant le ventre, bord bas festonné (remplacé par la peinture quand elle existe)
 apron = [ball((0, -0.20, 0.47), 0.21, APRON, scale=(1.0, 0.16, 1.0))]
 for i in range(5):
     apron.append(ball((-0.16 + i * 0.08, -0.215, 0.29), 0.055, APRON, scale=(1, 0.3, 1)))
-attach(apron, rig, "DEF-spine.001")
+if not SPEC.get("paint"):
+    attach(apron, rig, "DEF-spine.001")
+else:
+    for o in apron:
+        bpy.data.objects.remove(o)
 # foulard rouge + nœud
 scarf = []
 bpy.ops.mesh.primitive_torus_add(major_radius=0.17, minor_radius=0.06, location=(0, -0.01, 0.73))
@@ -187,7 +193,11 @@ for sx in (-1, 1):
     scarf.append(ball((sx * 0.07, -0.19, 0.70), 0.065, SCARF, scale=(1.3, 0.7, 1.0)))
     scarf.append(cone((sx * 0.09, -0.20, 0.62), 0.055, 0.015, 0.16, SCARF, rot=(math.radians(-8), 0, math.radians(sx * 12))))
 scarf.append(ball((0, -0.205, 0.70), 0.045, SCARF))
-attach(scarf, rig, "DEF-spine.003")
+if not SPEC.get("paint"):
+    attach(scarf, rig, "DEF-spine.003")
+else:
+    for o in scarf:
+        bpy.data.objects.remove(o)
 
 # bras : fourrure orange, patte arrondie à trois doigts
 for s in ("L", "R"):
@@ -216,6 +226,117 @@ for i, (y, z) in enumerate(path):
     tail.append(ball((0, y, z), 0.085 - i * 0.003, FUR, scale=(1, 1.1, 1.1), seg=18))
 tail.append(ball((0, 0.36, 0.80), 0.075, mat("bout_queue", SPEC["tail_tip"], 0.85), seg=18))
 attach(tail, rig, "DEF-hips")
+
+# ------------------------------------------------------------------ tête peinte : la peinture d'origine projetée de face sur des volumes 3D
+def painted_material(name, imgfile, box, back, k, chin_z, row_chin, clip=False):
+    """Matière qui affiche la peinture d'origine, projetée de face. box = (centre_x, x0, y0, largeur, hauteur) en pixels de la peinture.
+    Les coordonnées suivent un repère accroché à l'os : la peinture reste collée au personnage quand il bouge.
+    Le contour de la peinture (transparence) découpe le volume ; derrière (y > 0), couleur unie."""
+    cx_px, x0, y0, cw, ch = box
+    img = bpy.data.images.load(os.path.join(os.path.dirname(os.path.abspath(__file__)), "_work", imgfile))
+    z_bottom = chin_z + (row_chin - (y0 + ch)) * k
+    m = bpy.data.materials.new(name)
+    m.use_nodes = True
+    nt = m.node_tree
+    b = nt.nodes["Principled BSDF"]
+    tc = nt.nodes.new("ShaderNodeTexCoord")
+    tc.object = REF[0]
+    sep = nt.nodes.new("ShaderNodeSeparateXYZ")
+    com = nt.nodes.new("ShaderNodeCombineXYZ")
+    mp = nt.nodes.new("ShaderNodeMapping")
+    mp.inputs["Scale"].default_value = (1 / (k * cw), 1 / (k * ch), 1)
+    mp.inputs["Location"].default_value = ((cx_px - x0) / cw, -z_bottom / (k * ch), 0)
+    nt.links.new(tc.outputs["Object"], sep.inputs["Vector"])
+    nt.links.new(sep.outputs["X"], com.inputs["X"])
+    nt.links.new(sep.outputs["Z"], com.inputs["Y"])
+    nt.links.new(com.outputs["Vector"], mp.inputs["Vector"])
+    t = nt.nodes.new("ShaderNodeTexImage")
+    t.image = img
+    t.extension = "CLIP"
+    t.interpolation = "Cubic"
+    nt.links.new(mp.outputs["Vector"], t.inputs["Vector"])
+    # la peinture n'est valable que sur les surfaces tournées vers l'avant : sur les côtés et le dessus, couleur unie (sinon elle s'étire en traînées)
+    nsep = nt.nodes.new("ShaderNodeSeparateXYZ")
+    nt.links.new(tc.outputs["Normal"], nsep.inputs["Vector"])
+    ny = nt.nodes.new("ShaderNodeMath")
+    ny.operation = "MULTIPLY"
+    ny.inputs[1].default_value = -1.0
+    nt.links.new(nsep.outputs["Y"], ny.inputs[0])
+    front = nt.nodes.new("ShaderNodeMapRange")
+    front.inputs["From Min"].default_value = 0.30
+    front.inputs["From Max"].default_value = 0.55
+    nt.links.new(ny.outputs[0], front.inputs["Value"])
+    sidef = nt.nodes.new("ShaderNodeMath")
+    sidef.operation = "SUBTRACT"
+    sidef.inputs[0].default_value = 1.0
+    nt.links.new(front.outputs["Result"], sidef.inputs[1])
+    topf = nt.nodes.new("ShaderNodeMapRange")
+    topf.inputs["From Min"].default_value = 0.45
+    topf.inputs["From Max"].default_value = 0.80
+    nt.links.new(nsep.outputs["Z"], topf.inputs["Value"])
+    sm = nt.nodes.new("ShaderNodeMath")
+    sm.operation = "MAXIMUM"
+    nt.links.new(sidef.outputs[0], sm.inputs[0])
+    nt.links.new(topf.outputs["Result"], sm.inputs[1])
+    mix = nt.nodes.new("ShaderNodeMix")
+    mix.data_type = "RGBA"
+    nt.links.new(sm.outputs[0], mix.inputs[0])
+    nt.links.new(t.outputs["Color"], mix.inputs[6])
+    mix.inputs[7].default_value = (*back, 1)
+    dim = nt.nodes.new("ShaderNodeMix")                    # la peinture porte déjà ses ombres : on atténue la lumière de la scène par-dessus
+    dim.data_type = "RGBA"
+    dim.blend_type = "MULTIPLY"
+    dim.inputs[0].default_value = 1.0
+    dim.inputs[7].default_value = (0.30, 0.30, 0.30, 1)
+    nt.links.new(mix.outputs[2], dim.inputs[6])
+    nt.links.new(dim.outputs[2], b.inputs["Base Color"])
+    nt.links.new(mix.outputs[2], b.inputs["Emission Color"])
+    b.inputs["Emission Strength"].default_value = 0.78
+    b.inputs["Roughness"].default_value = 0.9
+    b.inputs["Specular IOR Level"].default_value = 0.1
+    if clip:   # plaque collée : le contour de l'image la découpe, et elle disparaît sur les côtés
+        ca = nt.nodes.new("ShaderNodeMath")
+        ca.operation = "MULTIPLY"
+        nt.links.new(t.outputs["Alpha"], ca.inputs[0])
+        nt.links.new(front.outputs["Result"], ca.inputs[1])
+        nt.links.new(ca.outputs[0], b.inputs["Alpha"])
+    return m
+
+
+REF = [None]
+
+
+def painted_head():
+    P = SPEC["paint"]
+    cx_px, x0_px, y0_px, cw_px, ch_px = P["px"]
+    k = (P["top_z"] - P["chin_z"]) / ch_px                  # unités du monde par pixel de la peinture
+    ref = bpy.data.objects.new("tete_ref", None)             # repère de la peinture (au repos : l'origine du monde)
+    bpy.context.collection.objects.link(ref)
+    ref.location = (0, 0, 0)
+    REF[0] = ref
+    PH = painted_material("tete_peinte", P["img"], P["px"], SPEC["fur"], k, P["chin_z"], P["row_chin"])
+    PT = painted_material("toque_peinte", P["img"], P["px"], SPEC["hat"], k, P["chin_z"], P["row_chin"])
+    z = 1.07
+    objs = [ball((0, 0, z), 0.5, PH, scale=(0.82, 0.72, 0.64), seg=40),
+            ball((0, -0.22, z - 0.12), 0.22, PH, scale=(1.2, 0.7, 0.75))]
+    for sx in (-1, 1):
+        objs.append(cone((sx * 0.35, 0.0, z + 0.28), 0.16, 0.015, 0.42, PH, rot=(0, math.radians(sx * 22), 0), verts=24))   # oreille
+        for dz, ang in ((0.04, 60), (-0.06, 85), (-0.15, 110)):
+            objs.append(cone((sx * 0.44, -0.05, z + dz), 0.075, 0.0, 0.18, PH, rot=(0, math.radians(sx * ang), 0), verts=12))   # joues touffues
+    objs.append(cone((0, 0.0, 1.38), 0.27, 0.265, 0.21, PT, verts=40))                                                  # bandeau de la toque
+    for (dx, dy, dz, r) in ((0, 0, 1.64, 0.27), (0.17, 0.02, 1.60, 0.25), (-0.17, 0.02, 1.60, 0.25), (0, 0.08, 1.66, 0.24)):
+        objs.append(ball((dx, dy, dz), r, PT, seg=28))
+    attach(objs + [ref], rig, "DEF-head")
+    # plastron : foulard rouge et tablier de la peinture, collés sur le ventre
+    T = P["torso"]
+    PB = painted_material("plastron_peint", T["img"], T["px"], SPEC["fur"], k, P["chin_z"], P["row_chin"], clip=True)
+    body = [ball((0, -0.16, 0.52), 0.30, PB, scale=(0.9, 0.34, 0.95), seg=36)]
+    attach(body, rig, "DEF-spine.002")
+
+
+if "paint" in SPEC:
+    painted_head()
+    SPEC["_painted"] = True
 
 # ------------------------------------------------------------------ tête : grande, ronde, joues touffues, grandes oreilles, grands yeux
 HC = Vector((0, 0.0, 1.07))
@@ -276,7 +397,12 @@ for k in range(5):
 head.append(cone(HC + Vector((0, 0.0, 0.34)), 0.27, 0.26, 0.20, HAT, verts=36))
 for (dx, dy, dz, r) in ((0, 0, 0.62, 0.26), (0.15, 0.04, 0.60, 0.18), (-0.15, 0.04, 0.60, 0.18), (0, 0.1, 0.62, 0.16), (0, -0.07, 0.64, 0.18)):
     head.append(ball(HC + Vector((dx, dy, dz)), r, HAT, seg=24))
-attach(head, rig, "DEF-head")
+if SPEC.get("_painted"):   # la tête vient de la peinture : on retire la tête fabriquée à la main
+    for o in head:
+        bpy.data.objects.remove(o)
+    head = []
+if head:
+    attach(head, rig, "DEF-head")
 
 # poêle dans la patte droite
 iron = mat("fer", (0.07, 0.07, 0.075), 0.35)
@@ -342,6 +468,15 @@ bpy.context.view_layer.update()
 # --- mode « jeu » : toutes les animations sous 5 angles (le jeu retourne l'image pour les 3 autres directions)
 GAME_DIRS = [("E", 90), ("SE", 45), ("S", 0), ("NE", 135), ("N", 180)]   # angle dont le personnage est tourné (S = face à la caméra, E = vers la droite)
 GAME_FRAMES = {"idle": 12, "marche": 16, "course": 16, "attaque": 16}
+if MODE in ("face", "profil"):   # une image au repos, vue de face ou de profil, pour comparer avec l'original
+    pivot.rotation_euler = (0, 0, math.radians(0 if MODE == "face" else 90))
+    act = bpy.data.actions["Idle_Loop"]
+    rig.animation_data.action = act
+    sc.frame_set(10)
+    sc.render.filepath = os.path.join(OUT, f"{WHO}_{MODE}.png")
+    bpy.ops.render.render(write_still=True)
+    print("CHEF OK", WHO)
+    sys.exit(0)
 if MODE == "jeu":
     for dname, yaw in GAME_DIRS:
         pivot.rotation_euler = (0, 0, math.radians(yaw))
