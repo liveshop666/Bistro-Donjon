@@ -2,7 +2,7 @@
 
 Fiche courte pour reprendre le projet dans un nouvel espace de travail, sans refaire ce qui est déjà fait ni répéter les erreurs passées.
 À lire en premier, avant le [[JOURNAL]] (le journal garde l'historique complet, cette fiche ne garde que l'essentiel).
-Mise à jour : 15/11/2026, fin de session.
+Mise à jour : 17/11/2026 (jeu sur PC : net, toute la map, équipement ; images de personnages doublées).
 
 ## 1. Où on en est
 
@@ -45,7 +45,7 @@ Mise à jour : 15/11/2026, fin de session.
 
 | Élément | Où | Régénérer ? |
 |---|---|---|
-| Personnages, poses d'attaque, poses de marche (`_atk`, `_mar`) | planches dans `reference/3d/*.png`, découpées dans `public/assets/sprites3d/` | **Non.** Ils sont bons et vérifiés. Ne relancer `python3 tools/extract_3d.py` que si une planche change, puis vérifier chaque image à l'œil. |
+| Personnages, poses d'attaque, poses de marche (`_atk`, `_mar`) | planches dans `reference/3d/*.png`, découpées dans `public/assets/sprites3d/` | **Non.** (Depuis le 17/11 ils sont agrandis 2 fois : `python3 tools/upscale_sprites.py <EDSR_x2.pb>`, ~35 min, `ART_RES` = 12. Après un nouveau `extract_3d.py`, relancer cet agrandissement.) Ils sont bons et vérifiés. Ne relancer `python3 tools/extract_3d.py` que si une planche change, puis vérifier chaque image à l'œil. |
 | Boutons, joystick, cœurs, pièce, chrono | `public/assets/ui3d/` (découpés par `tools/extract_ui3d.py`) | **Non.** |
 | Maps 3D | `public/assets/maps/wide3d_*.jpg` (1680 px) et `hd3d_*.jpg` (3360 px) | **Non.** L'agrandissement prend environ 10 minutes par map. Ne le relancer que pour une nouvelle map : `python3 tools/upscale_maps.py <modèle EDSR_x2.pb>` (modèle : github.com/Saafke/EDSR_Tensorflow). |
 | Vignettes de l'onglet des maps | `public/assets/maps/thumb3d_*.jpg` | Seulement si une map change. |

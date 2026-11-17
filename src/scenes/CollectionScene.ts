@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { audio } from '../audio/AudioManager';
 import { CHEFS, H, itemLabel, RARITY, SHOP, ShopItem, TEST_UNLOCK_ALL, W, WORLD_ORDER, worldUnlocked, WORLDS } from '../core/constants';
-import { loadProfile, saveProfile } from '../core/Storage';
+import { equipItem, loadProfile, saveProfile } from '../core/Storage';
 import { setupLandscapeMenu } from '../ui/landscapeMenu';
 import { button, txt } from '../ui/text';
 
@@ -16,6 +16,7 @@ export class CollectionScene extends Phaser.Scene {
   private tab: Tab = 'costumes';
   private page = 0;
   private dyn: Phaser.GameObjects.GameObject[] = [];
+  private toast?: Phaser.GameObjects.Text;
 
   constructor() {
     super('Collection');
@@ -130,10 +131,14 @@ export class CollectionScene extends Phaser.Scene {
   }
 
   private equip(it: ShopItem, on: boolean): void {
-    const q = loadProfile();
-    if (it.kind === 'skin') saveProfile({ skins: { ...q.skins, [it.chef!]: on ? it.id : undefined } });
-    else saveProfile({ effect: on ? it.id : null });
+    equipItem(it, on);
     this.draw();
+    audio.sfx('clic');
+    // dire clairement ce qui s'est passé (le costume est sur SON chef, qui devient le chef choisi)
+    const msg = !on ? 'Retiré.' : it.kind === 'skin' ? `Équipé : ${CHEFS[it.chef!].name} est maintenant ton chef.` : 'Équipé !';
+    this.toast?.destroy();
+    this.toast = txt(this, W / 2, 580, msg, 8, '#8fe0ff').setOrigin(0.5);
+    this.time.delayedCall(2200, () => this.toast?.destroy());
   }
 
   /** Petite image de l'article : le costume, ou un trait de la couleur de l'effet. */

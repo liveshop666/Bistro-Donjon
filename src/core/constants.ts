@@ -389,7 +389,7 @@ export function fitUi<T extends Phaser.GameObjects.Image>(img: T, k = 1): T {
 }
 /** Taille d'affichage d'un sprite : 0,5 pour les images 3D (dessinées 2 fois plus grandes), 1 sinon. */
 /** Images 3D des personnages : 4 fois la taille des anciens dessins pixel (tools/extract_3d.py), pour rester nettes. */
-export const ART_RES = 6;
+export const ART_RES = 12;
 /** Taille d'affichage des personnages 3D par rapport aux anciens dessins : 1,7 (caméra plus haute, Rudy 15/11). */
 export const ART_SIZE = 1.7;
 export const artScale = (key: string): number => (is3d(key) ? ART_SIZE / ART_RES : 1);

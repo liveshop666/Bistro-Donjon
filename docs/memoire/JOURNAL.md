@@ -3,7 +3,17 @@
 Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en haut à chaque session.
 Pour reprendre vite : lire d'abord [[REPRISE]] (`docs/memoire/REPRISE.md`).
 
-## Où on en est (16/11/2026)
+## Où on en est (17/11/2026)
+
+**17/11/2026 : jeu sur ordinateur (PC) : net, toute la map, équipement clair**
+- Rudy joue sur PC : « tout est flou », « équiper ne marche pas », « le personnage se met sur un autre personnage », « on ne voit plus toute la map ».
+- Flou, cause 1 : sur un écran d'ordinateur le jeu était dessiné en 1280 x 720 puis étiré sur 1920 x 1080. Maintenant (`wantedRes()` dans `layout.ts`) la finesse suit la vraie taille de l'écran sur ordinateur (de 2 à 5 ; téléphone inchangé : 2 à 4). Si la fenêtre est agrandie après le lancement (F11), la page se recharge toute seule depuis un menu (jamais en partie).
+- Flou, cause 2 : les images des personnages étaient petites (le Taureau : 340 px de haut, affiché à 470). `python3 tools/upscale_sprites.py <EDSR_x2.pb>` les double (super-résolution, comme les maps ; ~35 minutes pour les 52 images) ; `ART_RES` passe de 6 à 12 (`constants.ts`). `hd.json` évite de les agrandir deux fois. À relancer après chaque `python3 tools/extract_3d.py`.
+- « Équiper » : un costume appartient à UN chef (le Taureau Boucher est un costume de Maître Shiba). Équiper un costume d'un autre chef que le chef choisi ne changeait rien à l'écran. Maintenant `equipItem()` (`Storage.ts`) sélectionne aussi le chef et la collection affiche « Équipé : ... est maintenant ton chef ». Même chose dans la boutique.
+- Champ de vision : sur ordinateur en paysage, la caméra montre TOUTE la map (zoom juste assez pour ne montrer aucun bord noir). Téléphone inchangé (0,78).
+- Textes coupés corrigés au menu paysage : NIVEAU, MONDE 1 / 8, RECORD et la version.
+- Test : un robot clique avec une vraie souris sur chaque bouton de 6 écrans (`isDesktop`, poignée `window.__game` en mode développement seulement).
+- Pas fait : mouvements réalistes par squelette. Blender ne peut pas s'utiliser ici sur le PC de Rudy, et les personnages sont des images à plat : un squelette demande de les découper en morceaux. Piste proposée : « rig léger » dans le jeu (déformation par os d'une image : respiration, arme qui balance, buste qui penche).
 
 **16/11/2026 : le jeu sur GitHub Pages (adresse ouverte)**
 - Rudy ne pouvait pas entrer sur Vercel (porte « Version de test privée », autorisation oubliée par l'appareil). Il a mis le dépôt GitHub en public pour avoir une adresse à lui.
@@ -223,6 +233,9 @@ Détails :
 - Connexion par compte : avec quel service (Google Play Jeux, e-mail via Supabase…).
 
 ## Erreurs commises et leçons
+- **Jeu flou sur PC** (17/11) : tout avait été réglé pour téléphone (finesse 2 à 4 selon l'écran, 1280 px de large en paysage) ; sur un écran d'ordinateur de 1920 px le navigateur étirait une petite image. Leçon : tester aussi à 1920 x 1080 (et 1366 x 768, 2560 x 1440), pas seulement en 360 x 640, et ne jamais compter sur des images sources minuscules : vérifier leur taille réelle.
+- **Costume équipé sans effet visible** (17/11) : un costume est lié à un chef précis. Leçon : toute action « équiper » doit aussi montrer le résultat (chef sélectionné, message).
+- **GitHub Pages bloqué à « Chargement... 0 % »** (16/11) : la source de Pages était restée sur « Deploy from a branch », donc GitHub republiait le code brut juste après le jeu construit. Leçon : Settings > Pages > Source = « GitHub Actions », puis relancer « Jeu en ligne (GitHub Pages) ».
 - **Zone tactile de taille zéro** : une zone `setInteractive()` vide (bouton PAUSE déplacé hors écran avec w = h = 0) a cassé tout le toucher en vertical -> ne jamais créer de zone tactile vide ; ne pas créer le bouton du tout. Tester le joystick avec de vrais touchers (CDP `Input.dispatchTouchEvent`), pas seulement la souris.
 - **Image envoyée dans la discussion crue disponible comme fichier** : une image collée dans la conversation n'est pas un fichier du projet, Claude la voit mais ne peut pas l'enregistrer -> demander à Rudy de la déposer dans `reference/` (ou dans Canva).
 - Tests qui comptent sur la mission du jour (`test_v8`) : la mission change chaque jour, un échec « 3 missions accomplies » peut venir du tirage (ex. « finis 3x les vagues ») -> vérifier le libellé des missions avant de chercher un bug.

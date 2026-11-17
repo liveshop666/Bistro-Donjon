@@ -27,7 +27,28 @@ export function landscapeHeight(): number {
  * Qualité maximale tout le temps (décision de Rudy, 15/11 : « on ne choisit pas la qualité ») : RES suit la finesse
  * de l'écran (pixels réels du téléphone), de 2 à 4. Il n'y a plus de réglage « fluide ».
  */
-export const RES = Math.min(4, Math.max(2, Math.round((window.devicePixelRatio || 1) * 1.25)));
+export const RES = wantedRes();
+
+/** Vrai sur un ordinateur (souris), faux sur un téléphone ou une tablette tactile. */
+export function isDesktop(): boolean {
+  try {
+    return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Finesse voulue. Téléphone : de 2 à 4 selon l'écran. Ordinateur : le jeu est dessiné au moins aussi fin que les
+ * vrais pixels de l'écran (sinon le navigateur étire une petite image : tout est flou), de 2 à 5.
+ * Le grand côté de la page vaut toujours 640 unités du jeu (portrait comme paysage).
+ */
+export function wantedRes(): number {
+  const dpr = window.devicePixelRatio || 1;
+  if (!isDesktop()) return Math.min(4, Math.max(2, Math.round(dpr * 1.25)));
+  const longSide = Math.max(window.innerWidth, window.innerHeight) * dpr;
+  return Math.min(5, Math.max(2, Math.ceil(longSide / 480)));
+}
 
 /**
  * Règle une caméra : elle occupe le rectangle (vx, vy, vw, vh) de l'écran (en coordonnées de page)
