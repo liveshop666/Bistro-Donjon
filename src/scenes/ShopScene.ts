@@ -4,7 +4,7 @@ import { landscapeWanted } from '../core/layout';
 import { audio } from '../audio/AudioManager';
 import { billing } from '../core/Billing';
 import { CHEFS, H, itemLabel, RARITY, SHOP, ShopItem, STYLE_3D, TEST_PAYMENTS, W, fitUi } from '../core/constants';
-import { addCoins, loadProfile, nextMilestone, recordPurchase, saveProfile } from '../core/Storage';
+import { addCoins, equipItem, loadProfile, nextMilestone, recordPurchase, saveProfile } from '../core/Storage';
 import { openModal } from '../ui/Modal';
 import { button, txt } from '../ui/text';
 
@@ -257,9 +257,7 @@ export class ShopScene extends Phaser.Scene {
     const title = itemLabel(it);
     const note = `${RARITY[it.rarity].label}\n${who}\n${it.desc}`;
     const equip = (on: boolean) => {
-      const q = loadProfile();
-      if (it.kind === 'skin') saveProfile({ skins: { ...q.skins, [it.chef!]: on ? it.id : undefined } });
-      else saveProfile({ effect: on ? it.id : null });
+      equipItem(it, on);
       this.draw();
     };
     const info = (heading: string, text: string) => this.time.delayedCall(50, () => openModal(this, heading, [{ label: 'OK', action: () => {} }], text));

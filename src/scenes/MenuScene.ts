@@ -177,10 +177,10 @@ export class MenuScene extends Phaser.Scene {
     const lvl = playerLevel(profile.earned);
     this.add.rectangle(8, 6, 24, 18, 0x4fb8ff).setOrigin(0).setStrokeStyle(2, 0x1b1b2b);
     txt(this, 20, 15, String(lvl.level), 8, '#0c0c18').setOrigin(0.5);
-    txt(this, 38, 7, `NIVEAU ${lvl.level}`, 8, '#bfc8e0');
+    txt(this, 38, 1, `NIVEAU ${lvl.level}`, 8, '#bfc8e0');
     const xp = this.add.graphics();
-    xp.fillStyle(0x1b1b2b).fillRect(38, 18, 110, 5);
-    xp.fillStyle(0x4fb8ff).fillRect(38, 18, Math.round((110 * lvl.into) / lvl.span), 5);
+    xp.fillStyle(0x1b1b2b).fillRect(38, 21, 110, 5);
+    xp.fillStyle(0x4fb8ff).fillRect(38, 21, Math.round((110 * lvl.into) / lvl.span), 5);
     txt(this, w / 2, 16, 'BISTRO DONJON', 16, '#ffc533').setOrigin(0.5).setStroke('#7a2a12', 4);
     this.add.image(w - 150, 15, 'piece');
     txt(this, w - 138, 15, String(profile.coins), 8, '#ffd23e').setOrigin(0, 0.5);
@@ -199,8 +199,8 @@ export class MenuScene extends Phaser.Scene {
     button(this, 67, 133, 118, 30, 'MON COMPTE', 0x4a4f66, () => this.scene.start('Account'));
     button(this, 67, 169, 118, 30, 'REGLES', 0x4a4f66, () => this.scene.start('Rules'));
     button(this, 67, 205, 118, 30, 'LES MAPS', 0x3d5c8f, () => this.scene.start('Maps'));
-    txt(this, 6, h - 12, `V ${BUILD_LABEL}`, 8, '#6b7391');
-    txt(this, 6, h - 30, `RECORD : ${profile.best}`, 8, '#bfc8e0');
+    txt(this, 6, h - 20, `V ${BUILD_LABEL}`, 8, '#6b7391');
+    txt(this, 6, h - 38, `RECORD : ${profile.best}`, 8, '#bfc8e0');
 
     // à droite : le monde, le mode et JOUER
     const px = w - 246;
@@ -257,7 +257,7 @@ export class MenuScene extends Phaser.Scene {
     const px = w - 246;
     const i = WORLD_ORDER.indexOf(this.world);
     const locked = !worldUnlocked(this.world, this.unlocked, this.owned);
-    add(txt(this, px + 10, 52, `MONDE ${i + 1} / ${WORLD_ORDER.length}`, 8, '#8fe0ff'));
+    add(txt(this, px + 10, 46, `MONDE ${i + 1} / ${WORLD_ORDER.length}`, 8, '#8fe0ff'));
     const th = add(this.add.image(px + 10, 66, 'map_' + this.world).setOrigin(0).setScale(68 / W));
     if (locked) {
       th.setTint(0x333344);

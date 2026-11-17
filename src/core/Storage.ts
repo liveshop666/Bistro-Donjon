@@ -95,6 +95,16 @@ export function loadProfile(): Profile {
   const p = storedProfile();
   return TEST_UNLOCK_ALL ? { ...p, owned: allOwnable(), unlocked: WORLD_ORDER.length } : p;
 }
+/**
+ * Équipe (ou retire) un costume ou un effet. Un costume équipé SÉLECTIONNE AUSSI son chef : sinon, équiper le
+ * Taureau Boucher (costume de Maître Shiba) alors que Chef Moustachu est choisi ne change rien à l'écran,
+ * et le costume « apparaît » plus tard sur un autre personnage (confusion de Rudy sur PC, 17/11).
+ */
+export function equipItem(it: { kind: string; id: string; chef?: ChefId }, on: boolean): void {
+  const q = storedProfile();
+  if (it.kind === 'skin' && it.chef) saveProfile({ skins: { ...q.skins, [it.chef]: on ? it.id : undefined }, ...(on ? { chef: it.chef } : {}) });
+  else saveProfile({ effect: on ? it.id : null });
+}
 export function saveProfile(p: Partial<Profile>): void {
   const next = { ...storedProfile(), ...p };
   // mode test : ce qui est « possédé » est factice, on garde les vraies valeurs de la sauvegarde

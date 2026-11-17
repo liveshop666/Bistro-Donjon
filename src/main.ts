@@ -15,7 +15,7 @@ import { SignupScene } from './scenes/SignupScene';
 import { MapsScene } from './scenes/MapsScene';
 import { App } from '@capacitor/app';
 import { reloadIfUpdated } from './core/update';
-import { RES } from './core/layout';
+import { RES, wantedRes } from './core/layout';
 try {
   localStorage.removeItem('bistro-donjon-qualite'); // ancien réglage « IMAGE : FLUIDE », supprimé le 15/11
 } catch {
@@ -70,6 +70,8 @@ Promise.all([document.fonts.load('8px "Press Start 2P"'), document.fonts.load('1
     audio: { noAudio: true }, // tout le son passe par src/audio/AudioManager (synthèse Web Audio)
     scene: [BootScene, MenuScene, GameScene, RulesScene, DuelScene, ShopScene, AccountScene, CollectionScene, SignupScene, MapsScene],
   });
+  // aide aux tests automatiques (navigateur piloté) : poignée sur le jeu, jamais dans la version publiée
+  if (import.meta.env.DEV) (window as unknown as { __game: Phaser.Game }).__game = game;
   // Recalage de l'écran : refait tout de suite puis encore deux fois, car sur Android la taille de la fenêtre
   // n'est pas toujours à jour au moment de l'événement (clavier qui se ferme, rotation, retour dans l'appli).
   const refit = () => {
@@ -96,6 +98,15 @@ Promise.all([document.fonts.load('8px "Press Start 2P"'), document.fonts.load('1
   document.addEventListener('pointerdown', unlockRotation, { once: true });
   document.addEventListener('visibilitychange', () => !document.hidden && unlockRotation());
   window.addEventListener('resize', refitSoon);
+  // ordinateur : fenêtre agrandie ou plein écran (F11) après le lancement -> le jeu est redessiné plus fin, sinon tout devient flou.
+  // Jamais pendant une partie : on attend d'être revenu dans un menu.
+  let reloadTimer = 0;
+  window.addEventListener('resize', () => {
+    window.clearTimeout(reloadTimer);
+    reloadTimer = window.setTimeout(() => {
+      if (wantedRes() > RES && !game.scene.isActive('Game') && !game.scene.isActive('Duel')) window.location.reload();
+    }, 800);
+  });
   // la partie passe en paysage ou revient en portrait (taille du canvas changée par GameScene)
   game.events.on('refit', refitSoon);
   window.addEventListener('orientationchange', refitSoon);
