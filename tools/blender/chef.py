@@ -30,8 +30,8 @@ CHAR_SCALE = 0.31   # taille du personnage par rapport à la carte : environ 56 
 ANIMS = {"idle": "Idle_Loop", "marche": "Walk_Loop", "course": "Jog_Fwd_Loop", "attaque": "Sword_Attack", "touche": "Hit_Chest", "mort": "Death01"}
 
 SPECS = {
-    "moustachu": dict(fur=(0.80, 0.30, 0.04), light=(0.95, 0.66, 0.38), apron=(0.93, 0.82, 0.62), scarf=(0.80, 0.10, 0.08),
-                      hat=(0.97, 0.92, 0.80), ear_in=(0.95, 0.55, 0.60), eye=(0.55, 0.28, 0.05), tail_tip=(0.98, 0.92, 0.80),
+    "moustachu": dict(fur=(0.40, 0.085, 0.003), light=(0.75, 0.34, 0.10), apron=(0.93, 0.82, 0.62), scarf=(0.80, 0.10, 0.08),
+                      hat=(0.96, 0.83, 0.62), ear_in=(0.95, 0.55, 0.60), eye=(0.55, 0.28, 0.05), tail_tip=(0.85, 0.37, 0.06),
                       paint=dict(img="moustachu_tete.png", px=(207.5, 60, 0, 295, 330), chin_z=0.76, top_z=1.93, row_chin=330,
                                  torso=dict(img="moustachu_plastron.png", px=(207.5, 112, 332, 196, 153)))),
 }
@@ -88,7 +88,18 @@ def capsule(p0, p1, r0, r1, m):
     d = p1 - p0
     mid = (p0 + p1) / 2
     rot = d.to_track_quat("Z", "Y").to_euler()
-    return [cone(mid, r0, r1, d.length, m, rot=rot, verts=28), ball(p0, r0, m, seg=20), ball(p1, r1, m, seg=20)]
+    parts = [cone(mid, r0, r1, d.length, m, rot=rot, verts=28), ball(p0, r0, m, seg=20), ball(p1, r1, m, seg=20)]
+    bpy.ops.object.select_all(action="DESELECT")
+    for o in parts:
+        o.select_set(True)
+    bpy.context.view_layer.objects.active = parts[0]
+    bpy.ops.object.join()
+    o = bpy.context.view_layer.objects.active
+    rm = o.modifiers.new("lisse", "REMESH")                 # une seule surface lisse, sans les « perles » aux articulations
+    rm.mode = "VOXEL"
+    rm.voxel_size = 0.018
+    bpy.ops.object.modifier_apply(modifier=rm.name)
+    return [smooth(o)]
 
 
 def attach(objs, rig, bone):
@@ -200,32 +211,44 @@ else:
         bpy.data.objects.remove(o)
 
 # bras : fourrure orange, patte arrondie à trois doigts
-for s in ("L", "R"):
-    ua, fa, ha = JOINT(f"DEF-upper_arm.{s}"), JOINT(f"DEF-forearm.{s}"), JOINT(f"DEF-hand.{s}")
-    fa_e = JOINT(f"DEF-forearm.{s}", "tail")
-    attach(capsule(ua, fa, 0.085, 0.075, FUR), rig, f"DEF-upper_arm.{s}")
-    attach(capsule(fa, fa_e, 0.075, 0.07, FUR), rig, f"DEF-forearm.{s}")
-    paw = [ball(ha, 0.105, FUR, scale=(1.1, 1.0, 1.0))]
+TOE = mat("orteil", (0.55, 0.15, 0.01), 0.9, bump=0.12)
+for s_ in ("L", "R"):
+    ua, fa, ha = JOINT(f"DEF-upper_arm.{s_}"), JOINT(f"DEF-forearm.{s_}"), JOINT(f"DEF-hand.{s_}")
+    fa_e = JOINT(f"DEF-forearm.{s_}", "tail")
+    attach(capsule(ua, fa, 0.105, 0.095, FUR), rig, f"DEF-upper_arm.{s_}")
+    attach(capsule(fa, fa_e, 0.095, 0.09, FUR), rig, f"DEF-forearm.{s_}")
+    paw = [ball(ha, 0.13, FUR, scale=(1.1, 1.0, 1.0))]
     for k in (-1, 0, 1):
-        paw.append(ball(ha + Vector((math.copysign(0.07, ha.x), -0.045, 0.04 * k)), 0.04, LIGHT, seg=14))
-    attach(paw, rig, f"DEF-hand.{s}")
+        paw.append(ball(ha + Vector((math.copysign(0.09, ha.x), -0.05, 0.05 * k)), 0.05, TOE, seg=14))
+    attach(paw, rig, f"DEF-hand.{s_}")
 # jambes : cuisses, mollets, grands pieds ronds avec orteils
-for s in ("L", "R"):
-    th, sh, ft = JOINT(f"DEF-thigh.{s}"), JOINT(f"DEF-shin.{s}"), JOINT(f"DEF-foot.{s}")
-    sh_e = JOINT(f"DEF-shin.{s}", "tail")
-    attach(capsule(th, sh, 0.12, 0.10, FUR), rig, f"DEF-thigh.{s}")
-    attach(capsule(sh, sh_e, 0.10, 0.09, FUR), rig, f"DEF-shin.{s}")
-    foot = [ball(Vector((ft.x, ft.y - 0.07, 0.055)), 0.13, FUR, scale=(0.95, 1.4, 0.62))]
+for s_ in ("L", "R"):
+    th, sh, ft = JOINT(f"DEF-thigh.{s_}"), JOINT(f"DEF-shin.{s_}"), JOINT(f"DEF-foot.{s_}")
+    sh_e = JOINT(f"DEF-shin.{s_}", "tail")
+    attach(capsule(th, sh, 0.15, 0.125, FUR), rig, f"DEF-thigh.{s_}")
+    attach(capsule(sh, sh_e, 0.125, 0.11, FUR), rig, f"DEF-shin.{s_}")
+    foot = [ball(Vector((ft.x, ft.y - 0.07, 0.06)), 0.155, FUR, scale=(0.95, 1.35, 0.62))]
     for k in (-1, 0, 1):
-        foot.append(ball(Vector((ft.x + 0.055 * k, ft.y - 0.20, 0.045)), 0.04, LIGHT, scale=(1, 1, 0.85), seg=14))
-    attach(foot, rig, f"DEF-foot.{s}")
-# queue : orange, bout crème, qui remonte
-tail = []
-path = [(0.15, 0.36), (0.25, 0.33), (0.36, 0.35), (0.44, 0.42), (0.48, 0.52), (0.47, 0.62), (0.43, 0.70), (0.38, 0.76)]
-for i, (y, z) in enumerate(path):
-    tail.append(ball((0, y, z), 0.085 - i * 0.003, FUR, scale=(1, 1.1, 1.1), seg=18))
-tail.append(ball((0, 0.36, 0.80), 0.075, mat("bout_queue", SPEC["tail_tip"], 0.85), seg=18))
-attach(tail, rig, "DEF-hips")
+        foot.append(ball(Vector((ft.x + 0.065 * k, ft.y - 0.21, 0.05)), 0.05, TOE, scale=(1, 1, 0.85), seg=14))
+    attach(foot, rig, f"DEF-foot.{s_}")
+# queue : tube lisse orange qui remonte, bout crème (comme sur la peinture)
+cd = bpy.data.curves.new("queue", "CURVE")
+cd.dimensions = "3D"
+cd.bevel_depth = 0.095
+cd.bevel_resolution = 8
+cd.use_fill_caps = True
+sp = cd.splines.new("BEZIER")
+tail_pts = [(0.14, 0.38, 1.0), (0.32, 0.31, 1.0), (0.47, 0.42, 0.95), (0.50, 0.60, 0.88), (0.42, 0.76, 0.80)]
+sp.bezier_points.add(len(tail_pts) - 1)
+for bp_, (y_, z_, r_) in zip(sp.bezier_points, tail_pts):
+    bp_.co = (0, y_, z_)
+    bp_.handle_left_type = bp_.handle_right_type = "AUTO"
+    bp_.radius = r_
+tail_obj = bpy.data.objects.new("queue", cd)
+bpy.context.collection.objects.link(tail_obj)
+tail_obj.data.materials.append(FUR)
+tail_tip = ball((0, 0.42, 0.80), 0.085, mat("bout_queue", (0.80, 0.50, 0.20), 0.85, bump=0.1), seg=18)
+attach([tail_obj, tail_tip], rig, "DEF-hips")
 
 # ------------------------------------------------------------------ tête peinte : la peinture d'origine projetée de face sur des volumes 3D
 def painted_material(name, imgfile, box, back, k, chin_z, row_chin, clip=False):
@@ -289,9 +312,18 @@ def painted_material(name, imgfile, box, back, k, chin_z, row_chin, clip=False):
     dim.inputs[0].default_value = 1.0
     dim.inputs[7].default_value = (0.30, 0.30, 0.30, 1)
     nt.links.new(mix.outputs[2], dim.inputs[6])
-    nt.links.new(dim.outputs[2], b.inputs["Base Color"])
+    full = nt.nodes.new("ShaderNodeMix")                    # peinture : atténuée ; couleur unie : pleine (éclairée normalement)
+    full.data_type = "RGBA"
+    nt.links.new(sm.outputs[0], full.inputs[0])
+    nt.links.new(dim.outputs[2], full.inputs[6])
+    full.inputs[7].default_value = (*back, 1)
+    nt.links.new(full.outputs[2], b.inputs["Base Color"])
     nt.links.new(mix.outputs[2], b.inputs["Emission Color"])
-    b.inputs["Emission Strength"].default_value = 0.78
+    emk = nt.nodes.new("ShaderNodeMapRange")                # émission : 0,78 sur la peinture, 0,35 sur la couleur unie
+    emk.inputs["To Min"].default_value = 0.78
+    emk.inputs["To Max"].default_value = 0.35
+    nt.links.new(sm.outputs[0], emk.inputs["Value"])
+    nt.links.new(emk.outputs["Result"], b.inputs["Emission Strength"])
     b.inputs["Roughness"].default_value = 0.9
     b.inputs["Specular IOR Level"].default_value = 0.1
     if clip:   # plaque collée : le contour de l'image la découpe, et elle disparaît sur les côtés
@@ -314,13 +346,15 @@ def painted_head():
     bpy.context.collection.objects.link(ref)
     ref.location = (0, 0, 0)
     REF[0] = ref
-    PH = painted_material("tete_peinte", P["img"], P["px"], SPEC["fur"], k, P["chin_z"], P["row_chin"])
+    PH = painted_material("tete_peinte", P["img"], P["px"], (0.53, 0.10, 0.002), k, P["chin_z"], P["row_chin"])
     PT = painted_material("toque_peinte", P["img"], P["px"], SPEC["hat"], k, P["chin_z"], P["row_chin"])
     z = 1.07
     objs = [ball((0, 0, z), 0.5, PH, scale=(0.82, 0.72, 0.64), seg=40),
             ball((0, -0.22, z - 0.12), 0.22, PH, scale=(1.2, 0.7, 0.75))]
     for sx in (-1, 1):
-        objs.append(cone((sx * 0.35, 0.0, z + 0.28), 0.16, 0.015, 0.42, PH, rot=(0, math.radians(sx * 22), 0), verts=24))   # oreille
+        ear = cone((sx * 0.35, 0.0, z + 0.28), 0.18, 0.015, 0.42, PH, rot=(0, math.radians(sx * 22), 0), verts=24)   # oreille aplatie
+        ear.scale.y = 0.45
+        objs.append(ear)
         for dz, ang in ((0.04, 60), (-0.06, 85), (-0.15, 110)):
             objs.append(cone((sx * 0.44, -0.05, z + dz), 0.075, 0.0, 0.18, PH, rot=(0, math.radians(sx * ang), 0), verts=12))   # joues touffues
     objs.append(cone((0, 0.0, 1.38), 0.27, 0.265, 0.21, PT, verts=40))                                                  # bandeau de la toque
@@ -409,13 +443,17 @@ iron = mat("fer", (0.07, 0.07, 0.075), 0.35)
 iron.node_tree.nodes["Principled BSDF"].inputs["Metallic"].default_value = 0.8
 hr = JOINT("DEF-hand.R")
 pan = []
-bpy.ops.mesh.primitive_cylinder_add(vertices=48, radius=0.19, depth=0.05, location=hr + Vector((-0.34, 0, 0)))
+bpy.ops.mesh.primitive_cylinder_add(vertices=48, radius=0.25, depth=0.075, location=hr + Vector((-0.43, 0, 0)))
 pn = bpy.context.object
 pn.data.materials.append(iron)
 pan.append(smooth(pn))
-bpy.ops.mesh.primitive_cylinder_add(vertices=16, radius=0.03, depth=0.26, location=hr + Vector((-0.10, 0, 0)), rotation=(0, math.radians(90), 0))
+bpy.ops.mesh.primitive_cylinder_add(vertices=48, radius=0.205, depth=0.02, location=hr + Vector((-0.43, 0, 0.034)))
+pin = bpy.context.object
+pin.data.materials.append(mat("fond_poele", (0.015, 0.015, 0.016), 0.6))
+pan.append(smooth(pin))
+bpy.ops.mesh.primitive_cylinder_add(vertices=16, radius=0.036, depth=0.30, location=hr + Vector((-0.16, 0, 0)), rotation=(0, math.radians(90), 0))
 hd = bpy.context.object
-hd.data.materials.append(mat("manche", (0.30, 0.16, 0.07), 0.7))
+hd.data.materials.append(mat("manche", (0.12, 0.06, 0.03), 0.7))
 pan.append(smooth(hd))
 attach(pan, rig, "DEF-hand.R")
 
@@ -468,6 +506,16 @@ bpy.context.view_layer.update()
 # --- mode « jeu » : toutes les animations sous 5 angles (le jeu retourne l'image pour les 3 autres directions)
 GAME_DIRS = [("E", 90), ("SE", 45), ("S", 0), ("NE", 135), ("N", 180)]   # angle dont le personnage est tourné (S = face à la caméra, E = vers la droite)
 GAME_FRAMES = {"idle": 12, "marche": 16, "course": 16, "attaque": 16}
+if MODE == "angles":   # une image au repos sous chacun des 5 angles, pour comparer avec l'original
+    act = bpy.data.actions["Idle_Loop"]
+    rig.animation_data.action = act
+    sc.frame_set(10)
+    for dname, yaw in GAME_DIRS:
+        pivot.rotation_euler = (0, 0, math.radians(yaw))
+        sc.render.filepath = os.path.join(OUT, f"{WHO}_angle_{dname}.png")
+        bpy.ops.render.render(write_still=True)
+    print("CHEF OK", WHO)
+    sys.exit(0)
 if MODE in ("face", "profil"):   # une image au repos, vue de face ou de profil, pour comparer avec l'original
     pivot.rotation_euler = (0, 0, math.radians(0 if MODE == "face" else 90))
     act = bpy.data.actions["Idle_Loop"]
