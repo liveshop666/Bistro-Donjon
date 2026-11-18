@@ -47,6 +47,7 @@ Dans le jeu : `BootScene` charge `rig_<chef>_<anim>_<direction>` ; `Chef.ts` (`a
 - Ce qui donne l'identique : **projeter la peinture d'origine de face** (tête, toque, foulard, tablier) sur des volumes 3D accrochés aux os, repère qui suit l'os (`painted_material` dans `chef.py`). De face = le dessin ; sur les côtés/dessus/dos = couleur unie éclairée (la projection s'étire sinon).
 - Ne PAS découper par la transparence de la peinture : vu de côté, la tête devient fantôme. Étaler les couleurs au-delà du contour (`scipy.ndimage.distance_transform_edt`) et ajuster les volumes à la silhouette.
 - **La tête et le corps doivent avoir la même couleur** (Rudy l'a signalé deux fois le 17/11 : tête vive, corps terne, puis encore une différence visible). Même formule d'éclairage partout (émission dominante) ; mesurer les pixels (tête / torse / jambes) ET regarder l'image zoomée.
+- **Deuxième chef fait : Maître Shiba (chien)**, via `painted_generic()` (voir `SPECS['shiba']` : `paint.geom`) : c'est le modèle à copier pour Mlle Noisette (lapin), le Taureau, le Gorille, le Tigre. Étapes : mesurer les couleurs sur la peinture, repérer la tête et le plastron sur une grille (coordonnées), entrée `SPECS` + `ZONES`, `make_paint.py`, `chef.py ... angles` (comparer, mesurer tête/corps), `chef.py ... jeu`, `pack_anim.py <dossier> <chef> 80`, test navigateur.
 - Pour un nouveau personnage : entrée dans `SPECS` et dans `ZONES` de `make_paint.py` (zones de la tête et du plastron dans la peinture), `python3 tools/blender/make_paint.py <chef>`, couleurs mesurées sur la peinture, lancer `chef.py ... apercu/angles`, comparer, puis `jeu`.
 
 ## 5. Réglages qui comptent
@@ -82,6 +83,8 @@ Dans le jeu : `BootScene` charge `rig_<chef>_<anim>_<direction>` ; `Chef.ts` (`a
 13. **Fichiers de travail pas dans git** (18/11) : les peintures recadrées du chat étaient dans `tools/blender/_work/` (ignoré) sans script pour les refaire : une nouvelle session n'aurait pas pu rendre le chat. → `make_paint.py` les reconstruit à l'identique (vérifié : écart 0,0). Toujours se demander : « une nouvelle session peut-elle tout refaire avec les seules commandes écrites dans le dépôt ? »
 14. **Python `urllib` refusé (403) par Poly Haven** alors que `curl` passe : → envoyer un `User-Agent` générique (jamais de donnée personnelle).
 15. **Texture photo prise telle quelle** : terre granuleuse, cailloux énormes, trop vive. → teinter vers la couleur de la peinture, ne garder qu'une part du motif, échelle plus fine.
+16. **Plastron découpé trop large** (Shiba) : il reprenait les bras et le rouleau de la peinture. → polygones étroits (foulard, tablier) ; les parties qui bougent (veste, bras) sont faites en 3D.
+17. **Boules de joue peintes** : taches noires (peinture projetée de côté). → fourrure unie, ou pas de joues.
 11. **Dire « fusionné » sans l'être** (et inversement) : vérifier avec l'état du dépôt avant de répondre.
 
 ## 8. Pour aller 10 fois plus vite

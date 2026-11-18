@@ -5,6 +5,12 @@ Pour reprendre vite : lire d'abord [[REPRISE]] (`docs/memoire/REPRISE.md`).
 
 ## Où on en est (18/11/2026)
 
+**18/11/2026 (suite) : Maître Shiba en 3D (deuxième chef)**
+- Même méthode que le chat : tête et plastron de la peinture projetés (`make_paint.py shiba`), squelette et animations identiques, 5 angles, planches dans `public/assets/anim3d/shiba_*.webp`, entrée `shiba` dans `src/core/anim3d.json` ; le jeu l'utilise tout seul (`Chef.ts` lit l'entrée du chef choisi) quand aucun costume n'est équipé.
+- Nouveautés dans `chef.py` : `painted_generic()` (tête, toque, plastron décrits par `SPEC["paint"]["geom"]` : sphère de tête, museau, oreilles, joues, bandeau et bouffants de la toque, ellipsoïde du plastron) ; `flat_mat()` (même formule d'éclairage que la peinture, pour la veste et le rouleau) ; arme `pin` (rouleau à pâtisserie) ; queue paramétrable (`tail_pts`) ; manches blanches (`sleeve`). `make_paint.py` accepte plusieurs polygones pour le plastron (foulard + tablier : la veste est faite par le modèle 3D, les bras et le rouleau de la peinture sont exclus).
+- Leçons : les boules de joue peintes donnaient des taches noires (la peinture projetée de côté) : joues en fourrure unie, ou pas de joues ; un plastron découpé « large » reprend les bras et l'arme de la peinture : le découper en petits polygones (foulard, tablier) ; mesurer tête / corps tout de suite (tête 230-146-63, corps 219-142-70 : OK).
+- Pas identique : le rouleau est tenu d'une main à la verticale (sur la peinture il est tenu à deux mains en diagonale) ; profil et dos de la tête (couleur unie) ; pattes et queue plus simples. Version sur la branche de travail, **à fusionner après l'accord de Rudy**.
+
 **18/11/2026 : sol réaliste de la Clairière (textures Poly Haven)**
 - Rudy a autorisé de nouveaux domaines dans l'environnement cloud : `dl.polyhaven.org` fonctionne (Poly Haven en entier) ; ambientCG (fichiers), Kenney, itch.io, Mixamo, etc. restent bloqués (liste dans `ATELIER-BLENDER.md` section 6).
 - Le sol de la Clairière est maintenant fait de **vraies photos** (Poly Haven, CC0) : `brown_mud_dry` pour la terre, `rocky_terrain_02` pour l'herbe, teintées pour retrouver les couleurs de la peinture, relief et rugosité réels, traces de roues par-dessus. Premier essai trop granuleux et trop vif (cailloux démesurés) : on ne garde que 55 % du motif de la photo. Carte rendue en 3360 x 1888 et installée dans le jeu (`install_map.py`).
