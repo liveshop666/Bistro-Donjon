@@ -12,6 +12,8 @@ Mémoire technique du chantier 3D (créée le 17/11/2026 à la demande de Rudy :
 
 ## 2. Mise en route (5 minutes)
 ```bash
+python3 tools/blender/make_masks.py && python3 tools/blender/make_paint.py moustachu          # images de travail (dossier _work/, pas dans git)
+python3 tools/blender/fetch_textures.py brown_mud_dry rocky_terrain_02 2k                       # textures de sol (si Poly Haven est autorisé)
 python3 -m venv /tmp/blender_env
 pip download bpy --no-deps -d /tmp/bpy_dl            # roue ~430 Mo (Blender 5.3 comme module Python)
 /tmp/blender_env/bin/pip install /tmp/bpy_dl/bpy-*.whl
@@ -28,6 +30,8 @@ pip install scipy opencv-contrib-python-headless      # masques, étalement des 
 | Fichier | À quoi il sert |
 |---|---|
 | `make_masks.py` | forme de la zone de terre et traces au sol, tirées de la peinture d'origine d'une carte |
+| `make_paint.py` | reconstruit les images de peinture du chef (tête, plastron) depuis `public/assets/sprites3d/<chef>.png` : **à lancer avant `chef.py`** (le dossier `_work/` n'est pas dans git) |
+| `fetch_textures.py` | télécharge des textures de sol Poly Haven (CC0) dans `_work/tex/` |
 | `clairiere.py` | scène 3D complète de la Clairière (modèle pour les 7 autres cartes) ; `-- sortie.png échelle échantillons` |
 | `finish.py` | vignette, chaleur, contraste après le rendu de la carte |
 | `install_map.py` | installe un rendu 3360 x 1888 dans le jeu (4 tailles : `hd3d_`, `wide3d_`, `thumb3d_`, `port3d_`) |
@@ -43,7 +47,7 @@ Dans le jeu : `BootScene` charge `rig_<chef>_<anim>_<direction>` ; `Chef.ts` (`a
 - Ce qui donne l'identique : **projeter la peinture d'origine de face** (tête, toque, foulard, tablier) sur des volumes 3D accrochés aux os, repère qui suit l'os (`painted_material` dans `chef.py`). De face = le dessin ; sur les côtés/dessus/dos = couleur unie éclairée (la projection s'étire sinon).
 - Ne PAS découper par la transparence de la peinture : vu de côté, la tête devient fantôme. Étaler les couleurs au-delà du contour (`scipy.ndimage.distance_transform_edt`) et ajuster les volumes à la silhouette.
 - **La tête et le corps doivent avoir la même couleur** (Rudy l'a signalé deux fois le 17/11 : tête vive, corps terne, puis encore une différence visible). Même formule d'éclairage partout (émission dominante) ; mesurer les pixels (tête / torse / jambes) ET regarder l'image zoomée.
-- Pour un nouveau personnage : entrée dans `SPECS`, recadrer tête et plastron dans la peinture (`tools/blender/_work/`), couleurs mesurées sur la peinture, lancer `chef.py ... apercu/angles`, comparer, puis `jeu`.
+- Pour un nouveau personnage : entrée dans `SPECS` et dans `ZONES` de `make_paint.py` (zones de la tête et du plastron dans la peinture), `python3 tools/blender/make_paint.py <chef>`, couleurs mesurées sur la peinture, lancer `chef.py ... apercu/angles`, comparer, puis `jeu`.
 
 ## 5. Réglages qui comptent
 - Carte : caméra orthographique inclinée à 60°, 1 unité = 100 px de la peinture ; `P(px, py, z)` place un objet au pixel de la peinture. Rendu 3360 x 1888, 48 échantillons, débruitage ; ~15 min.
@@ -51,11 +55,17 @@ Dans le jeu : `BootScene` charge `rig_<chef>_<anim>_<direction>` ; `Chef.ts` (`a
 - Mouvements : la bibliothèque est à 24 images/s ; images intermédiaires par `frame_set(int, subframe=)`. Course = `Sprint_Loop` (cycle court). Squelette raccourci par `Z_MAP` (jambes ×0,5) ; les déplacements du bassin des animations sont réduits de même (`LOC_K`).
 - Durées de rendu (4 cœurs) : image de personnage 640 px ≈ 2,6 s ; 300 images (5 angles) ≈ 13 min ; vidéo de 200 images ≈ 9 min.
 
-## 6. Ressources gratuites : ce qui est accessible
-- OK : GitHub (clone des dépôts publics, fichiers `raw.githubusercontent.com`), PyPI, `quaternius.com` et `opengameart.org` (pages), l'API `api.polyhaven.com`.
-- Bloqué dans l'environnement cloud tant que Rudy ne l'autorise pas : les fichiers de **Poly Haven** (`dl.polyhaven.org`, attention : en `.org`), **ambientCG** (`acg-download.struffelproductions.com`), Kenney (`kenney.nl`, 403), Sketchfab. Rudy les ajoute dans les réglages de l'environnement cloud (Domaines autorisés, **une adresse par ligne**), puis il faut peut-être **relancer la session**.
-- Licences : Quaternius = CC0 (usage commercial libre, pas de crédit obligatoire, mais **on ne redistribue pas les modèles eux-mêmes** : seuls les rendus vont dans le dépôt). Générateurs d'arbres sous GPL (tree-gen) : refusé par la sécurité de la session (code téléchargé), non utilisé.
+## 6. Ressources gratuites : ce qui est accessible (état au 18/11/2026)
+- **OK** : GitHub (clone des dépôts publics, `raw.githubusercontent.com`), PyPI, `quaternius.com`, `opengameart.org`, **Poly Haven en entier** (`api.polyhaven.com` + fichiers sur `dl.polyhaven.org`, ajoutés par Rudy le 18/11), pages de ambientCG et de Sketchfab (mais pas leurs téléchargements).
+- **Bloqué** (à autoriser par Rudy dans « Domaines autorisés » de l'environnement cloud, **une adresse par ligne**, puis relancer la session) : `acg-download.struffelproductions.com` (fichiers d'ambientCG), `kenney.nl` (403), `poly.pizza`, `itch.io`, `quaternius.itch.io`, `freepbr.com`, `cgbookcase.com`, `mixamo.com`, `download.blender.org`.
+- **Poly Haven (CC0)** : `python3 tools/blender/fetch_textures.py <id> <id> 2k` télécharge diffuse + normales + rugosité dans `tools/blender/_work/tex/` (les textures ne vont pas dans le dépôt ; Python doit se présenter avec un `User-Agent` générique, sinon 403). Textures utilisées : `brown_mud_dry` (terre) et `rocky_terrain_02` (herbe). Autres vues et prometteuses : `dirt_floor`, `red_laterite_soil_stones`, `forest_ground_04`, `aerial_grass_rock`. Modèles, HDRI : même API (`https://api.polyhaven.com/assets?t=models|hdris|textures`).
+- Licences : Quaternius = CC0 (usage commercial libre, pas de crédit obligatoire, mais **on ne redistribue pas les modèles eux-mêmes** : seuls les rendus vont dans le dépôt). Poly Haven = CC0. Générateurs d'arbres sous GPL (tree-gen) : refusé par la sécurité de la session (code téléchargé), non utilisé.
 - Recherche de dépôts : `gh api -X GET search/repositories -f q='...'` (marche) ; lire un dépôt non attaché demande `add_repo`.
+
+## 6 bis. Sol réaliste d'une carte (méthode, 18/11)
+- Photo de terre + photo d'herbe, **teintées pour retrouver la couleur de la peinture** (`tinted()` dans `clairiere.py` : teinte = cible / moyenne mesurée de la texture), mélangées à deux échelles (pas de motif répété), **seulement 55 % du motif de la photo** (le reste = couleur moyenne) : trop de motif = terre granuleuse et cailloux démesurés à l'échelle de la carte.
+- Relief (normales) et rugosité réels de la photo, mélangés comme la couleur ; traces de roues par-dessus.
+- Pour une autre carte : choisir les textures qui ressemblent à la peinture (voir la planche de contact), mesurer leur couleur moyenne, régler la teinte, faire un aperçu `0.5 24` avant le rendu final.
 
 ## 7. Erreurs commises et leçons (ne plus jamais refaire)
 1. **Attendre la fin avec `grep -q fini`** : « fini » est dans « glTF import finished ». → attendre un marqueur unique (`CHEF OK`, `TERMINE`) avec `for i in $(seq 1 110); do grep -q "..." log && break; timeout 5 tail -f /dev/null; done`. Le `sleep` seul est bloqué.
@@ -69,6 +79,9 @@ Dans le jeu : `BootScene` charge `rig_<chef>_<anim>_<direction>` ; `Chef.ts` (`a
 9. **Tester un seul angle** : le dos et le profil étaient mauvais. → toujours le mode `angles`.
 10. **Domaines réseau saisis sur une seule ligne** : refusé. → une adresse par ligne, case « gestionnaires de paquet » cochée.
 12. **Couleur tête / corps « corrigée » mais pas vraiment (17/11 nuit)** : la moyenne des pixels était proche, mais la tête (peinture, émission) et le corps (éclairé par la scène, plus clair et bleuté) ne se ressemblaient pas à l'œil. → toute la matière du personnage suit la MÊME formule que la peinture : couleur de base × 0,3 + émission 0,78 de la couleur (`mat()` fourrure et `painted_material`), couleur de fourrure mesurée sur les joues peintes. Ne pas se fier à la seule moyenne : regarder les images zoomées, comparer la teinte ET la luminosité, et montrer à Rudy avant de fusionner.
+13. **Fichiers de travail pas dans git** (18/11) : les peintures recadrées du chat étaient dans `tools/blender/_work/` (ignoré) sans script pour les refaire : une nouvelle session n'aurait pas pu rendre le chat. → `make_paint.py` les reconstruit à l'identique (vérifié : écart 0,0). Toujours se demander : « une nouvelle session peut-elle tout refaire avec les seules commandes écrites dans le dépôt ? »
+14. **Python `urllib` refusé (403) par Poly Haven** alors que `curl` passe : → envoyer un `User-Agent` générique (jamais de donnée personnelle).
+15. **Texture photo prise telle quelle** : terre granuleuse, cailloux énormes, trop vive. → teinter vers la couleur de la peinture, ne garder qu'une part du motif, échelle plus fine.
 11. **Dire « fusionné » sans l'être** (et inversement) : vérifier avec l'état du dépôt avant de répondre.
 
 ## 8. Pour aller 10 fois plus vite
