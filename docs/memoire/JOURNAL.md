@@ -3,7 +3,13 @@
 Mémoire partagée entre les sessions de travail. Ajouter une entrée datée en haut à chaque session.
 Pour reprendre vite : lire d'abord [[REPRISE]] (`docs/memoire/REPRISE.md`).
 
-## Où on en est (17/11/2026)
+## Où on en est (18/11/2026)
+
+**18/11/2026 : sol réaliste de la Clairière (textures Poly Haven)**
+- Rudy a autorisé de nouveaux domaines dans l'environnement cloud : `dl.polyhaven.org` fonctionne (Poly Haven en entier) ; ambientCG (fichiers), Kenney, itch.io, Mixamo, etc. restent bloqués (liste dans `ATELIER-BLENDER.md` section 6).
+- Le sol de la Clairière est maintenant fait de **vraies photos** (Poly Haven, CC0) : `brown_mud_dry` pour la terre, `rocky_terrain_02` pour l'herbe, teintées pour retrouver les couleurs de la peinture, relief et rugosité réels, traces de roues par-dessus. Premier essai trop granuleux et trop vif (cailloux démesurés) : on ne garde que 55 % du motif de la photo. Carte rendue en 3360 x 1888 et installée dans le jeu (`install_map.py`).
+- Nouveaux scripts : `tools/blender/make_paint.py` (reconstruit les peintures du chat, vérifié à l'identique) et `fetch_textures.py`. **Piège trouvé** : le dossier `tools/blender/_work/` n'est pas dans git, une nouvelle session n'aurait pas pu refaire le chat sans `make_paint.py`.
+- Pas fait : l'étal et la marmite restent simples comparés à la peinture ; les 7 autres cartes ; les autres personnages. Version sur la branche de travail, **à fusionner après l'accord de Rudy**.
 
 **17/11/2026, FIN DE JOURNÉE : résumé pour reprendre**
 - Rudy s'arrête là pour aujourd'hui. Tout est fusionné sur `main`. Où on en est et comment reprendre : voir [[REPRISE]] (section 0) et [[ATELIER-BLENDER]] (méthode, outils, 12 erreurs commises avec leur leçon, check-list avant fusion).
