@@ -5,6 +5,12 @@ Pour reprendre vite : lire d'abord [[REPRISE]] (`docs/memoire/REPRISE.md`).
 
 ## Où on en est (18/11/2026)
 
+**18/11/2026 (soir) : même personnage dans le menu et dans la partie**
+- Rudy : « je ne retrouve pas mon chat », « rien n'est mis en place correctement ». Le jeu en ligne était bien à jour (vérifié : publication réussie, aucun fichier manquant), mais **le menu, les règles, Mon compte et le duel montraient encore les anciens dessins** (portrait pixel du chat, grand dessin peint), alors que la partie montrait le modèle 3D. On ne reconnaissait pas son personnage d'un écran à l'autre.
+- Corrigé : pour chaque chef qui a un modèle 3D (Moustachu, Shiba), toutes ces images viennent maintenant du **même modèle 3D** (`tools/blender/make_menu_images.py`, rendus de face `chef.py ... face 2560` → `public/assets/sprites3d/rig_<chef>_hd.png` et `rig_<chef>_portrait.png`, chargés par `BootScene` à la place de `hd_`, `hdp_`, `portrait_`). Mlle Noisette garde son dessin tant qu'elle n'est pas en 3D. Portraits affichés à taille fixe (48 px) et sans déformation.
+- Testé : menu PC et téléphone, règles, Mon compte, duel ; clic sur le chat puis JOUER → chat 3D en partie ; clic sur Shiba puis JOUER → Shiba 3D ; aucune erreur.
+- Leçon : quand un personnage change d'apparence, **changer TOUTES ses images (menus, portraits, partie)** et refaire le parcours de Rudy (menu → clic → JOUER), pas seulement la partie.
+
 **18/11/2026 (suite) : Maître Shiba en 3D (deuxième chef)**
 - Même méthode que le chat : tête et plastron de la peinture projetés (`make_paint.py shiba`), squelette et animations identiques, 5 angles, planches dans `public/assets/anim3d/shiba_*.webp`, entrée `shiba` dans `src/core/anim3d.json` ; le jeu l'utilise tout seul (`Chef.ts` lit l'entrée du chef choisi) quand aucun costume n'est équipé.
 - Nouveautés dans `chef.py` : `painted_generic()` (tête, toque, plastron décrits par `SPEC["paint"]["geom"]` : sphère de tête, museau, oreilles, joues, bandeau et bouffants de la toque, ellipsoïde du plastron) ; `flat_mat()` (même formule d'éclairage que la peinture, pour la veste et le rouleau) ; arme `pin` (rouleau à pâtisserie) ; queue paramétrable (`tail_pts`) ; manches blanches (`sleeve`). `make_paint.py` accepte plusieurs polygones pour le plastron (foulard + tablier : la veste est faite par le modèle 3D, les bras et le rouleau de la peinture sont exclus).

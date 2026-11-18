@@ -39,6 +39,7 @@ pip install scipy opencv-contrib-python-headless      # masques, étalement des 
 | `chef.py` | personnage sur le squelette ; modes `apercu`, `face`, `profil`, `angles`, `video`, `repos`, `jeu` |
 | `pack_anim.py` | assemble les rendus en planches WebP + `src/core/anim3d.json` |
 | `compose_video.py` | vidéo de démonstration (carte entière + loupe) |
+| `make_menu_images.py` | images des menus (en pied, portrait) tirées du même modèle 3D que la partie |
 
 Dans le jeu : `BootScene` charge `rig_<chef>_<anim>_<direction>` ; `Chef.ts` (`applyRig`, `sectorFor`) choisit l'image selon la direction (8 secteurs, 5 angles rendus, les 3 autres retournés), la cadence des pas suit la vitesse (`RIG_STRIDE`).
 
@@ -85,6 +86,7 @@ Dans le jeu : `BootScene` charge `rig_<chef>_<anim>_<direction>` ; `Chef.ts` (`a
 15. **Texture photo prise telle quelle** : terre granuleuse, cailloux énormes, trop vive. → teinter vers la couleur de la peinture, ne garder qu'une part du motif, échelle plus fine.
 16. **Plastron découpé trop large** (Shiba) : il reprenait les bras et le rouleau de la peinture. → polygones étroits (foulard, tablier) ; les parties qui bougent (veste, bras) sont faites en 3D.
 17. **Boules de joue peintes** : taches noires (peinture projetée de côté). → fourrure unie, ou pas de joues.
+18. **Personnage 3D seulement en partie** (18/11) : menus, règles, Mon compte et duel montraient encore les anciens dessins : Rudy ne retrouvait pas « son » chat. → pour tout chef en 3D : `chef.py -- <dossier> <chef> face 2560` puis `make_menu_images.py <rendu> <chef>` ; vérifier le parcours menu → clic → JOUER.
 11. **Dire « fusionné » sans l'être** (et inversement) : vérifier avec l'état du dépôt avant de répondre.
 
 ## 8. Pour aller 10 fois plus vite

@@ -23,7 +23,7 @@ export class AccountScene extends Phaser.Scene {
     this.add.rectangle(0, 0, W, H, 0x0c0c18, 0.86).setOrigin(0);
     txt(this, W / 2, 26, 'MON COMPTE', 16, '#ffc533').setOrigin(0.5);
 
-    this.add.image(60, 96, 'portrait_' + p.chef);
+    this.add.image(60, 96, 'portrait_' + p.chef).setDisplaySize(48, 48);
     txt(this, 96, 76, 'PSEUDO', 8, '#8fe0ff');
     txt(this, 96, 92, p.pseudo || 'CHEF SANS NOM', 8);
     txt(this, 96, 108, p.registered ? `Compte créé le ${p.registered.split('-').reverse().join('/')}` : 'Affiché en duel en ligne', 8, '#6b7391');

@@ -33,7 +33,7 @@ export class DuelScene extends Phaser.Scene {
     this.add.image(0, 0, 'map_' + this.world).setOrigin(0);
     this.add.rectangle(0, 0, W, H, 0x0c0c18, 0.8).setOrigin(0);
     txt(this, W / 2, 50, 'GUERRE DES\nSTANDS', 16, '#ff6a5a').setOrigin(0.5).setStroke('#1b1b2b', 4);
-    this.add.image(W / 2 - 60, 120, 'portrait_' + this.chef);
+    this.add.image(W / 2 - 60, 120, 'portrait_' + this.chef).setDisplaySize(52, 52);
     txt(this, W / 2, 120, 'VS', 16, '#ffc533').setOrigin(0.5);
     this.add.image(W / 2 + 60, 120, 'roi_tomate').setScale(0.55 * artScale('roi_tomate'));
     txt(this, W / 2, 176, '2 minutes. Le plus riche gagne.\n3 plats d\'affilée = sabotage !', 8, '#bfc8e0').setOrigin(0.5);

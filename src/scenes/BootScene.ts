@@ -19,10 +19,13 @@ export class BootScene extends Phaser.Scene {
     this.load.setPath('assets/');
     for (const c of CHEF_ORDER) {
       this.load.image(c, `sprites/chefs/${c}.png`);
-      this.load.image('portrait_' + c, `sprites/chefs/portrait_${c}.png`);
+      if (!(STYLE_3D && c in ANIM3D)) this.load.image('portrait_' + c, `sprites/chefs/portrait_${c}.png`);
       // grands dessins haute définition (menu en paysage), découpés par tools/extract_hd_chefs.py
-      this.load.image('hd_' + c, STYLE_3D ? `sprites3d/${c}.png` : `sprites/chefs/hd_${c}.png`);
-      this.load.image('hdp_' + c, STYLE_3D ? `sprites3d/${c}.png` : `sprites/chefs/hdp_${c}.png`);
+      // chef en 3D (Blender) : le menu, les règles, Mon compte et le duel montrent le MÊME modèle que dans la partie
+      const rig3d = STYLE_3D && c in ANIM3D;
+      this.load.image('hd_' + c, rig3d ? `sprites3d/rig_${c}_hd.png` : STYLE_3D ? `sprites3d/${c}.png` : `sprites/chefs/hd_${c}.png`);
+      this.load.image('hdp_' + c, rig3d ? `sprites3d/rig_${c}_hd.png` : STYLE_3D ? `sprites3d/${c}.png` : `sprites/chefs/hdp_${c}.png`);
+      if (rig3d) this.load.image('portrait_' + c, `sprites3d/rig_${c}_portrait.png`);
     }
     // style 3D : la même clé charge l'image 3D à la place du dessin pixel
     const art = (k: string, pixel: string) => (is3d(k) ? `sprites3d/${ART_3D[k]}.png` : pixel);
@@ -59,7 +62,7 @@ export class BootScene extends Phaser.Scene {
     for (const k of this.textures.getTextureKeys()) if (k.startsWith('ui3d_') || (STYLE_3D && UI3D_HD.includes(k))) this.textures.get(k).setFilter(Phaser.Textures.FilterMode.LINEAR);
     // images 3D : lissées (pas de gros pixels)
     for (const k of Object.keys(ART_3D)) if (is3d(k) && this.textures.exists(k)) this.textures.get(k).setFilter(Phaser.Textures.FilterMode.LINEAR);
-    for (const k of this.textures.getTextureKeys()) if (k.startsWith('rig_')) this.textures.get(k).setFilter(Phaser.Textures.FilterMode.LINEAR);
+    for (const k of this.textures.getTextureKeys()) if (k.startsWith('rig_') || k.startsWith('portrait_')) this.textures.get(k).setFilter(Phaser.Textures.FilterMode.LINEAR);
     const g = this.make.graphics({ x: 0, y: 0 }, false);
     const tex = (key: string, w: number, h: number, draw: () => void) => {
       if (this.textures.exists(key)) return; // déjà chargé (image 3D)
