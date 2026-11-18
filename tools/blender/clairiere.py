@@ -246,6 +246,48 @@ def ramp2(c0, c1, fac_out, scale, detail=6, in_node=None):
     return r
 
 
+TEXD = os.path.join(WORK, "tex")   # textures photographiques (Poly Haven, CC0) : python3 tools/blender/fetch_textures.py brown_mud_dry rocky_terrain_02
+
+
+def photo(name, tile, data=False):
+    """Texture photo répétée sur le sol (coordonnées du monde, `tile` répétitions par unité)."""
+    n = nt.nodes.new("ShaderNodeTexImage")
+    n.image = bpy.data.images.load(os.path.join(TEXD, name))
+    n.image.colorspace_settings.name = "Non-Color" if data else "sRGB"
+    n.extension = "REPEAT"
+    n.interpolation = "Cubic"
+    m = nt.nodes.new("ShaderNodeMapping")
+    m.inputs["Scale"].default_value = (tile, tile, tile)
+    nt.links.new(wc.outputs["Position"], m.inputs["Vector"])
+    nt.links.new(m.outputs["Vector"], n.inputs["Vector"])
+    return n
+
+
+def tinted(name, tiles, tint, target, keep):
+    """Moyenne de la même texture à deux échelles (le motif ne se répète pas visiblement), multipliée par une teinte qui ramène la couleur à celle de la peinture."""
+    a, b = photo(name, tiles[0]), photo(name, tiles[1])
+    mixab = nt.nodes.new("ShaderNodeMix")
+    mixab.data_type = "RGBA"
+    mixab.inputs[0].default_value = 0.5
+    nt.links.new(a.outputs["Color"], mixab.inputs[6])
+    nt.links.new(b.outputs["Color"], mixab.inputs[7])
+    t = nt.nodes.new("ShaderNodeMix")
+    t.data_type = "RGBA"
+    t.blend_type = "MULTIPLY"
+    t.inputs[0].default_value = 1.0
+    t.inputs[7].default_value = (*tint, 1)
+    nt.links.new(mixab.outputs[2], t.inputs[6])
+    soft = nt.nodes.new("ShaderNodeMix")   # on garde seulement une part du motif de la photo : le reste est la couleur moyenne de la peinture (terre battue, plus lisse)
+    soft.data_type = "RGBA"
+    soft.inputs[0].default_value = keep
+    soft.inputs[6].default_value = (*target, 1)
+    nt.links.new(t.outputs[2], soft.inputs[7])
+    return soft
+
+
+# couleurs moyennes mesurées des textures (linéaire) : terre (0.182, 0.110, 0.051), herbe (0.082, 0.077, 0.013) ; cibles de la peinture : terre (0.50, 0.19, 0.04), herbe (0.07, 0.16, 0.03)
+dirt_photo = tinted("brown_mud_dry_diff.jpg", (0.55, 0.14), (2.45, 1.55, 0.70), (0.46, 0.17, 0.035), 0.55)
+grass_photo = tinted("rocky_terrain_02_diff.jpg", (0.45, 0.11), (0.9, 1.9, 1.5), (0.07, 0.16, 0.03), 0.7)
 dirt_col = ramp2((0.30, 0.125, 0.035), (0.52, 0.25, 0.085), None, 3.5)
 dirt_fine = ramp2((0.78, 0.78, 0.78), (1.22, 1.15, 1.08), None, 90, 3)
 dirt_big = ramp2((0.80, 0.78, 0.76), (1.15, 1.10, 1.05), None, 1.1, 3)
@@ -254,7 +296,7 @@ dm = nt.nodes.new("ShaderNodeMix")
 dm.data_type = "RGBA"
 dm.blend_type = "MULTIPLY"
 dm.inputs[0].default_value = 1.0
-nt.links.new(dirt_col.outputs["Color"], dm.inputs[6])
+nt.links.new(dirt_photo.outputs[2], dm.inputs[6])
 nt.links.new(dirt_fine.outputs["Color"], dm.inputs[7])
 dm2 = nt.nodes.new("ShaderNodeMix")
 dm2.data_type = "RGBA"
@@ -271,7 +313,7 @@ nt.links.new(dm2.outputs[2], trk_dark.inputs[6])
 fin = nt.nodes.new("ShaderNodeMix")
 fin.data_type = "RGBA"
 nt.links.new(cut.outputs["Result"], fin.inputs[0])
-nt.links.new(grass_col.outputs["Color"], fin.inputs[6])
+nt.links.new(grass_photo.outputs[2], fin.inputs[6])
 nt.links.new(trk_dark.outputs[2], fin.inputs[7])
 nt.links.new(fin.outputs[2], bsdf.inputs["Base Color"])
 # relief : grain de terre + traces de roues
@@ -291,6 +333,24 @@ bmp = nt.nodes.new("ShaderNodeBump")
 bmp.inputs["Strength"].default_value = 0.6
 nt.links.new(hsum.outputs[0], bmp.inputs["Height"])
 nt.links.new(bmp.outputs["Normal"], bsdf.inputs["Normal"])
+# relief et rugosité des photos (terre / herbe, mélangés comme la couleur)
+nd, ng = photo("brown_mud_dry_nor.jpg", 0.55, True), photo("rocky_terrain_02_nor.jpg", 0.45, True)
+nmix = nt.nodes.new("ShaderNodeMix")
+nmix.data_type = "RGBA"
+nt.links.new(cut.outputs["Result"], nmix.inputs[0])
+nt.links.new(ng.outputs["Color"], nmix.inputs[6])
+nt.links.new(nd.outputs["Color"], nmix.inputs[7])
+nmap = nt.nodes.new("ShaderNodeNormalMap")
+nmap.inputs["Strength"].default_value = 0.8
+nt.links.new(nmix.outputs[2], nmap.inputs["Color"])
+nt.links.new(nmap.outputs["Normal"], bmp.inputs["Normal"])
+rd, rg = photo("brown_mud_dry_rough.jpg", 0.55, True), photo("rocky_terrain_02_rough.jpg", 0.45, True)
+rmix = nt.nodes.new("ShaderNodeMix")
+rmix.data_type = "RGBA"
+nt.links.new(cut.outputs["Result"], rmix.inputs[0])
+nt.links.new(rg.outputs["Color"], rmix.inputs[6])
+nt.links.new(rd.outputs["Color"], rmix.inputs[7])
+nt.links.new(rmix.outputs[2], bsdf.inputs["Roughness"])
 put(ground, gm, smooth=False)
 
 # ------------------------------------------------------------------ herbe : des milliers de brins sur la zone d'herbe
