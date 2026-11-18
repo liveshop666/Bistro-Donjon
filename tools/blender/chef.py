@@ -34,6 +34,18 @@ SPECS = {
                       hat=(0.96, 0.83, 0.62), ear_in=(0.95, 0.55, 0.60), eye=(0.55, 0.28, 0.05), tail_tip=(0.85, 0.37, 0.06),
                       paint=dict(img="moustachu_tete.png", px=(207.5, 60, 0, 295, 330), chin_z=0.76, top_z=1.93, row_chin=330,
                                  torso=dict(img="moustachu_plastron.png", px=(207.5, 112, 332, 196, 153)))),
+    # chien : fourrure orange clair, museau et ventre crème, veste et tablier blancs, foulard rouge, rouleau à pâtisserie
+    "shiba": dict(fur=(0.82, 0.31, 0.05), light=(0.86, 0.66, 0.39), apron=(0.68, 0.66, 0.67), scarf=(0.33, 0.024, 0.022),
+                  hat=(0.86, 0.85, 0.85), ear_in=(0.95, 0.60, 0.58), eye=(0.10, 0.05, 0.03), tail_tip=(0.855, 0.445, 0.144),
+                  sleeve=(0.60, 0.59, 0.64), weapon="pin",
+                  tail_pts=[(0.14, 0.38, 1.0), (0.32, 0.38, 1.0), (0.44, 0.52, 0.95), (0.40, 0.70, 0.9), (0.26, 0.80, 0.85)],
+                  paint=dict(img="shiba_tete.png", px=(160, 55, 0, 220, 295), chin_z=0.76, top_z=1.93, row_chin=295, k_body=0.00297,
+                             torso=dict(img="shiba_plastron.png", px=(172, 95, 295, 180, 210)),
+                             geom=dict(head_z=1.12, head_r=(0.5, (0.80, 0.70, 0.74)), muzzle=((0, -0.22, 0.97), 0.21, (1.25, 0.75, 0.7)),
+                                       ear=dict(x=0.28, z=1.44, r=0.19, h=0.36, rot=10, flat=0.6),
+                                       cheeks=[],
+                                       band=(1.55, 0.25, 0.20), puffs=[(0, 0, 1.74, 0.29), (0.17, 0.02, 1.70, 0.22), (-0.17, 0.02, 1.70, 0.22), (0, 0.07, 1.78, 0.2)],
+                                       torso=((0, -0.17, 0.52), 0.32, (0.88, 0.34, 1.0)))))
 }
 SPEC = SPECS[WHO]
 
@@ -62,6 +74,16 @@ def mat(name, color, rough=0.7, bump=0.0):
         bp.inputs["Strength"].default_value = bump
         nt.links.new(n.outputs["Fac"], bp.inputs["Height"])
         nt.links.new(bp.outputs["Normal"], b.inputs["Normal"])
+    return m
+
+
+def flat_mat(name, color, rough=0.85):
+    """Matière qui suit la même formule d'éclairage que la peinture (30 % de lumière de la scène + émission 0,78) : même couleur que la tête."""
+    m = mat(name, color, rough)
+    b = m.node_tree.nodes["Principled BSDF"]
+    b.inputs["Base Color"].default_value = (color[0] * 0.3, color[1] * 0.3, color[2] * 0.3, 1)
+    b.inputs["Emission Color"].default_value = (*color, 1)
+    b.inputs["Emission Strength"].default_value = 0.78
     return m
 
 
@@ -180,13 +202,16 @@ LIGHT = mat("poil_clair", SPEC["light"], 0.9, bump=0.15)
 APRON = mat("tablier", SPEC["apron"], 0.85)
 SCARF = mat("foulard", SPEC["scarf"], 0.7)
 HAT = mat("toque", SPEC["hat"], 0.8)
+JACKET = flat_mat("veste_peinte", SPEC["sleeve"]) if SPEC.get("sleeve") else None
 PINK = mat("rose", SPEC["ear_in"], 0.7)
 DARK = mat("sombre", (0.10, 0.05, 0.03), 0.4)
 BROW = mat("sourcil", [c * 0.55 for c in SPEC["fur"]], 0.8)
 
 # ------------------------------------------------------------------ corps (formes arrondies accrochées aux os)
 attach([ball((0, 0, 0.40), 0.23, FUR, scale=(1.05, 0.95, 0.85))], rig, "DEF-hips")
-torso = [ball((0, 0, 0.56), 0.28, FUR, scale=(1.0, 0.85, 1.0)), ball((0, -0.12, 0.52), 0.21, LIGHT, scale=(1.0, 0.7, 1.05))]
+torso = [ball((0, 0, 0.56), 0.28, JACKET or FUR, scale=(1.0, 0.85, 1.0))]
+if not JACKET:
+    torso.append(ball((0, -0.12, 0.52), 0.21, LIGHT, scale=(1.0, 0.7, 1.05)))
 attach(torso, rig, "DEF-spine.002")
 # tablier : plaque arrondie devant le ventre, bord bas festonné (remplacé par la peinture quand elle existe)
 apron = [ball((0, -0.20, 0.47), 0.21, APRON, scale=(1.0, 0.16, 1.0))]
@@ -219,7 +244,7 @@ TOE = mat("orteil", (0.55, 0.15, 0.01), 0.9, bump=0.12)
 for s_ in ("L", "R"):
     ua, fa, ha = JOINT(f"DEF-upper_arm.{s_}"), JOINT(f"DEF-forearm.{s_}"), JOINT(f"DEF-hand.{s_}")
     fa_e = JOINT(f"DEF-forearm.{s_}", "tail")
-    attach(capsule(ua, fa, 0.105, 0.095, FUR), rig, f"DEF-upper_arm.{s_}")
+    attach(capsule(ua, fa, 0.105, 0.095, JACKET or FUR), rig, f"DEF-upper_arm.{s_}")
     attach(capsule(fa, fa_e, 0.095, 0.09, FUR), rig, f"DEF-forearm.{s_}")
     paw = [ball(ha, 0.13, FUR, scale=(1.1, 1.0, 1.0))]
     for k in (-1, 0, 1):
@@ -242,7 +267,7 @@ cd.bevel_depth = 0.095
 cd.bevel_resolution = 8
 cd.use_fill_caps = True
 sp = cd.splines.new("BEZIER")
-tail_pts = [(0.14, 0.38, 1.0), (0.32, 0.31, 1.0), (0.47, 0.42, 0.95), (0.50, 0.60, 0.88), (0.42, 0.76, 0.80)]
+tail_pts = SPEC.get("tail_pts", [(0.14, 0.38, 1.0), (0.32, 0.31, 1.0), (0.47, 0.42, 0.95), (0.50, 0.60, 0.88), (0.42, 0.76, 0.80)])
 sp.bezier_points.add(len(tail_pts) - 1)
 for bp_, (y_, z_, r_) in zip(sp.bezier_points, tail_pts):
     bp_.co = (0, y_, z_)
@@ -251,7 +276,7 @@ for bp_, (y_, z_, r_) in zip(sp.bezier_points, tail_pts):
 tail_obj = bpy.data.objects.new("queue", cd)
 bpy.context.collection.objects.link(tail_obj)
 tail_obj.data.materials.append(FUR)
-tail_tip = ball((0, 0.42, 0.80), 0.085, mat("bout_queue", (0.80, 0.50, 0.20), 0.85, bump=0.1), seg=18)
+tail_tip = ball((0, tail_pts[-1][0], tail_pts[-1][1] + 0.04), 0.085, mat("bout_queue", SPEC["tail_tip"] if WHO != "moustachu" else (0.80, 0.50, 0.20), 0.85, bump=0.1), seg=18)
 attach([tail_obj, tail_tip], rig, "DEF-hips")
 
 # ------------------------------------------------------------------ tête peinte : la peinture d'origine projetée de face sur des volumes 3D
@@ -342,7 +367,42 @@ def painted_material(name, imgfile, box, back, k, chin_z, row_chin, clip=False):
 REF = [None]
 
 
+def painted_generic():
+    """Tête, toque et plastron peints pour un personnage décrit par SPEC["paint"]["geom"] (chien, lapin...) : mêmes principes que painted_head()."""
+    P = SPEC["paint"]
+    G = P["geom"]
+    k = (P["top_z"] - P["chin_z"]) / P["px"][4]
+    ref = bpy.data.objects.new("tete_ref", None)
+    bpy.context.collection.objects.link(ref)
+    ref.location = (0, 0, 0)
+    REF[0] = ref
+    PH = painted_material("tete_peinte", P["img"], P["px"], SPEC["fur"], k, P["chin_z"], P["row_chin"])
+    PT = painted_material("toque_peinte", P["img"], P["px"], SPEC["hat"], k, P["chin_z"], P["row_chin"])
+    z = G["head_z"]
+    objs = [ball((0, 0, z), G["head_r"][0], PH, scale=G["head_r"][1], seg=40)]
+    mz_, mr_, ms_ = G["muzzle"]
+    objs.append(ball(mz_, mr_, PH, scale=ms_))
+    E = G["ear"]
+    for sx in (-1, 1):
+        ear = cone((sx * E["x"], 0.0, E["z"]), E["r"], 0.015, E["h"], PH, rot=(0, math.radians(sx * E["rot"]), 0), verts=24)
+        ear.scale.y = E["flat"]
+        objs.append(ear)
+        for (cx_, cy_, cz_, cr_) in G["cheeks"]:
+            objs.append(ball((sx * cx_, cy_, cz_), cr_, FUR, seg=20))
+    bz, br_, bh_ = G["band"]
+    objs.append(cone((0, 0.0, bz), br_, br_ - 0.005, bh_, PT, verts=40))
+    for (dx, dy, dz, r) in G["puffs"]:
+        objs.append(ball((dx, dy, dz), r, PT, seg=28))
+    attach(objs + [ref], rig, "DEF-head")
+    T = P["torso"]
+    PB = painted_material("plastron_peint", T["img"], T["px"], SPEC["apron"], P["k_body"], P["chin_z"], P["row_chin"], clip=True)
+    tc_, tr_, ts_ = G["torso"]
+    attach([ball(tc_, tr_, PB, scale=ts_, seg=36)], rig, "DEF-spine.002")
+
+
 def painted_head():
+    if "geom" in SPEC["paint"]:
+        return painted_generic()
     P = SPEC["paint"]
     cx_px, x0_px, y0_px, cw_px, ch_px = P["px"]
     k = (P["top_z"] - P["chin_z"]) / ch_px                  # unités du monde par pixel de la peinture
@@ -447,18 +507,31 @@ iron = mat("fer", (0.07, 0.07, 0.075), 0.35)
 iron.node_tree.nodes["Principled BSDF"].inputs["Metallic"].default_value = 0.8
 hr = JOINT("DEF-hand.R")
 pan = []
-bpy.ops.mesh.primitive_cylinder_add(vertices=48, radius=0.25, depth=0.075, location=hr + Vector((-0.43, 0, 0)))
-pn = bpy.context.object
-pn.data.materials.append(iron)
-pan.append(smooth(pn))
-bpy.ops.mesh.primitive_cylinder_add(vertices=48, radius=0.205, depth=0.02, location=hr + Vector((-0.43, 0, 0.034)))
-pin = bpy.context.object
-pin.data.materials.append(mat("fond_poele", (0.015, 0.015, 0.016), 0.6))
-pan.append(smooth(pin))
-bpy.ops.mesh.primitive_cylinder_add(vertices=16, radius=0.036, depth=0.30, location=hr + Vector((-0.16, 0, 0)), rotation=(0, math.radians(90), 0))
-hd = bpy.context.object
-hd.data.materials.append(mat("manche", (0.12, 0.06, 0.03), 0.7))
-pan.append(smooth(hd))
+if SPEC.get("weapon") == "pin":   # rouleau à pâtisserie géant : corps en bois, poignées aux deux bouts
+    wood = flat_mat("rouleau", (0.42, 0.17, 0.045))
+    c0 = hr + Vector((-0.10, 0, 0))                    # tenu par le poing, corps du rouleau à la verticale (dans l'axe de l'avant-bras plié)
+    bpy.ops.mesh.primitive_cylinder_add(vertices=40, radius=0.13, depth=0.70, location=c0 + Vector((0, 0, 0.18)))
+    pan.append(smooth(bpy.context.object))
+    pan[-1].data.materials.append(wood)
+    for dz, r_ in ((-0.30, 0.05), (0.66, 0.05)):
+        bpy.ops.mesh.primitive_cylinder_add(vertices=20, radius=r_, depth=0.20, location=c0 + Vector((0, 0, dz)))
+        pan.append(smooth(bpy.context.object))
+        pan[-1].data.materials.append(wood)
+        pan.append(ball(c0 + Vector((0, 0, dz - 0.10 if dz < 0 else dz + 0.10)), 0.07, wood, seg=16))
+else:
+    pan = []
+    bpy.ops.mesh.primitive_cylinder_add(vertices=48, radius=0.25, depth=0.075, location=hr + Vector((-0.43, 0, 0)))
+    pn = bpy.context.object
+    pn.data.materials.append(iron)
+    pan.append(smooth(pn))
+    bpy.ops.mesh.primitive_cylinder_add(vertices=48, radius=0.205, depth=0.02, location=hr + Vector((-0.43, 0, 0.034)))
+    pin = bpy.context.object
+    pin.data.materials.append(mat("fond_poele", (0.015, 0.015, 0.016), 0.6))
+    pan.append(smooth(pin))
+    bpy.ops.mesh.primitive_cylinder_add(vertices=16, radius=0.036, depth=0.30, location=hr + Vector((-0.16, 0, 0)), rotation=(0, math.radians(90), 0))
+    hd = bpy.context.object
+    hd.data.materials.append(mat("manche", (0.12, 0.06, 0.03), 0.7))
+    pan.append(smooth(hd))
 attach(pan, rig, "DEF-hand.R")
 
 # ------------------------------------------------------------------ rendu

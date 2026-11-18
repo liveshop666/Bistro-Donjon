@@ -30,5 +30,37 @@
     "cols": 4
    }
   }
+ },
+ "shiba": {
+  "w": 219,
+  "h": 254,
+  "ox": 109.0,
+  "oy": 187.0,
+  "scale": 0.44944,
+  "dirs": [
+   "E",
+   "N",
+   "NE",
+   "S",
+   "SE"
+  ],
+  "anims": {
+   "attaque": {
+    "frames": 16,
+    "cols": 4
+   },
+   "course": {
+    "frames": 16,
+    "cols": 4
+   },
+   "idle": {
+    "frames": 12,
+    "cols": 4
+   },
+   "marche": {
+    "frames": 16,
+    "cols": 4
+   }
+  }
  }
 }

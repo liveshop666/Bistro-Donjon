@@ -17,6 +17,10 @@ os.makedirs(OUT, exist_ok=True)
 ZONES = {
     # tête : (x0, y0, x1, y1) ; plastron : (x0, y0, x1, y1)
     "moustachu": dict(tete=(60, 0, 355, 330), plastron=(112, 332, 308, 485)),
+    # chien : la tête s'arrête au foulard ; le plastron (foulard, veste, tablier) évite le rouleau à pâtisserie et les bras (polygone en pixels de la peinture)
+    "shiba": dict(tete=(55, 0, 275, 295), plastron=(95, 295, 275, 505),
+                  poly=[[(100, 298), (216, 298), (216, 346), (104, 338)],                      # foulard
+                        [(128, 440), (270, 442), (272, 502), (130, 504)]]),                    # tablier
 }
 
 
@@ -37,7 +41,9 @@ bleed(src.crop(z["tete"]), keep_alpha=False).save(os.path.join(OUT, f"{who}_tete
 crop = src.crop(z["plastron"])
 w, h = crop.size
 mask = Image.new("L", (w, h), 0)
-ImageDraw.Draw(mask).polygon([(34, 0), (w - 34, 0), (w - 14, 70), (w - 22, h), (22, h), (14, 70)], fill=255)   # le plastron seulement (pas les bras ni la poêle)
+polys = [[(x - z["plastron"][0], y - z["plastron"][1]) for x, y in pl] for pl in z["poly"]] if "poly" in z else [[(34, 0), (w - 34, 0), (w - 14, 70), (w - 22, h), (22, h), (14, 70)]]
+for pl in polys:
+    ImageDraw.Draw(mask).polygon(pl, fill=255)   # le plastron seulement (pas les bras ni l'arme)
 mask = mask.filter(ImageFilter.GaussianBlur(4))
 alpha = np.minimum(np.asarray(crop.getchannel("A"), float), np.asarray(mask, float)).astype(np.uint8)
 crop.putalpha(Image.fromarray(alpha))
