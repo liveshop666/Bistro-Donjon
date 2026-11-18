@@ -73,6 +73,7 @@ export class MenuScene extends Phaser.Scene {
       this.add.rectangle(x, 166, 52, 56, 0x1b1b2b);
       this.add
         .image(x, 166, 'portrait_' + id)
+        .setDisplaySize(48, 48)
         .setInteractive({ useHandCursor: true })
         .on('pointerdown', () => {
           this.chef = id;
@@ -244,7 +245,8 @@ export class MenuScene extends Phaser.Scene {
     add(txt(this, cx, 264, `${c.weapon}\n${c.ultimateName}`, 8, '#bfc8e0').setOrigin(0.5, 0).setAlign('center'));
     CHEF_ORDER.forEach((id, i) => {
       const x = cx + (i - 1) * 58;
-      const pt = add(this.add.image(x, 322, 'hdp_' + id).setDisplaySize(34, 38).setInteractive({ useHandCursor: true }));
+      const pt = add(this.add.image(x, 322, 'hdp_' + id).setInteractive({ useHandCursor: true }));
+      pt.setScale(Math.min(34 / pt.width, 40 / pt.height)); // sans déformer (les images 3D sont plus hautes que larges)
       pt.on('pointerdown', () => {
         this.chef = id;
         audio.sfx('clic');
